@@ -1,0 +1,135 @@
+Makefile
+  s_bbf609960902b0::t_4550665d7e3b60 12
+  s_bbf609960902b0::t_07b2147f2a3a7a 48-49
+  s_bbf609960902b0::t_be6fa83cac7f2a 1
+  h_a3f313f3d96276 13
+  s_bbf609960902b0::t_77d90433586073 19-25
+  s_bbf609960902b0::t_727b273a6cad67 9,26-27,30,34,36,40,90-95,102,114
+  s_bbf609960902b0::t_9597336bf99d0d 69,72-88
+  s_bbf609960902b0::t_6ba062c073343b 106
+api/cms/v1/cms.go
+  s_bbf609960902b0::t_aa4cfe21bcc6b8 253
+  s_bbf609960902b0::t_40fb41e446ed5d 254-255
+  s_bbf609960902b0::t_1dce22805960a2 258,261,266,269,273-287,289-291
+  s_bbf609960902b0::t_6d0ee8fb1d95d2 288
+  s_bbf609960902b0::t_110d29581d446a 14
+  s_bbf609960902b0::t_f648e20cf10ffc 256
+  s_bbf609960902b0::t_2899622e3460c9 147,151
+  s_bbf609960902b0::t_091d498829e456 210-216
+  s_bbf609960902b0::t_fa93b76a6f75a4 227
+  s_bbf609960902b0::t_d6f62d22d19e41 191-192
+  s_bbf609960902b0::t_c4e99efd4e131d 17-26
+  s_bbf609960902b0::t_311eedccae3e2e 118-120
+  h_a3f313f3d96276 88-115,121-123,129-146,148-150
+  s_bbf609960902b0::t_07c9259352fc13 158-159,161,175-180
+api/cms/v1/internal/handler/readyhandler.go
+  s_bbf609960902b0::t_c4e99efd4e131d 9-11
+  s_bbf609960902b0::t_ba18c7f87d838f 1-8,12-45
+internal/seed/configdict_test.go
+  h_a3f313f3d96276 5-9,11-22,24-25,28,35,69-81
+  s_bbf609960902b0::t_c1d62489d7a327 1-4,10,23,26-27,29-34,36-68,82-83
+internal/migration/lock.go
+  s_bbf609960902b0::t_ab6a803eccf755 10
+  s_bbf609960902b0::t_232f1a9aeceefa 1-9,11-49
+internal/seed/permissions_test.go
+  s_bbf609960902b0::t_c3730570879565 4
+  s_bbf609960902b0::t_a559c934fbf669 137-152
+internal/migration/version.go
+  s_bbf609960902b0::t_c4e99efd4e131d 13-16
+  s_bbf609960902b0::t_102635c3f4458e 1-12,17-117
+internal/config/dsn_test.go
+  s_bbf609960902b0::t_4b0ad7aa31caad 1-43
+internal/migration/backupcheck.go
+  s_bbf609960902b0::t_3467aa94a3b414 1-28
+internal/seed/seed.go
+  s_bbf609960902b0::t_4b806cdc60ba6f 19,25,31,37,40
+  s_bbf609960902b0::t_4cbc2ba52582bb 159
+  s_bbf609960902b0::t_91bc4bb0fe9e19 128
+  s_bbf609960902b0::t_344ead51d49036 36,38-39,41-44
+  s_bbf609960902b0::t_7afc91494d1bc9 15-17
+  s_bbf609960902b0::t_6a2963aab3885a 161,165
+  s_bbf609960902b0::t_2382cb38a92a77 100
+  s_bbf609960902b0::t_c4e99efd4e131d 7-12
+  s_bbf609960902b0::t_1a571b6f2e0bd8 45,56,70,84,101,108,115,130,137,142
+cmd/backup/main.go
+  s_bbf609960902b0::t_3edb8018e0f573 23-26
+  s_bbf609960902b0::t_58a9b9fde73c2e 58
+  s_bbf609960902b0::t_268e60e3fdc4da 1-22,27-31,33,35,48-57,59-111
+  s_bbf609960902b0::t_5c618a517cd932 32,34,36-47
+internal/migration/migration_test.go
+  s_bbf609960902b0::t_d70f03e07addb1 1-53
+internal/migration/dedupe.go
+  s_bbf609960902b0::t_8717fa44974fff 1-129
+cmd/migrate/main.go
+  s_bbf609960902b0::t_3bd56754868f5d 1-11,16-18,21,35-39,41-53,55-65,68-71,73-76,79-80,82-99,101-114,116-126,128-129,131,134,137-175,177-184,186-192,195-197,199-206,208-215,217,220,234
+  s_bbf609960902b0::t_3c1c65e7228953 23-24
+  s_bbf609960902b0::t_c4e99efd4e131d 26-32
+internal/seed/configdict.go
+  s_bbf609960902b0::t_5d6efa05628957 136,179,201,203,235,248,267
+  s_bbf609960902b0::t_4a303ac8b86185 1-5,10-20,22-25,30,33-36,42-84,99-108,131,135,137,140,171-178,180-198,200,202,204-214,217,228-234,236-247,249-266,268-274
+  s_bbf609960902b0::t_b5c8bc4fb20cbe 165-168
+  s_bbf609960902b0::t_c4e99efd4e131d 6-9,21,26
+  s_bbf609960902b0::t_ec3c48528cf8dc 132-133,138-139,141-164,169-170
+  s_bbf609960902b0::t_0950773aa4c5a3 37-41
+  s_bbf609960902b0::t_c94eb66bbe2d6a 199
+  s_bbf609960902b0::t_3f3ef166ed83cb 85-98
+  s_bbf609960902b0::t_dbaa80fa139047 215-216,218-227
+  s_bbf609960902b0::t_0e8472d54781a0 134
+  h_a3f313f3d96276 113,122,126
+  s_bbf609960902b0::t_a23ae8703be83a 109-112,114-121,123-125,127-130
+  s_bbf609960902b0::t_f01f5a250bf77a 27-29,31-32
+api/cms/v1/internal/handler/contentroutes.go
+  s_bbf609960902b0::t_c4e99efd4e131d 6
+  s_bbf609960902b0::t_b8e58c8496f869 71-73,83
+  s_bbf609960902b0::t_afc4147bdc37c8 89-90
+  s_bbf609960902b0::t_b57c763bbc6b78 67-70
+internal/version/version.go
+  s_bbf609960902b0::t_cc26606eaa121c 1-22
+internal/config/dsn.go
+  s_bbf609960902b0::t_8f3dca478dfec1 1-55
+internal/migration/check.go
+  s_bbf609960902b0::t_77927ed9aae378 1-10,12-129
+  s_bbf609960902b0::t_c4e99efd4e131d 11
+internal/seed/permissions.go
+  s_bbf609960902b0::t_4d45c7def63542 330,361,397
+  s_bbf609960902b0::t_c4e99efd4e131d 7-9
+  s_bbf609960902b0::t_82760aaa5dde70 328
+  s_bbf609960902b0::t_eac1f80e940be7 254
+  s_bbf609960902b0::t_44cd3cf0e1d37f 159-165
+  s_bbf609960902b0::t_a218fdfa192a2c 215-220
+  s_bbf609960902b0::t_e9b82f16c4808e 252-253
+  s_bbf609960902b0::t_1a69a902ef80e5 353-355
+  s_bbf609960902b0::t_a83ae80c7a7541 166
+  s_bbf609960902b0::t_774d6fb763008e 256-270
+api/cms/v1/content.doc.api
+  s_bbf609960902b0::t_1b24107e10829d 43-48
+  h_a3f313f3d96276 497-498
+internal/migration/backfill.go
+  s_bbf609960902b0::t_1a76e79cf18fd0 1-10,14-87
+  s_bbf609960902b0::t_c4e99efd4e131d 11-13
+test/migration/doc.go
+  s_bbf609960902b0::t_f4ecc42bd32b97 1-4
+test/migration/legacy_upgrade_test.go
+  s_bbf609960902b0::t_a8748c59eb2487 1-203
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "26.9.9",
+  "base_commit_sha": "d01cf21f24388e78e933c53860f96bba892e3ab5",
+  "prompts": {},
+  "humans": {
+    "h_a3f313f3d96276": {
+      "author": "liuxingyu <yuwen002@163.com>"
+    }
+  },
+  "sessions": {
+    "s_bbf609960902b0": {
+      "agent_id": {
+        "tool": "codebuddy",
+        "id": "e1b6045518d048e4bd07e87813a33b92",
+        "model": "hy4free"
+      },
+      "human_author": "liuxingyu <yuwen002@163.com>"
+    }
+  }
+}
