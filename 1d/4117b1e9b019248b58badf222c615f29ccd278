@@ -1,0 +1,53 @@
+.github/workflows/release.yml
+  s_bbf609960902b0::t_9da8d56708aba8 40-53
+Dockerfile
+  s_bbf609960902b0::t_c4e99efd4e131d 26
+  s_bbf609960902b0::t_e8bb917d31c3c7 52
+  s_bbf609960902b0::t_3f52729a9996cd 22-25,27,37-40
+go.mod
+  s_bbf609960902b0::t_c4e99efd4e131d 1
+.goctl/api/handler.tpl
+  s_bbf609960902b0::t_06ee5b5851b00a 10,12
+.env.example
+  h_a3f313f3d96276 54-57
+  s_bbf609960902b0::t_c4e99efd4e131d 52,69,71
+  s_bbf609960902b0::t_d5df241a1c2b83 3-8,12
+  s_bbf609960902b0::t_eb9f654242883b 32-51,53
+docker-compose.yml
+  h_a3f313f3d96276 90-92
+  s_bbf609960902b0::t_c071192e65b52b 83-84
+  s_bbf609960902b0::t_c4e99efd4e131d 20,40,55-56,67,74
+  s_bbf609960902b0::t_0072f30f5990c7 51-53
+  s_bbf609960902b0::t_9331b9ecb0fa7c 93-111
+  s_bbf609960902b0::t_29311dd647f15e 129-132
+web/index.html
+  s_bbf609960902b0::t_c4e99efd4e131d 6
+web/public/docs.html
+  s_bbf609960902b0::t_c4e99efd4e131d 5
+web/package.json
+  s_bbf609960902b0::t_c4e99efd4e131d 2
+docs/api-docs/meteor-cms.apifox.json
+  s_bbf609960902b0::t_f0044294e3bbd2 9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "26.9.9",
+  "base_commit_sha": "1d4117b1e9b019248b58badf222c615f29ccd278",
+  "prompts": {},
+  "humans": {
+    "h_a3f313f3d96276": {
+      "author": "liuxingyu <yuwen002@163.com>"
+    }
+  },
+  "sessions": {
+    "s_bbf609960902b0": {
+      "agent_id": {
+        "tool": "codebuddy",
+        "id": "e1b6045518d048e4bd07e87813a33b92",
+        "model": "hy4free"
+      },
+      "human_author": "liuxingyu <yuwen002@163.com>",
+      "generated_lines": 49149
+    }
+  }
+}
