@@ -14,7 +14,9 @@ const MinPasswordLength = 8
 //   - 长度 >= MinPasswordLength
 //   - 至少包含 3 类字符（小写字母、大写字母、数字、特殊字符）
 //
-// 返回 (是否通过, 失败原因)。初始种子密码 Admin123456（12 位，含大/小/数字三类）满足该策略。
+// 返回 (是否通过, 失败原因)。仅业务入口（创建/注册/改密/重置）调用本函数；
+// 初始化种子直接构造 AdminUser，写入的 admin/123456 是本策略的唯一例外，
+// 保留它是为了让本地开发与 E2E 开箱即用，生产首次登录后必须立即修改。
 func ValidatePasswordComplexity(password string) (bool, string) {
 	if len(password) < MinPasswordLength {
 		return false, "密码长度不能少于 " + strconv.Itoa(MinPasswordLength) + " 位"

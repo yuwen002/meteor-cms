@@ -1,8 +1,11 @@
 <template>
-  <div class="portal">
+  <div class="portal" :style="{ '--site-primary': site.primary_color || '#409EFF' }">
     <header class="site-header">
       <div class="header-inner">
-        <router-link to="/articles" class="brand">Meteor<span>CMS</span></router-link>
+        <router-link to="/articles" class="brand">
+          <img v-if="site.logo" :src="site.logo" :alt="site.name" class="brand-logo" />
+          <template v-else>{{ site.name }}</template>
+        </router-link>
         <nav class="nav-links">
           <router-link to="/articles">全部文章</router-link>
           <a href="/api/rss" target="_blank" rel="noopener noreferrer">RSS</a>
@@ -67,28 +70,106 @@
       </div>
     </main>
 
+    <section v-if="site.comment_enabled" class="comment-panel">
+      <div class="container">
+        <h3>评论<span v-if="comments.length">（{{ comments.length }}）</span></h3>
+        <div v-for="c in comments" :key="c.id" class="comment-item">
+          <div class="comment-head">
+            <strong>{{ c.author }}</strong><span>{{ c.created_at }}</span>
+          </div>
+          <p>{{ c.content }}</p>
+        </div>
+        <el-empty v-if="!comments.length" description="还没有评论，来抢沙发" :image-size="60" />
+        <div class="comment-form">
+          <div class="comment-fields">
+            <el-input v-model="commentForm.author" placeholder="昵称" style="width: 180px" />
+            <el-input v-model="commentForm.email" placeholder="邮箱（选填）" style="width: 220px" />
+          </div>
+          <el-input v-model="commentForm.content" type="textarea" :rows="3" placeholder="说点什么…" />
+          <el-button type="primary" :loading="commentSubmitting" @click="submitComment">发表评论</el-button>
+        </div>
+      </div>
+    </section>
+
     <footer class="site-footer">
-      Powered by Go Meteor CMS ·
-      <a href="/api/rss" target="_blank" rel="noopener noreferrer">RSS</a> ·
-      <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
+      <div>{{ site.footer || 'Powered by Meteor CMS' }}</div>
+      <div v-if="site.icp" class="site-icp">{{ site.icp }}</div>
+      <div class="footer-links">
+        <a href="/api/rss" target="_blank" rel="noopener noreferrer">RSS</a> ·
+        <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
+      </div>
+      <div v-if="siteLinks.length" class="friend-links">
+        友情链接：
+        <a v-for="l in siteLinks" :key="l.id" :href="l.url" target="_blank" rel="noopener noreferrer">
+          {{ l.name }}
+        </a>
+      </div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from '@/utils/element'
 import { getPublicArticle, type PublicArticle, type PublicArticleDetail } from '@/api/public'
+import { createPublicComment, getPublicComments, type PublicCommentItem } from '@/api/siteext'
 import { plainSummary, renderMarkdown } from '@/utils/markdown'
+import {
+  applySiteMeta,
+  articleTitle,
+  loadSiteInfo,
+  loadSiteLinks,
+  siteInfo,
+  siteLinks as siteLinksRef,
+} from '@/utils/site'
 
 const route = useRoute()
 const router = useRouter()
+const site = computed(() => siteInfo.value)
+const siteLinks = computed(() => siteLinksRef.value)
 const slug = computed(() => String(route.params.slug ?? ''))
 const article = ref<PublicArticleDetail | null>(null)
 const loading = ref(false)
 const rendered = computed(() => renderMarkdown(article.value?.content ?? ''))
 const relatedList = computed<PublicArticle[]>(() => article.value?.related ?? [])
 const originalTitle = document.title
+
+const comments = ref<PublicCommentItem[]>([])
+const commentForm = reactive({ author: '', email: '', content: '' })
+const commentSubmitting = ref(false)
+
+async function loadComments() {
+  if (!slug.value) return
+  try {
+    comments.value = (await getPublicComments(slug.value)).list || []
+  } catch {
+    comments.value = []
+  }
+}
+
+async function submitComment() {
+  if (!commentForm.author.trim() || !commentForm.content.trim()) {
+    ElMessage.warning('请填写昵称与评论内容')
+    return
+  }
+  commentSubmitting.value = true
+  try {
+    const res = await createPublicComment({
+      slug: slug.value,
+      author: commentForm.author.trim(),
+      email: commentForm.email.trim(),
+      content: commentForm.content.trim(),
+    })
+    ElMessage.success(res.need_review ? '评论已提交，等待审核' : '评论已发布')
+    commentForm.content = ''
+    await loadComments()
+  } catch (e) {
+    ElMessage.error((e as Error).message || '提交失败')
+  } finally {
+    commentSubmitting.value = false
+  }
+}
 
 interface MetaSnapshot {
   name: string
@@ -126,9 +207,12 @@ function syncCanonical(url: string) {
 }
 
 function syncPageMeta(a: PublicArticleDetail) {
-  document.title = a.seo_title || a.title
-  syncMeta('description', a.seo_description || a.summary || plainSummary(a.content))
-  syncMeta('keywords', a.seo_keywords || a.tag_names.join(', '))
+  document.title = articleTitle(a.seo_title || a.title)
+  syncMeta(
+    'description',
+    a.seo_description || a.summary || plainSummary(a.content) || site.value.description,
+  )
+  syncMeta('keywords', a.seo_keywords || a.tag_names.join(', ') || site.value.keywords)
   syncCanonical(a.canonical_url || `${window.location.origin}/articles/${a.slug}`)
 }
 
@@ -161,8 +245,11 @@ async function load() {
   if (!slug.value) return
   loading.value = true
   try {
-    article.value = await getPublicArticle(slug.value)
-    syncPageMeta(article.value)
+    // 站点信息必须先就绪，标题模板与默认 meta 才能正确套用
+    const [a] = await Promise.all([getPublicArticle(slug.value), loadSiteInfo()])
+    article.value = a
+    syncPageMeta(a)
+    void loadComments()
     window.scrollTo({ top: 0 })
   } catch {
     article.value = null
@@ -176,14 +263,17 @@ function goBack() {
 }
 
 onMounted(() => {
+  void loadSiteInfo()
+  void loadSiteLinks()
   void load()
 })
 watch(slug, () => {
   void load()
 })
 onUnmounted(() => {
-  document.title = originalTitle
   restoreMeta()
+  applySiteMeta(site.value)
+  if (!site.value.name) document.title = originalTitle
 })
 </script>
 
@@ -454,5 +544,70 @@ onUnmounted(() => {
 @media (max-width: 640px) {
   .detail-card { padding: 24px 20px; }
   .detail-title { font-size: 24px; }
+}
+
+/* 站点配置：Logo、主题主色与页脚文本 */
+.brand-logo {
+  height: 26px;
+  max-width: 160px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+.site-header {
+  background: linear-gradient(120deg, var(--site-primary, #1d4ed8), #0ea5e9);
+}
+.crumb a,
+.chip,
+.tag,
+.adjacent-link,
+.article-body :deep(a) {
+  color: var(--site-primary, #2563eb);
+}
+.site-icp {
+  margin-top: 6px;
+}
+.footer-links {
+  margin-top: 6px;
+}
+.friend-links {
+  margin-top: 8px;
+}
+.friend-links a {
+  margin: 0 6px;
+}
+.comment-panel {
+  padding: 8px 0 28px;
+}
+.comment-panel h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+.comment-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.comment-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.comment-item p {
+  margin: 8px 0 0;
+  color: #334155;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 18px;
+}
+.comment-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 </style>

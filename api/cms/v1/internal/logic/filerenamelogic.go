@@ -9,10 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent/mediafile"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -54,9 +55,28 @@ func (l *FileRenameLogic) FileRename(req *types.FileRenameReq) error {
 	if _, err := os.Stat(dst); err == nil {
 		return common.NewBizError(common.ErrInvalidParams)
 	}
+	oldURL := mediaFileURL(req.Path)
+	if info, err := os.Stat(src); err == nil && !info.IsDir() {
+		used, err := mediaRefCount(l.ctx, l.svcCtx.EntClient, oldURL)
+		if err != nil {
+			logx.Errorf("检查媒体引用失败: %v", err)
+			return common.NewBizError(common.ErrInternalServer)
+		}
+		if used > 0 {
+			return common.NewBizErrorWithMsg(common.ErrInvalidParams, "文件正被文章引用，重命名会导致链接失效")
+		}
+	}
 	if err := os.Rename(src, dst); err != nil {
 		logx.Errorf("rename %s -> %s failed: %v", src, dst, err)
 		return common.NewBizError(common.ErrInternalServer)
+	}
+	// 同步媒体表中的 URL，避免列表里元数据与磁盘文件脱节
+	newURL := mediaFileURL(filepath.ToSlash(filepath.Join(filepath.Dir(req.Path), req.NewName)))
+	if _, err := l.svcCtx.EntClient.MediaFile.Update().
+		Where(mediafile.URLEQ(oldURL)).
+		SetURL(newURL).
+		Save(l.ctx); err != nil {
+		logx.Errorf("同步媒体元数据 URL 失败 %s -> %s: %v", oldURL, newURL, err)
 	}
 	return nil
 }

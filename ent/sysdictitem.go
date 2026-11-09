@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdictitem"
+	"github.com/yuwen002/meteor-cms/ent/sysdictitem"
 )
 
 // 数据字典项表，存放字典类型下的具体枚举值
@@ -31,7 +31,13 @@ type SysDictItem struct {
 	// 状态：1 启用 0 禁用
 	Status int `json:"status,omitempty"`
 	// 排序，从小到大
-	Sort         int `json:"sort,omitempty"`
+	Sort int `json:"sort,omitempty"`
+	// 父级字典项 ID，0 表示顶级，用于树形枚举（如省市区）
+	ParentID int64 `json:"parent_id,omitempty"`
+	// 是否该字典的默认选中项
+	IsDefault bool `json:"is_default,omitempty"`
+	// 备注说明
+	Remark       string `json:"remark,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -40,9 +46,11 @@ func (*SysDictItem) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sysdictitem.FieldID, sysdictitem.FieldStatus, sysdictitem.FieldSort:
+		case sysdictitem.FieldIsDefault:
+			values[i] = new(sql.NullBool)
+		case sysdictitem.FieldID, sysdictitem.FieldStatus, sysdictitem.FieldSort, sysdictitem.FieldParentID:
 			values[i] = new(sql.NullInt64)
-		case sysdictitem.FieldDictCode, sysdictitem.FieldLabel, sysdictitem.FieldValue:
+		case sysdictitem.FieldDictCode, sysdictitem.FieldLabel, sysdictitem.FieldValue, sysdictitem.FieldRemark:
 			values[i] = new(sql.NullString)
 		case sysdictitem.FieldCreatedAt, sysdictitem.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -109,6 +117,24 @@ func (_m *SysDictItem) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Sort = int(value.Int64)
 			}
+		case sysdictitem.FieldParentID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field parent_id", values[i])
+			} else if value.Valid {
+				_m.ParentID = value.Int64
+			}
+		case sysdictitem.FieldIsDefault:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_default", values[i])
+			} else if value.Valid {
+				_m.IsDefault = value.Bool
+			}
+		case sysdictitem.FieldRemark:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field remark", values[i])
+			} else if value.Valid {
+				_m.Remark = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -165,6 +191,15 @@ func (_m *SysDictItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sort=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Sort))
+	builder.WriteString(", ")
+	builder.WriteString("parent_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ParentID))
+	builder.WriteString(", ")
+	builder.WriteString("is_default=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsDefault))
+	builder.WriteString(", ")
+	builder.WriteString("remark=")
+	builder.WriteString(_m.Remark)
 	builder.WriteByte(')')
 	return builder.String()
 }

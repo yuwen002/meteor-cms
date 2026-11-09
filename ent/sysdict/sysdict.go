@@ -27,6 +27,10 @@ const (
 	FieldStatus = "status"
 	// FieldSort holds the string denoting the sort field in the database.
 	FieldSort = "sort"
+	// FieldDictGroup holds the string denoting the dict_group field in the database.
+	FieldDictGroup = "dict_group"
+	// FieldIsSystem holds the string denoting the is_system field in the database.
+	FieldIsSystem = "is_system"
 	// Table holds the table name of the sysdict in the database.
 	Table = "sys_dicts"
 )
@@ -41,6 +45,8 @@ var Columns = []string{
 	FieldDescription,
 	FieldStatus,
 	FieldSort,
+	FieldDictGroup,
+	FieldIsSystem,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -70,6 +76,12 @@ var (
 	DefaultStatus int
 	// DefaultSort holds the default value on creation for the "sort" field.
 	DefaultSort int
+	// DefaultDictGroup holds the default value on creation for the "dict_group" field.
+	DefaultDictGroup string
+	// DictGroupValidator is a validator for the "dict_group" field. It is called by the builders before save.
+	DictGroupValidator func(string) error
+	// DefaultIsSystem holds the default value on creation for the "is_system" field.
+	DefaultIsSystem bool
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(int64) error
 )
@@ -115,4 +127,14 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // BySort orders the results by the sort field.
 func BySort(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSort, opts...).ToFunc()
+}
+
+// ByDictGroup orders the results by the dict_group field.
+func ByDictGroup(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDictGroup, opts...).ToFunc()
+}
+
+// ByIsSystem orders the results by the is_system field.
+func ByIsSystem(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsSystem, opts...).ToFunc()
 }

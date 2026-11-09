@@ -6,7 +6,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -14,7 +14,8 @@ import (
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		rest.WithMiddlewares(
-			[]rest.Middleware{serverCtx.ClientInfoMiddleware},
+			// 认证类接口没有 JWT 身份，但注册、令牌续期、重置密码等敏感动作同样需要审计留痕
+			[]rest.Middleware{serverCtx.ClientInfoMiddleware, serverCtx.OperationLogMiddleware},
 			[]rest.Route{
 				{
 					Method:  http.MethodPost,

@@ -116,6 +116,9 @@ func (Article) Indexes() []ent.Index {
 		index.Fields("deleted_at", "status", "published_at", "id"),
 		index.Fields("deleted_at", "is_top", "id"),
 		index.Fields("deleted_at", "category_id", "status"),
+		// 行级数据权限：非超管列表按 author_id 过滤，deleted_at 仍作最左列，
+		// 避免补过滤后退化成全表扫描。
+		index.Fields("deleted_at", "author_id", "status", "id"),
 	}
 }
 

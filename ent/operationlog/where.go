@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
@@ -122,6 +122,26 @@ func DurationMs(v int64) predicate.OperationLog {
 // Params applies equality check predicate on the "params" field. It's identical to ParamsEQ.
 func Params(v string) predicate.OperationLog {
 	return predicate.OperationLog(sql.FieldEQ(FieldParams, v))
+}
+
+// Query applies equality check predicate on the "query" field. It's identical to QueryEQ.
+func Query(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEQ(FieldQuery, v))
+}
+
+// RequestID applies equality check predicate on the "request_id" field. It's identical to RequestIDEQ.
+func RequestID(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEQ(FieldRequestID, v))
+}
+
+// BizCode applies equality check predicate on the "biz_code" field. It's identical to BizCodeEQ.
+func BizCode(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEQ(FieldBizCode, v))
+}
+
+// HTTPStatus applies equality check predicate on the "http_status" field. It's identical to HTTPStatusEQ.
+func HTTPStatus(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEQ(FieldHTTPStatus, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -987,6 +1007,236 @@ func ParamsEqualFold(v string) predicate.OperationLog {
 // ParamsContainsFold applies the ContainsFold predicate on the "params" field.
 func ParamsContainsFold(v string) predicate.OperationLog {
 	return predicate.OperationLog(sql.FieldContainsFold(FieldParams, v))
+}
+
+// QueryEQ applies the EQ predicate on the "query" field.
+func QueryEQ(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEQ(FieldQuery, v))
+}
+
+// QueryNEQ applies the NEQ predicate on the "query" field.
+func QueryNEQ(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNEQ(FieldQuery, v))
+}
+
+// QueryIn applies the In predicate on the "query" field.
+func QueryIn(vs ...string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldIn(FieldQuery, vs...))
+}
+
+// QueryNotIn applies the NotIn predicate on the "query" field.
+func QueryNotIn(vs ...string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNotIn(FieldQuery, vs...))
+}
+
+// QueryGT applies the GT predicate on the "query" field.
+func QueryGT(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldGT(FieldQuery, v))
+}
+
+// QueryGTE applies the GTE predicate on the "query" field.
+func QueryGTE(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldGTE(FieldQuery, v))
+}
+
+// QueryLT applies the LT predicate on the "query" field.
+func QueryLT(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldLT(FieldQuery, v))
+}
+
+// QueryLTE applies the LTE predicate on the "query" field.
+func QueryLTE(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldLTE(FieldQuery, v))
+}
+
+// QueryContains applies the Contains predicate on the "query" field.
+func QueryContains(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldContains(FieldQuery, v))
+}
+
+// QueryHasPrefix applies the HasPrefix predicate on the "query" field.
+func QueryHasPrefix(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldHasPrefix(FieldQuery, v))
+}
+
+// QueryHasSuffix applies the HasSuffix predicate on the "query" field.
+func QueryHasSuffix(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldHasSuffix(FieldQuery, v))
+}
+
+// QueryIsNil applies the IsNil predicate on the "query" field.
+func QueryIsNil() predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldIsNull(FieldQuery))
+}
+
+// QueryNotNil applies the NotNil predicate on the "query" field.
+func QueryNotNil() predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNotNull(FieldQuery))
+}
+
+// QueryEqualFold applies the EqualFold predicate on the "query" field.
+func QueryEqualFold(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEqualFold(FieldQuery, v))
+}
+
+// QueryContainsFold applies the ContainsFold predicate on the "query" field.
+func QueryContainsFold(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldContainsFold(FieldQuery, v))
+}
+
+// RequestIDEQ applies the EQ predicate on the "request_id" field.
+func RequestIDEQ(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEQ(FieldRequestID, v))
+}
+
+// RequestIDNEQ applies the NEQ predicate on the "request_id" field.
+func RequestIDNEQ(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNEQ(FieldRequestID, v))
+}
+
+// RequestIDIn applies the In predicate on the "request_id" field.
+func RequestIDIn(vs ...string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldIn(FieldRequestID, vs...))
+}
+
+// RequestIDNotIn applies the NotIn predicate on the "request_id" field.
+func RequestIDNotIn(vs ...string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNotIn(FieldRequestID, vs...))
+}
+
+// RequestIDGT applies the GT predicate on the "request_id" field.
+func RequestIDGT(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldGT(FieldRequestID, v))
+}
+
+// RequestIDGTE applies the GTE predicate on the "request_id" field.
+func RequestIDGTE(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldGTE(FieldRequestID, v))
+}
+
+// RequestIDLT applies the LT predicate on the "request_id" field.
+func RequestIDLT(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldLT(FieldRequestID, v))
+}
+
+// RequestIDLTE applies the LTE predicate on the "request_id" field.
+func RequestIDLTE(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldLTE(FieldRequestID, v))
+}
+
+// RequestIDContains applies the Contains predicate on the "request_id" field.
+func RequestIDContains(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldContains(FieldRequestID, v))
+}
+
+// RequestIDHasPrefix applies the HasPrefix predicate on the "request_id" field.
+func RequestIDHasPrefix(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldHasPrefix(FieldRequestID, v))
+}
+
+// RequestIDHasSuffix applies the HasSuffix predicate on the "request_id" field.
+func RequestIDHasSuffix(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldHasSuffix(FieldRequestID, v))
+}
+
+// RequestIDIsNil applies the IsNil predicate on the "request_id" field.
+func RequestIDIsNil() predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldIsNull(FieldRequestID))
+}
+
+// RequestIDNotNil applies the NotNil predicate on the "request_id" field.
+func RequestIDNotNil() predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNotNull(FieldRequestID))
+}
+
+// RequestIDEqualFold applies the EqualFold predicate on the "request_id" field.
+func RequestIDEqualFold(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEqualFold(FieldRequestID, v))
+}
+
+// RequestIDContainsFold applies the ContainsFold predicate on the "request_id" field.
+func RequestIDContainsFold(v string) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldContainsFold(FieldRequestID, v))
+}
+
+// BizCodeEQ applies the EQ predicate on the "biz_code" field.
+func BizCodeEQ(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEQ(FieldBizCode, v))
+}
+
+// BizCodeNEQ applies the NEQ predicate on the "biz_code" field.
+func BizCodeNEQ(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNEQ(FieldBizCode, v))
+}
+
+// BizCodeIn applies the In predicate on the "biz_code" field.
+func BizCodeIn(vs ...int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldIn(FieldBizCode, vs...))
+}
+
+// BizCodeNotIn applies the NotIn predicate on the "biz_code" field.
+func BizCodeNotIn(vs ...int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNotIn(FieldBizCode, vs...))
+}
+
+// BizCodeGT applies the GT predicate on the "biz_code" field.
+func BizCodeGT(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldGT(FieldBizCode, v))
+}
+
+// BizCodeGTE applies the GTE predicate on the "biz_code" field.
+func BizCodeGTE(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldGTE(FieldBizCode, v))
+}
+
+// BizCodeLT applies the LT predicate on the "biz_code" field.
+func BizCodeLT(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldLT(FieldBizCode, v))
+}
+
+// BizCodeLTE applies the LTE predicate on the "biz_code" field.
+func BizCodeLTE(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldLTE(FieldBizCode, v))
+}
+
+// HTTPStatusEQ applies the EQ predicate on the "http_status" field.
+func HTTPStatusEQ(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldEQ(FieldHTTPStatus, v))
+}
+
+// HTTPStatusNEQ applies the NEQ predicate on the "http_status" field.
+func HTTPStatusNEQ(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNEQ(FieldHTTPStatus, v))
+}
+
+// HTTPStatusIn applies the In predicate on the "http_status" field.
+func HTTPStatusIn(vs ...int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldIn(FieldHTTPStatus, vs...))
+}
+
+// HTTPStatusNotIn applies the NotIn predicate on the "http_status" field.
+func HTTPStatusNotIn(vs ...int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldNotIn(FieldHTTPStatus, vs...))
+}
+
+// HTTPStatusGT applies the GT predicate on the "http_status" field.
+func HTTPStatusGT(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldGT(FieldHTTPStatus, v))
+}
+
+// HTTPStatusGTE applies the GTE predicate on the "http_status" field.
+func HTTPStatusGTE(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldGTE(FieldHTTPStatus, v))
+}
+
+// HTTPStatusLT applies the LT predicate on the "http_status" field.
+func HTTPStatusLT(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldLT(FieldHTTPStatus, v))
+}
+
+// HTTPStatusLTE applies the LTE predicate on the "http_status" field.
+func HTTPStatusLTE(v int) predicate.OperationLog {
+	return predicate.OperationLog(sql.FieldLTE(FieldHTTPStatus, v))
 }
 
 // And groups predicates with the AND operator between them.

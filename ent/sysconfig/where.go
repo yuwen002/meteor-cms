@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
@@ -87,6 +87,36 @@ func Remark(v string) predicate.SysConfig {
 // IsSystem applies equality check predicate on the "is_system" field. It's identical to IsSystemEQ.
 func IsSystem(v bool) predicate.SysConfig {
 	return predicate.SysConfig(sql.FieldEQ(FieldIsSystem, v))
+}
+
+// ConfigGroup applies equality check predicate on the "config_group" field. It's identical to ConfigGroupEQ.
+func ConfigGroup(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldConfigGroup, v))
+}
+
+// ValueType applies equality check predicate on the "value_type" field. It's identical to ValueTypeEQ.
+func ValueType(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldValueType, v))
+}
+
+// Validation applies equality check predicate on the "validation" field. It's identical to ValidationEQ.
+func Validation(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldValidation, v))
+}
+
+// Sort applies equality check predicate on the "sort" field. It's identical to SortEQ.
+func Sort(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldSort, v))
+}
+
+// Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
+func Status(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldStatus, v))
+}
+
+// IsSecret applies equality check predicate on the "is_secret" field. It's identical to IsSecretEQ.
+func IsSecret(v bool) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldIsSecret, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -457,6 +487,301 @@ func IsSystemEQ(v bool) predicate.SysConfig {
 // IsSystemNEQ applies the NEQ predicate on the "is_system" field.
 func IsSystemNEQ(v bool) predicate.SysConfig {
 	return predicate.SysConfig(sql.FieldNEQ(FieldIsSystem, v))
+}
+
+// ConfigGroupEQ applies the EQ predicate on the "config_group" field.
+func ConfigGroupEQ(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldConfigGroup, v))
+}
+
+// ConfigGroupNEQ applies the NEQ predicate on the "config_group" field.
+func ConfigGroupNEQ(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNEQ(FieldConfigGroup, v))
+}
+
+// ConfigGroupIn applies the In predicate on the "config_group" field.
+func ConfigGroupIn(vs ...string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldIn(FieldConfigGroup, vs...))
+}
+
+// ConfigGroupNotIn applies the NotIn predicate on the "config_group" field.
+func ConfigGroupNotIn(vs ...string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNotIn(FieldConfigGroup, vs...))
+}
+
+// ConfigGroupGT applies the GT predicate on the "config_group" field.
+func ConfigGroupGT(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGT(FieldConfigGroup, v))
+}
+
+// ConfigGroupGTE applies the GTE predicate on the "config_group" field.
+func ConfigGroupGTE(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGTE(FieldConfigGroup, v))
+}
+
+// ConfigGroupLT applies the LT predicate on the "config_group" field.
+func ConfigGroupLT(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLT(FieldConfigGroup, v))
+}
+
+// ConfigGroupLTE applies the LTE predicate on the "config_group" field.
+func ConfigGroupLTE(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLTE(FieldConfigGroup, v))
+}
+
+// ConfigGroupContains applies the Contains predicate on the "config_group" field.
+func ConfigGroupContains(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldContains(FieldConfigGroup, v))
+}
+
+// ConfigGroupHasPrefix applies the HasPrefix predicate on the "config_group" field.
+func ConfigGroupHasPrefix(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldHasPrefix(FieldConfigGroup, v))
+}
+
+// ConfigGroupHasSuffix applies the HasSuffix predicate on the "config_group" field.
+func ConfigGroupHasSuffix(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldHasSuffix(FieldConfigGroup, v))
+}
+
+// ConfigGroupEqualFold applies the EqualFold predicate on the "config_group" field.
+func ConfigGroupEqualFold(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEqualFold(FieldConfigGroup, v))
+}
+
+// ConfigGroupContainsFold applies the ContainsFold predicate on the "config_group" field.
+func ConfigGroupContainsFold(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldContainsFold(FieldConfigGroup, v))
+}
+
+// ValueTypeEQ applies the EQ predicate on the "value_type" field.
+func ValueTypeEQ(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldValueType, v))
+}
+
+// ValueTypeNEQ applies the NEQ predicate on the "value_type" field.
+func ValueTypeNEQ(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNEQ(FieldValueType, v))
+}
+
+// ValueTypeIn applies the In predicate on the "value_type" field.
+func ValueTypeIn(vs ...string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldIn(FieldValueType, vs...))
+}
+
+// ValueTypeNotIn applies the NotIn predicate on the "value_type" field.
+func ValueTypeNotIn(vs ...string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNotIn(FieldValueType, vs...))
+}
+
+// ValueTypeGT applies the GT predicate on the "value_type" field.
+func ValueTypeGT(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGT(FieldValueType, v))
+}
+
+// ValueTypeGTE applies the GTE predicate on the "value_type" field.
+func ValueTypeGTE(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGTE(FieldValueType, v))
+}
+
+// ValueTypeLT applies the LT predicate on the "value_type" field.
+func ValueTypeLT(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLT(FieldValueType, v))
+}
+
+// ValueTypeLTE applies the LTE predicate on the "value_type" field.
+func ValueTypeLTE(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLTE(FieldValueType, v))
+}
+
+// ValueTypeContains applies the Contains predicate on the "value_type" field.
+func ValueTypeContains(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldContains(FieldValueType, v))
+}
+
+// ValueTypeHasPrefix applies the HasPrefix predicate on the "value_type" field.
+func ValueTypeHasPrefix(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldHasPrefix(FieldValueType, v))
+}
+
+// ValueTypeHasSuffix applies the HasSuffix predicate on the "value_type" field.
+func ValueTypeHasSuffix(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldHasSuffix(FieldValueType, v))
+}
+
+// ValueTypeEqualFold applies the EqualFold predicate on the "value_type" field.
+func ValueTypeEqualFold(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEqualFold(FieldValueType, v))
+}
+
+// ValueTypeContainsFold applies the ContainsFold predicate on the "value_type" field.
+func ValueTypeContainsFold(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldContainsFold(FieldValueType, v))
+}
+
+// ValidationEQ applies the EQ predicate on the "validation" field.
+func ValidationEQ(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldValidation, v))
+}
+
+// ValidationNEQ applies the NEQ predicate on the "validation" field.
+func ValidationNEQ(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNEQ(FieldValidation, v))
+}
+
+// ValidationIn applies the In predicate on the "validation" field.
+func ValidationIn(vs ...string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldIn(FieldValidation, vs...))
+}
+
+// ValidationNotIn applies the NotIn predicate on the "validation" field.
+func ValidationNotIn(vs ...string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNotIn(FieldValidation, vs...))
+}
+
+// ValidationGT applies the GT predicate on the "validation" field.
+func ValidationGT(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGT(FieldValidation, v))
+}
+
+// ValidationGTE applies the GTE predicate on the "validation" field.
+func ValidationGTE(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGTE(FieldValidation, v))
+}
+
+// ValidationLT applies the LT predicate on the "validation" field.
+func ValidationLT(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLT(FieldValidation, v))
+}
+
+// ValidationLTE applies the LTE predicate on the "validation" field.
+func ValidationLTE(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLTE(FieldValidation, v))
+}
+
+// ValidationContains applies the Contains predicate on the "validation" field.
+func ValidationContains(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldContains(FieldValidation, v))
+}
+
+// ValidationHasPrefix applies the HasPrefix predicate on the "validation" field.
+func ValidationHasPrefix(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldHasPrefix(FieldValidation, v))
+}
+
+// ValidationHasSuffix applies the HasSuffix predicate on the "validation" field.
+func ValidationHasSuffix(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldHasSuffix(FieldValidation, v))
+}
+
+// ValidationIsNil applies the IsNil predicate on the "validation" field.
+func ValidationIsNil() predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldIsNull(FieldValidation))
+}
+
+// ValidationNotNil applies the NotNil predicate on the "validation" field.
+func ValidationNotNil() predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNotNull(FieldValidation))
+}
+
+// ValidationEqualFold applies the EqualFold predicate on the "validation" field.
+func ValidationEqualFold(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEqualFold(FieldValidation, v))
+}
+
+// ValidationContainsFold applies the ContainsFold predicate on the "validation" field.
+func ValidationContainsFold(v string) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldContainsFold(FieldValidation, v))
+}
+
+// SortEQ applies the EQ predicate on the "sort" field.
+func SortEQ(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldSort, v))
+}
+
+// SortNEQ applies the NEQ predicate on the "sort" field.
+func SortNEQ(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNEQ(FieldSort, v))
+}
+
+// SortIn applies the In predicate on the "sort" field.
+func SortIn(vs ...int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldIn(FieldSort, vs...))
+}
+
+// SortNotIn applies the NotIn predicate on the "sort" field.
+func SortNotIn(vs ...int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNotIn(FieldSort, vs...))
+}
+
+// SortGT applies the GT predicate on the "sort" field.
+func SortGT(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGT(FieldSort, v))
+}
+
+// SortGTE applies the GTE predicate on the "sort" field.
+func SortGTE(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGTE(FieldSort, v))
+}
+
+// SortLT applies the LT predicate on the "sort" field.
+func SortLT(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLT(FieldSort, v))
+}
+
+// SortLTE applies the LTE predicate on the "sort" field.
+func SortLTE(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLTE(FieldSort, v))
+}
+
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// StatusGT applies the GT predicate on the "status" field.
+func StatusGT(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGT(FieldStatus, v))
+}
+
+// StatusGTE applies the GTE predicate on the "status" field.
+func StatusGTE(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldGTE(FieldStatus, v))
+}
+
+// StatusLT applies the LT predicate on the "status" field.
+func StatusLT(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLT(FieldStatus, v))
+}
+
+// StatusLTE applies the LTE predicate on the "status" field.
+func StatusLTE(v int) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldLTE(FieldStatus, v))
+}
+
+// IsSecretEQ applies the EQ predicate on the "is_secret" field.
+func IsSecretEQ(v bool) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldEQ(FieldIsSecret, v))
+}
+
+// IsSecretNEQ applies the NEQ predicate on the "is_secret" field.
+func IsSecretNEQ(v bool) predicate.SysConfig {
+	return predicate.SysConfig(sql.FieldNEQ(FieldIsSecret, v))
 }
 
 // And groups predicates with the AND operator between them.

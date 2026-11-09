@@ -10,7 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/loginlog"
+	"github.com/yuwen002/meteor-cms/ent/loginlog"
 )
 
 // LoginLogCreate is the builder for creating a LoginLog entity.
@@ -138,6 +138,20 @@ func (_c *LoginLogCreate) SetNillableLoginAt(v *time.Time) *LoginLogCreate {
 	return _c
 }
 
+// SetRequestID sets the "request_id" field.
+func (_c *LoginLogCreate) SetRequestID(v string) *LoginLogCreate {
+	_c.mutation.SetRequestID(v)
+	return _c
+}
+
+// SetNillableRequestID sets the "request_id" field if the given value is not nil.
+func (_c *LoginLogCreate) SetNillableRequestID(v *string) *LoginLogCreate {
+	if v != nil {
+		_c.SetRequestID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *LoginLogCreate) SetID(v int64) *LoginLogCreate {
 	_c.mutation.SetID(v)
@@ -234,6 +248,11 @@ func (_c *LoginLogCreate) check() error {
 	if _, ok := _c.mutation.LoginAt(); !ok {
 		return &ValidationError{Name: "login_at", err: errors.New(`ent: missing required field "LoginLog.login_at"`)}
 	}
+	if v, ok := _c.mutation.RequestID(); ok {
+		if err := loginlog.RequestIDValidator(v); err != nil {
+			return &ValidationError{Name: "request_id", err: fmt.Errorf(`ent: validator failed for field "LoginLog.request_id": %w`, err)}
+		}
+	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := loginlog.IDValidator(v); err != nil {
 			return &ValidationError{Name: "id", err: fmt.Errorf(`ent: validator failed for field "LoginLog.id": %w`, err)}
@@ -306,6 +325,10 @@ func (_c *LoginLogCreate) createSpec() (*LoginLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.LoginAt(); ok {
 		_spec.SetField(loginlog.FieldLoginAt, field.TypeTime, value)
 		_node.LoginAt = value
+	}
+	if value, ok := _c.mutation.RequestID(); ok {
+		_spec.SetField(loginlog.FieldRequestID, field.TypeString, value)
+		_node.RequestID = value
 	}
 	return _node, _spec
 }

@@ -9,32 +9,38 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/yuwen002/go-meteor-cms/ent/migrate"
+	"github.com/yuwen002/meteor-cms/ent/migrate"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/yuwen002/go-meteor-cms/ent/adminpermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminroledept"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrolepermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuserrole"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/articlereview"
-	"github.com/yuwen002/go-meteor-cms/ent/articlerevision"
-	"github.com/yuwen002/go-meteor-cms/ent/articletag"
-	"github.com/yuwen002/go-meteor-cms/ent/category"
-	"github.com/yuwen002/go-meteor-cms/ent/department"
-	"github.com/yuwen002/go-meteor-cms/ent/loginlog"
-	"github.com/yuwen002/go-meteor-cms/ent/operationlog"
-	"github.com/yuwen002/go-meteor-cms/ent/slugredirect"
-	"github.com/yuwen002/go-meteor-cms/ent/sysconfig"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdict"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdictitem"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
-	"github.com/yuwen002/go-meteor-cms/ent/tokenblacklist"
+	"github.com/yuwen002/meteor-cms/ent/adminpermission"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminroledept"
+	"github.com/yuwen002/meteor-cms/ent/adminrolepermission"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/articlereview"
+	"github.com/yuwen002/meteor-cms/ent/articlerevision"
+	"github.com/yuwen002/meteor-cms/ent/articletag"
+	"github.com/yuwen002/meteor-cms/ent/category"
+	"github.com/yuwen002/meteor-cms/ent/comment"
+	"github.com/yuwen002/meteor-cms/ent/department"
+	"github.com/yuwen002/meteor-cms/ent/friendlink"
+	"github.com/yuwen002/meteor-cms/ent/loginlog"
+	"github.com/yuwen002/meteor-cms/ent/mediafile"
+	"github.com/yuwen002/meteor-cms/ent/operationlog"
+	"github.com/yuwen002/meteor-cms/ent/schemamigration"
+	"github.com/yuwen002/meteor-cms/ent/slugredirect"
+	"github.com/yuwen002/meteor-cms/ent/subscriber"
+	"github.com/yuwen002/meteor-cms/ent/sysconfig"
+	"github.com/yuwen002/meteor-cms/ent/sysconfigversion"
+	"github.com/yuwen002/meteor-cms/ent/sysdict"
+	"github.com/yuwen002/meteor-cms/ent/sysdictitem"
+	"github.com/yuwen002/meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/ent/tokenblacklist"
 )
 
 // Client is the client that holds all ent builders.
@@ -64,16 +70,28 @@ type Client struct {
 	ArticleTag *ArticleTagClient
 	// Category is the client for interacting with the Category builders.
 	Category *CategoryClient
+	// Comment is the client for interacting with the Comment builders.
+	Comment *CommentClient
 	// Department is the client for interacting with the Department builders.
 	Department *DepartmentClient
+	// FriendLink is the client for interacting with the FriendLink builders.
+	FriendLink *FriendLinkClient
 	// LoginLog is the client for interacting with the LoginLog builders.
 	LoginLog *LoginLogClient
+	// MediaFile is the client for interacting with the MediaFile builders.
+	MediaFile *MediaFileClient
 	// OperationLog is the client for interacting with the OperationLog builders.
 	OperationLog *OperationLogClient
+	// SchemaMigration is the client for interacting with the SchemaMigration builders.
+	SchemaMigration *SchemaMigrationClient
 	// SlugRedirect is the client for interacting with the SlugRedirect builders.
 	SlugRedirect *SlugRedirectClient
+	// Subscriber is the client for interacting with the Subscriber builders.
+	Subscriber *SubscriberClient
 	// SysConfig is the client for interacting with the SysConfig builders.
 	SysConfig *SysConfigClient
+	// SysConfigVersion is the client for interacting with the SysConfigVersion builders.
+	SysConfigVersion *SysConfigVersionClient
 	// SysDict is the client for interacting with the SysDict builders.
 	SysDict *SysDictClient
 	// SysDictItem is the client for interacting with the SysDictItem builders.
@@ -104,11 +122,17 @@ func (c *Client) init() {
 	c.ArticleRevision = NewArticleRevisionClient(c.config)
 	c.ArticleTag = NewArticleTagClient(c.config)
 	c.Category = NewCategoryClient(c.config)
+	c.Comment = NewCommentClient(c.config)
 	c.Department = NewDepartmentClient(c.config)
+	c.FriendLink = NewFriendLinkClient(c.config)
 	c.LoginLog = NewLoginLogClient(c.config)
+	c.MediaFile = NewMediaFileClient(c.config)
 	c.OperationLog = NewOperationLogClient(c.config)
+	c.SchemaMigration = NewSchemaMigrationClient(c.config)
 	c.SlugRedirect = NewSlugRedirectClient(c.config)
+	c.Subscriber = NewSubscriberClient(c.config)
 	c.SysConfig = NewSysConfigClient(c.config)
+	c.SysConfigVersion = NewSysConfigVersionClient(c.config)
 	c.SysDict = NewSysDictClient(c.config)
 	c.SysDictItem = NewSysDictItemClient(c.config)
 	c.Tag = NewTagClient(c.config)
@@ -216,11 +240,17 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ArticleRevision:     NewArticleRevisionClient(cfg),
 		ArticleTag:          NewArticleTagClient(cfg),
 		Category:            NewCategoryClient(cfg),
+		Comment:             NewCommentClient(cfg),
 		Department:          NewDepartmentClient(cfg),
+		FriendLink:          NewFriendLinkClient(cfg),
 		LoginLog:            NewLoginLogClient(cfg),
+		MediaFile:           NewMediaFileClient(cfg),
 		OperationLog:        NewOperationLogClient(cfg),
+		SchemaMigration:     NewSchemaMigrationClient(cfg),
 		SlugRedirect:        NewSlugRedirectClient(cfg),
+		Subscriber:          NewSubscriberClient(cfg),
 		SysConfig:           NewSysConfigClient(cfg),
+		SysConfigVersion:    NewSysConfigVersionClient(cfg),
 		SysDict:             NewSysDictClient(cfg),
 		SysDictItem:         NewSysDictItemClient(cfg),
 		Tag:                 NewTagClient(cfg),
@@ -255,11 +285,17 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ArticleRevision:     NewArticleRevisionClient(cfg),
 		ArticleTag:          NewArticleTagClient(cfg),
 		Category:            NewCategoryClient(cfg),
+		Comment:             NewCommentClient(cfg),
 		Department:          NewDepartmentClient(cfg),
+		FriendLink:          NewFriendLinkClient(cfg),
 		LoginLog:            NewLoginLogClient(cfg),
+		MediaFile:           NewMediaFileClient(cfg),
 		OperationLog:        NewOperationLogClient(cfg),
+		SchemaMigration:     NewSchemaMigrationClient(cfg),
 		SlugRedirect:        NewSlugRedirectClient(cfg),
+		Subscriber:          NewSubscriberClient(cfg),
 		SysConfig:           NewSysConfigClient(cfg),
+		SysConfigVersion:    NewSysConfigVersionClient(cfg),
 		SysDict:             NewSysDictClient(cfg),
 		SysDictItem:         NewSysDictItemClient(cfg),
 		Tag:                 NewTagClient(cfg),
@@ -295,8 +331,10 @@ func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AdminPermission, c.AdminRole, c.AdminRoleDept, c.AdminRolePermission,
 		c.AdminUser, c.AdminUserRole, c.Article, c.ArticleReview, c.ArticleRevision,
-		c.ArticleTag, c.Category, c.Department, c.LoginLog, c.OperationLog,
-		c.SlugRedirect, c.SysConfig, c.SysDict, c.SysDictItem, c.Tag, c.TokenBlacklist,
+		c.ArticleTag, c.Category, c.Comment, c.Department, c.FriendLink, c.LoginLog,
+		c.MediaFile, c.OperationLog, c.SchemaMigration, c.SlugRedirect, c.Subscriber,
+		c.SysConfig, c.SysConfigVersion, c.SysDict, c.SysDictItem, c.Tag,
+		c.TokenBlacklist,
 	} {
 		n.Use(hooks...)
 	}
@@ -308,8 +346,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AdminPermission, c.AdminRole, c.AdminRoleDept, c.AdminRolePermission,
 		c.AdminUser, c.AdminUserRole, c.Article, c.ArticleReview, c.ArticleRevision,
-		c.ArticleTag, c.Category, c.Department, c.LoginLog, c.OperationLog,
-		c.SlugRedirect, c.SysConfig, c.SysDict, c.SysDictItem, c.Tag, c.TokenBlacklist,
+		c.ArticleTag, c.Category, c.Comment, c.Department, c.FriendLink, c.LoginLog,
+		c.MediaFile, c.OperationLog, c.SchemaMigration, c.SlugRedirect, c.Subscriber,
+		c.SysConfig, c.SysConfigVersion, c.SysDict, c.SysDictItem, c.Tag,
+		c.TokenBlacklist,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -340,16 +380,28 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ArticleTag.mutate(ctx, m)
 	case *CategoryMutation:
 		return c.Category.mutate(ctx, m)
+	case *CommentMutation:
+		return c.Comment.mutate(ctx, m)
 	case *DepartmentMutation:
 		return c.Department.mutate(ctx, m)
+	case *FriendLinkMutation:
+		return c.FriendLink.mutate(ctx, m)
 	case *LoginLogMutation:
 		return c.LoginLog.mutate(ctx, m)
+	case *MediaFileMutation:
+		return c.MediaFile.mutate(ctx, m)
 	case *OperationLogMutation:
 		return c.OperationLog.mutate(ctx, m)
+	case *SchemaMigrationMutation:
+		return c.SchemaMigration.mutate(ctx, m)
 	case *SlugRedirectMutation:
 		return c.SlugRedirect.mutate(ctx, m)
+	case *SubscriberMutation:
+		return c.Subscriber.mutate(ctx, m)
 	case *SysConfigMutation:
 		return c.SysConfig.mutate(ctx, m)
+	case *SysConfigVersionMutation:
+		return c.SysConfigVersion.mutate(ctx, m)
 	case *SysDictMutation:
 		return c.SysDict.mutate(ctx, m)
 	case *SysDictItemMutation:
@@ -2174,6 +2226,139 @@ func (c *CategoryClient) mutate(ctx context.Context, m *CategoryMutation) (Value
 	}
 }
 
+// CommentClient is a client for the Comment schema.
+type CommentClient struct {
+	config
+}
+
+// NewCommentClient returns a client for the Comment from the given config.
+func NewCommentClient(c config) *CommentClient {
+	return &CommentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `comment.Hooks(f(g(h())))`.
+func (c *CommentClient) Use(hooks ...Hook) {
+	c.hooks.Comment = append(c.hooks.Comment, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `comment.Intercept(f(g(h())))`.
+func (c *CommentClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Comment = append(c.inters.Comment, interceptors...)
+}
+
+// Create returns a builder for creating a Comment entity.
+func (c *CommentClient) Create() *CommentCreate {
+	mutation := newCommentMutation(c.config, OpCreate)
+	return &CommentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Comment entities.
+func (c *CommentClient) CreateBulk(builders ...*CommentCreate) *CommentCreateBulk {
+	return &CommentCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CommentClient) MapCreateBulk(slice any, setFunc func(*CommentCreate, int)) *CommentCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CommentCreateBulk{err: fmt.Errorf("calling to CommentClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CommentCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CommentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Comment.
+func (c *CommentClient) Update() *CommentUpdate {
+	mutation := newCommentMutation(c.config, OpUpdate)
+	return &CommentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CommentClient) UpdateOne(_m *Comment) *CommentUpdateOne {
+	mutation := newCommentMutation(c.config, OpUpdateOne, withComment(_m))
+	return &CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CommentClient) UpdateOneID(id int64) *CommentUpdateOne {
+	mutation := newCommentMutation(c.config, OpUpdateOne, withCommentID(id))
+	return &CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Comment.
+func (c *CommentClient) Delete() *CommentDelete {
+	mutation := newCommentMutation(c.config, OpDelete)
+	return &CommentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CommentClient) DeleteOne(_m *Comment) *CommentDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CommentClient) DeleteOneID(id int64) *CommentDeleteOne {
+	builder := c.Delete().Where(comment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CommentDeleteOne{builder}
+}
+
+// Query returns a query builder for Comment.
+func (c *CommentClient) Query() *CommentQuery {
+	return &CommentQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeComment},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Comment entity by its id.
+func (c *CommentClient) Get(ctx context.Context, id int64) (*Comment, error) {
+	return c.Query().Where(comment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CommentClient) GetX(ctx context.Context, id int64) *Comment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CommentClient) Hooks() []Hook {
+	return c.hooks.Comment
+}
+
+// Interceptors returns the client interceptors.
+func (c *CommentClient) Interceptors() []Interceptor {
+	return c.inters.Comment
+}
+
+func (c *CommentClient) mutate(ctx context.Context, m *CommentMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CommentCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CommentUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CommentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CommentDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Comment mutation op: %q", m.Op())
+	}
+}
+
 // DepartmentClient is a client for the Department schema.
 type DepartmentClient struct {
 	config
@@ -2357,6 +2542,139 @@ func (c *DepartmentClient) mutate(ctx context.Context, m *DepartmentMutation) (V
 	}
 }
 
+// FriendLinkClient is a client for the FriendLink schema.
+type FriendLinkClient struct {
+	config
+}
+
+// NewFriendLinkClient returns a client for the FriendLink from the given config.
+func NewFriendLinkClient(c config) *FriendLinkClient {
+	return &FriendLinkClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `friendlink.Hooks(f(g(h())))`.
+func (c *FriendLinkClient) Use(hooks ...Hook) {
+	c.hooks.FriendLink = append(c.hooks.FriendLink, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `friendlink.Intercept(f(g(h())))`.
+func (c *FriendLinkClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FriendLink = append(c.inters.FriendLink, interceptors...)
+}
+
+// Create returns a builder for creating a FriendLink entity.
+func (c *FriendLinkClient) Create() *FriendLinkCreate {
+	mutation := newFriendLinkMutation(c.config, OpCreate)
+	return &FriendLinkCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FriendLink entities.
+func (c *FriendLinkClient) CreateBulk(builders ...*FriendLinkCreate) *FriendLinkCreateBulk {
+	return &FriendLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FriendLinkClient) MapCreateBulk(slice any, setFunc func(*FriendLinkCreate, int)) *FriendLinkCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FriendLinkCreateBulk{err: fmt.Errorf("calling to FriendLinkClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FriendLinkCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FriendLinkCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FriendLink.
+func (c *FriendLinkClient) Update() *FriendLinkUpdate {
+	mutation := newFriendLinkMutation(c.config, OpUpdate)
+	return &FriendLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FriendLinkClient) UpdateOne(_m *FriendLink) *FriendLinkUpdateOne {
+	mutation := newFriendLinkMutation(c.config, OpUpdateOne, withFriendLink(_m))
+	return &FriendLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FriendLinkClient) UpdateOneID(id int64) *FriendLinkUpdateOne {
+	mutation := newFriendLinkMutation(c.config, OpUpdateOne, withFriendLinkID(id))
+	return &FriendLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FriendLink.
+func (c *FriendLinkClient) Delete() *FriendLinkDelete {
+	mutation := newFriendLinkMutation(c.config, OpDelete)
+	return &FriendLinkDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FriendLinkClient) DeleteOne(_m *FriendLink) *FriendLinkDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FriendLinkClient) DeleteOneID(id int64) *FriendLinkDeleteOne {
+	builder := c.Delete().Where(friendlink.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FriendLinkDeleteOne{builder}
+}
+
+// Query returns a query builder for FriendLink.
+func (c *FriendLinkClient) Query() *FriendLinkQuery {
+	return &FriendLinkQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFriendLink},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FriendLink entity by its id.
+func (c *FriendLinkClient) Get(ctx context.Context, id int64) (*FriendLink, error) {
+	return c.Query().Where(friendlink.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FriendLinkClient) GetX(ctx context.Context, id int64) *FriendLink {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *FriendLinkClient) Hooks() []Hook {
+	return c.hooks.FriendLink
+}
+
+// Interceptors returns the client interceptors.
+func (c *FriendLinkClient) Interceptors() []Interceptor {
+	return c.inters.FriendLink
+}
+
+func (c *FriendLinkClient) mutate(ctx context.Context, m *FriendLinkMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FriendLinkCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FriendLinkUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FriendLinkUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FriendLinkDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FriendLink mutation op: %q", m.Op())
+	}
+}
+
 // LoginLogClient is a client for the LoginLog schema.
 type LoginLogClient struct {
 	config
@@ -2487,6 +2805,139 @@ func (c *LoginLogClient) mutate(ctx context.Context, m *LoginLogMutation) (Value
 		return (&LoginLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown LoginLog mutation op: %q", m.Op())
+	}
+}
+
+// MediaFileClient is a client for the MediaFile schema.
+type MediaFileClient struct {
+	config
+}
+
+// NewMediaFileClient returns a client for the MediaFile from the given config.
+func NewMediaFileClient(c config) *MediaFileClient {
+	return &MediaFileClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `mediafile.Hooks(f(g(h())))`.
+func (c *MediaFileClient) Use(hooks ...Hook) {
+	c.hooks.MediaFile = append(c.hooks.MediaFile, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `mediafile.Intercept(f(g(h())))`.
+func (c *MediaFileClient) Intercept(interceptors ...Interceptor) {
+	c.inters.MediaFile = append(c.inters.MediaFile, interceptors...)
+}
+
+// Create returns a builder for creating a MediaFile entity.
+func (c *MediaFileClient) Create() *MediaFileCreate {
+	mutation := newMediaFileMutation(c.config, OpCreate)
+	return &MediaFileCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of MediaFile entities.
+func (c *MediaFileClient) CreateBulk(builders ...*MediaFileCreate) *MediaFileCreateBulk {
+	return &MediaFileCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *MediaFileClient) MapCreateBulk(slice any, setFunc func(*MediaFileCreate, int)) *MediaFileCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &MediaFileCreateBulk{err: fmt.Errorf("calling to MediaFileClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*MediaFileCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &MediaFileCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for MediaFile.
+func (c *MediaFileClient) Update() *MediaFileUpdate {
+	mutation := newMediaFileMutation(c.config, OpUpdate)
+	return &MediaFileUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *MediaFileClient) UpdateOne(_m *MediaFile) *MediaFileUpdateOne {
+	mutation := newMediaFileMutation(c.config, OpUpdateOne, withMediaFile(_m))
+	return &MediaFileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *MediaFileClient) UpdateOneID(id int64) *MediaFileUpdateOne {
+	mutation := newMediaFileMutation(c.config, OpUpdateOne, withMediaFileID(id))
+	return &MediaFileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for MediaFile.
+func (c *MediaFileClient) Delete() *MediaFileDelete {
+	mutation := newMediaFileMutation(c.config, OpDelete)
+	return &MediaFileDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *MediaFileClient) DeleteOne(_m *MediaFile) *MediaFileDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *MediaFileClient) DeleteOneID(id int64) *MediaFileDeleteOne {
+	builder := c.Delete().Where(mediafile.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &MediaFileDeleteOne{builder}
+}
+
+// Query returns a query builder for MediaFile.
+func (c *MediaFileClient) Query() *MediaFileQuery {
+	return &MediaFileQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeMediaFile},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a MediaFile entity by its id.
+func (c *MediaFileClient) Get(ctx context.Context, id int64) (*MediaFile, error) {
+	return c.Query().Where(mediafile.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *MediaFileClient) GetX(ctx context.Context, id int64) *MediaFile {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *MediaFileClient) Hooks() []Hook {
+	return c.hooks.MediaFile
+}
+
+// Interceptors returns the client interceptors.
+func (c *MediaFileClient) Interceptors() []Interceptor {
+	return c.inters.MediaFile
+}
+
+func (c *MediaFileClient) mutate(ctx context.Context, m *MediaFileMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&MediaFileCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&MediaFileUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&MediaFileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&MediaFileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown MediaFile mutation op: %q", m.Op())
 	}
 }
 
@@ -2623,6 +3074,139 @@ func (c *OperationLogClient) mutate(ctx context.Context, m *OperationLogMutation
 	}
 }
 
+// SchemaMigrationClient is a client for the SchemaMigration schema.
+type SchemaMigrationClient struct {
+	config
+}
+
+// NewSchemaMigrationClient returns a client for the SchemaMigration from the given config.
+func NewSchemaMigrationClient(c config) *SchemaMigrationClient {
+	return &SchemaMigrationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `schemamigration.Hooks(f(g(h())))`.
+func (c *SchemaMigrationClient) Use(hooks ...Hook) {
+	c.hooks.SchemaMigration = append(c.hooks.SchemaMigration, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `schemamigration.Intercept(f(g(h())))`.
+func (c *SchemaMigrationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SchemaMigration = append(c.inters.SchemaMigration, interceptors...)
+}
+
+// Create returns a builder for creating a SchemaMigration entity.
+func (c *SchemaMigrationClient) Create() *SchemaMigrationCreate {
+	mutation := newSchemaMigrationMutation(c.config, OpCreate)
+	return &SchemaMigrationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SchemaMigration entities.
+func (c *SchemaMigrationClient) CreateBulk(builders ...*SchemaMigrationCreate) *SchemaMigrationCreateBulk {
+	return &SchemaMigrationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SchemaMigrationClient) MapCreateBulk(slice any, setFunc func(*SchemaMigrationCreate, int)) *SchemaMigrationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SchemaMigrationCreateBulk{err: fmt.Errorf("calling to SchemaMigrationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SchemaMigrationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SchemaMigrationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SchemaMigration.
+func (c *SchemaMigrationClient) Update() *SchemaMigrationUpdate {
+	mutation := newSchemaMigrationMutation(c.config, OpUpdate)
+	return &SchemaMigrationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SchemaMigrationClient) UpdateOne(_m *SchemaMigration) *SchemaMigrationUpdateOne {
+	mutation := newSchemaMigrationMutation(c.config, OpUpdateOne, withSchemaMigration(_m))
+	return &SchemaMigrationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SchemaMigrationClient) UpdateOneID(id int64) *SchemaMigrationUpdateOne {
+	mutation := newSchemaMigrationMutation(c.config, OpUpdateOne, withSchemaMigrationID(id))
+	return &SchemaMigrationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SchemaMigration.
+func (c *SchemaMigrationClient) Delete() *SchemaMigrationDelete {
+	mutation := newSchemaMigrationMutation(c.config, OpDelete)
+	return &SchemaMigrationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SchemaMigrationClient) DeleteOne(_m *SchemaMigration) *SchemaMigrationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SchemaMigrationClient) DeleteOneID(id int64) *SchemaMigrationDeleteOne {
+	builder := c.Delete().Where(schemamigration.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SchemaMigrationDeleteOne{builder}
+}
+
+// Query returns a query builder for SchemaMigration.
+func (c *SchemaMigrationClient) Query() *SchemaMigrationQuery {
+	return &SchemaMigrationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSchemaMigration},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SchemaMigration entity by its id.
+func (c *SchemaMigrationClient) Get(ctx context.Context, id int64) (*SchemaMigration, error) {
+	return c.Query().Where(schemamigration.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SchemaMigrationClient) GetX(ctx context.Context, id int64) *SchemaMigration {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SchemaMigrationClient) Hooks() []Hook {
+	return c.hooks.SchemaMigration
+}
+
+// Interceptors returns the client interceptors.
+func (c *SchemaMigrationClient) Interceptors() []Interceptor {
+	return c.inters.SchemaMigration
+}
+
+func (c *SchemaMigrationClient) mutate(ctx context.Context, m *SchemaMigrationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SchemaMigrationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SchemaMigrationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SchemaMigrationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SchemaMigrationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SchemaMigration mutation op: %q", m.Op())
+	}
+}
+
 // SlugRedirectClient is a client for the SlugRedirect schema.
 type SlugRedirectClient struct {
 	config
@@ -2756,6 +3340,139 @@ func (c *SlugRedirectClient) mutate(ctx context.Context, m *SlugRedirectMutation
 	}
 }
 
+// SubscriberClient is a client for the Subscriber schema.
+type SubscriberClient struct {
+	config
+}
+
+// NewSubscriberClient returns a client for the Subscriber from the given config.
+func NewSubscriberClient(c config) *SubscriberClient {
+	return &SubscriberClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `subscriber.Hooks(f(g(h())))`.
+func (c *SubscriberClient) Use(hooks ...Hook) {
+	c.hooks.Subscriber = append(c.hooks.Subscriber, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `subscriber.Intercept(f(g(h())))`.
+func (c *SubscriberClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Subscriber = append(c.inters.Subscriber, interceptors...)
+}
+
+// Create returns a builder for creating a Subscriber entity.
+func (c *SubscriberClient) Create() *SubscriberCreate {
+	mutation := newSubscriberMutation(c.config, OpCreate)
+	return &SubscriberCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Subscriber entities.
+func (c *SubscriberClient) CreateBulk(builders ...*SubscriberCreate) *SubscriberCreateBulk {
+	return &SubscriberCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SubscriberClient) MapCreateBulk(slice any, setFunc func(*SubscriberCreate, int)) *SubscriberCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SubscriberCreateBulk{err: fmt.Errorf("calling to SubscriberClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SubscriberCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SubscriberCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Subscriber.
+func (c *SubscriberClient) Update() *SubscriberUpdate {
+	mutation := newSubscriberMutation(c.config, OpUpdate)
+	return &SubscriberUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SubscriberClient) UpdateOne(_m *Subscriber) *SubscriberUpdateOne {
+	mutation := newSubscriberMutation(c.config, OpUpdateOne, withSubscriber(_m))
+	return &SubscriberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SubscriberClient) UpdateOneID(id int64) *SubscriberUpdateOne {
+	mutation := newSubscriberMutation(c.config, OpUpdateOne, withSubscriberID(id))
+	return &SubscriberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Subscriber.
+func (c *SubscriberClient) Delete() *SubscriberDelete {
+	mutation := newSubscriberMutation(c.config, OpDelete)
+	return &SubscriberDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SubscriberClient) DeleteOne(_m *Subscriber) *SubscriberDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SubscriberClient) DeleteOneID(id int64) *SubscriberDeleteOne {
+	builder := c.Delete().Where(subscriber.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SubscriberDeleteOne{builder}
+}
+
+// Query returns a query builder for Subscriber.
+func (c *SubscriberClient) Query() *SubscriberQuery {
+	return &SubscriberQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSubscriber},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Subscriber entity by its id.
+func (c *SubscriberClient) Get(ctx context.Context, id int64) (*Subscriber, error) {
+	return c.Query().Where(subscriber.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SubscriberClient) GetX(ctx context.Context, id int64) *Subscriber {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SubscriberClient) Hooks() []Hook {
+	return c.hooks.Subscriber
+}
+
+// Interceptors returns the client interceptors.
+func (c *SubscriberClient) Interceptors() []Interceptor {
+	return c.inters.Subscriber
+}
+
+func (c *SubscriberClient) mutate(ctx context.Context, m *SubscriberMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SubscriberCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SubscriberUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SubscriberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SubscriberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Subscriber mutation op: %q", m.Op())
+	}
+}
+
 // SysConfigClient is a client for the SysConfig schema.
 type SysConfigClient struct {
 	config
@@ -2886,6 +3603,139 @@ func (c *SysConfigClient) mutate(ctx context.Context, m *SysConfigMutation) (Val
 		return (&SysConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown SysConfig mutation op: %q", m.Op())
+	}
+}
+
+// SysConfigVersionClient is a client for the SysConfigVersion schema.
+type SysConfigVersionClient struct {
+	config
+}
+
+// NewSysConfigVersionClient returns a client for the SysConfigVersion from the given config.
+func NewSysConfigVersionClient(c config) *SysConfigVersionClient {
+	return &SysConfigVersionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sysconfigversion.Hooks(f(g(h())))`.
+func (c *SysConfigVersionClient) Use(hooks ...Hook) {
+	c.hooks.SysConfigVersion = append(c.hooks.SysConfigVersion, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sysconfigversion.Intercept(f(g(h())))`.
+func (c *SysConfigVersionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SysConfigVersion = append(c.inters.SysConfigVersion, interceptors...)
+}
+
+// Create returns a builder for creating a SysConfigVersion entity.
+func (c *SysConfigVersionClient) Create() *SysConfigVersionCreate {
+	mutation := newSysConfigVersionMutation(c.config, OpCreate)
+	return &SysConfigVersionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SysConfigVersion entities.
+func (c *SysConfigVersionClient) CreateBulk(builders ...*SysConfigVersionCreate) *SysConfigVersionCreateBulk {
+	return &SysConfigVersionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SysConfigVersionClient) MapCreateBulk(slice any, setFunc func(*SysConfigVersionCreate, int)) *SysConfigVersionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SysConfigVersionCreateBulk{err: fmt.Errorf("calling to SysConfigVersionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SysConfigVersionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SysConfigVersionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SysConfigVersion.
+func (c *SysConfigVersionClient) Update() *SysConfigVersionUpdate {
+	mutation := newSysConfigVersionMutation(c.config, OpUpdate)
+	return &SysConfigVersionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SysConfigVersionClient) UpdateOne(_m *SysConfigVersion) *SysConfigVersionUpdateOne {
+	mutation := newSysConfigVersionMutation(c.config, OpUpdateOne, withSysConfigVersion(_m))
+	return &SysConfigVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SysConfigVersionClient) UpdateOneID(id int64) *SysConfigVersionUpdateOne {
+	mutation := newSysConfigVersionMutation(c.config, OpUpdateOne, withSysConfigVersionID(id))
+	return &SysConfigVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SysConfigVersion.
+func (c *SysConfigVersionClient) Delete() *SysConfigVersionDelete {
+	mutation := newSysConfigVersionMutation(c.config, OpDelete)
+	return &SysConfigVersionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SysConfigVersionClient) DeleteOne(_m *SysConfigVersion) *SysConfigVersionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SysConfigVersionClient) DeleteOneID(id int64) *SysConfigVersionDeleteOne {
+	builder := c.Delete().Where(sysconfigversion.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SysConfigVersionDeleteOne{builder}
+}
+
+// Query returns a query builder for SysConfigVersion.
+func (c *SysConfigVersionClient) Query() *SysConfigVersionQuery {
+	return &SysConfigVersionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSysConfigVersion},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SysConfigVersion entity by its id.
+func (c *SysConfigVersionClient) Get(ctx context.Context, id int64) (*SysConfigVersion, error) {
+	return c.Query().Where(sysconfigversion.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SysConfigVersionClient) GetX(ctx context.Context, id int64) *SysConfigVersion {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SysConfigVersionClient) Hooks() []Hook {
+	return c.hooks.SysConfigVersion
+}
+
+// Interceptors returns the client interceptors.
+func (c *SysConfigVersionClient) Interceptors() []Interceptor {
+	return c.inters.SysConfigVersion
+}
+
+func (c *SysConfigVersionClient) mutate(ctx context.Context, m *SysConfigVersionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SysConfigVersionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SysConfigVersionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SysConfigVersionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SysConfigVersionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SysConfigVersion mutation op: %q", m.Op())
 	}
 }
 
@@ -3444,13 +4294,15 @@ type (
 	hooks struct {
 		AdminPermission, AdminRole, AdminRoleDept, AdminRolePermission, AdminUser,
 		AdminUserRole, Article, ArticleReview, ArticleRevision, ArticleTag, Category,
-		Department, LoginLog, OperationLog, SlugRedirect, SysConfig, SysDict,
-		SysDictItem, Tag, TokenBlacklist []ent.Hook
+		Comment, Department, FriendLink, LoginLog, MediaFile, OperationLog,
+		SchemaMigration, SlugRedirect, Subscriber, SysConfig, SysConfigVersion,
+		SysDict, SysDictItem, Tag, TokenBlacklist []ent.Hook
 	}
 	inters struct {
 		AdminPermission, AdminRole, AdminRoleDept, AdminRolePermission, AdminUser,
 		AdminUserRole, Article, ArticleReview, ArticleRevision, ArticleTag, Category,
-		Department, LoginLog, OperationLog, SlugRedirect, SysConfig, SysDict,
-		SysDictItem, Tag, TokenBlacklist []ent.Interceptor
+		Comment, Department, FriendLink, LoginLog, MediaFile, OperationLog,
+		SchemaMigration, SlugRedirect, Subscriber, SysConfig, SysConfigVersion,
+		SysDict, SysDictItem, Tag, TokenBlacklist []ent.Interceptor
 	}
 )

@@ -28,6 +28,7 @@ var textResponseTypes = map[string]string{
 	"publicRss":     "application/rss+xml",
 	"publicSitemap": "application/xml",
 	"publicRobots":  "text/plain",
+	"logExport":     "text/csv",
 }
 
 var pathParamRe = regexp.MustCompile(`:([A-Za-z_][A-Za-z0-9_]*)`)
@@ -85,13 +86,15 @@ func loadAPI(mainPath string) string {
 		}
 	}
 
-	// 内容模块的路由由 contentroutes.go 手工注册，没有进 cms.api；
-	// 这里单独合并一份仅用于文档的 .api 源，保证 gen-doc 覆盖全量接口。
-	docExtra := filepath.Join(dir, "content.doc.api")
-	if b, err := os.ReadFile(docExtra); err == nil {
-		base += "\n" + string(b)
-	} else {
-		fmt.Fprintln(os.Stderr, "warn: content doc source missing:", err)
+	// 手工注册的路由分两份文档源：内容模块（contentroutes.go）与系统模块
+	// （routes.go 中的字典/配置/强制下线），都没有进 cms.api。
+	for _, name := range []string{"content.doc.api", "system.doc.api", "log.doc.api", "site.doc.api", "ops.doc.api"} {
+		docExtra := filepath.Join(dir, name)
+		if b, err := os.ReadFile(docExtra); err == nil {
+			base += "\n" + string(b)
+		} else {
+			fmt.Fprintln(os.Stderr, "warn: doc source missing:", name, err)
+		}
 	}
 	return base
 }
@@ -464,7 +467,7 @@ func generate(src string) map[string]interface{} {
 	return map[string]interface{}{
 		"openapi": "3.0.3",
 		"info": map[string]interface{}{
-			"title":   "Go Meteor CMS API",
+			"title":   "Meteor CMS API",
 			"version": "v1",
 			"description": "由 cms.api 与 content.doc.api 自动生成的 OpenAPI 文档（make gen-doc）。" +
 				"除 RSS / sitemap / robots 等纯文本输出外，所有接口统一响应结构为 { code:int, msg:string, data:any }，" +

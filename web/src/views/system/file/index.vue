@@ -36,21 +36,58 @@
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="类型" width="100">
+        <el-table-column label="类型" width="80">
           <template #default="{ row }">{{ row.is_dir ? '目录' : '文件' }}</template>
         </el-table-column>
-        <el-table-column label="大小" width="140">
+        <el-table-column label="原始文件名" min-width="130" show-overflow-tooltip>
+          <template #default="{ row }">{{ row.is_dir ? '-' : row.original_name || '-' }}</template>
+        </el-table-column>
+        <el-table-column label="MIME / 尺寸" min-width="150" show-overflow-tooltip>
+          <template #default="{ row }">
+            <template v-if="row.is_dir">-</template>
+            <template v-else>
+              {{ row.mime || '未知' }}<span v-if="row.width"> · {{ row.width }}×{{ row.height }}</span>
+            </template>
+          </template>
+        </el-table-column>
+        <el-table-column label="大小" width="110">
           <template #default="{ row }">{{ row.is_dir ? '-' : formatSize(row.size) }}</template>
         </el-table-column>
-        <el-table-column label="修改时间" width="200">
+        <el-table-column label="引用" width="80">
+          <template #default="{ row }">
+            <el-tag v-if="!row.is_dir && row.ref_count > 0" type="warning" size="small">
+              {{ row.ref_count }} 篇
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="修改时间" width="170">
           <template #default="{ row }">{{ formatDate(row.modified) }}</template>
         </el-table-column>
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button v-if="row.is_dir" link type="primary" @click="openDir(asRow(row))">打开</el-button>
             <el-button v-else link type="primary" @click="preview(asRow(row))">预览</el-button>
-            <el-button v-if="canRename" link type="primary" @click="onRename(asRow(row))">重命名</el-button>
-            <el-button v-if="canDelete" link type="danger" @click="onDelete(asRow(row))">删除</el-button>
+            <el-button
+              v-if="canRename"
+              link
+              type="primary"
+              :disabled="!row.is_dir && row.ref_count > 0"
+              :title="row.ref_count > 0 ? '被文章引用，不能重命名' : ''"
+              @click="onRename(asRow(row))"
+            >
+              重命名
+            </el-button>
+            <el-button
+              v-if="canDelete"
+              link
+              type="danger"
+              :disabled="!row.is_dir && row.ref_count > 0"
+              :title="row.ref_count > 0 ? '被文章引用，不能删除' : ''"
+              @click="onDelete(asRow(row))"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
         <template #empty>

@@ -7,7 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.

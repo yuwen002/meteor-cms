@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdictitem"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/sysdictitem"
 )
 
 // SysDictItemUpdate is the builder for updating SysDictItem entities.
@@ -132,6 +132,61 @@ func (_u *SysDictItemUpdate) AddSort(v int) *SysDictItemUpdate {
 	return _u
 }
 
+// SetParentID sets the "parent_id" field.
+func (_u *SysDictItemUpdate) SetParentID(v int64) *SysDictItemUpdate {
+	_u.mutation.ResetParentID()
+	_u.mutation.SetParentID(v)
+	return _u
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_u *SysDictItemUpdate) SetNillableParentID(v *int64) *SysDictItemUpdate {
+	if v != nil {
+		_u.SetParentID(*v)
+	}
+	return _u
+}
+
+// AddParentID adds value to the "parent_id" field.
+func (_u *SysDictItemUpdate) AddParentID(v int64) *SysDictItemUpdate {
+	_u.mutation.AddParentID(v)
+	return _u
+}
+
+// SetIsDefault sets the "is_default" field.
+func (_u *SysDictItemUpdate) SetIsDefault(v bool) *SysDictItemUpdate {
+	_u.mutation.SetIsDefault(v)
+	return _u
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_u *SysDictItemUpdate) SetNillableIsDefault(v *bool) *SysDictItemUpdate {
+	if v != nil {
+		_u.SetIsDefault(*v)
+	}
+	return _u
+}
+
+// SetRemark sets the "remark" field.
+func (_u *SysDictItemUpdate) SetRemark(v string) *SysDictItemUpdate {
+	_u.mutation.SetRemark(v)
+	return _u
+}
+
+// SetNillableRemark sets the "remark" field if the given value is not nil.
+func (_u *SysDictItemUpdate) SetNillableRemark(v *string) *SysDictItemUpdate {
+	if v != nil {
+		_u.SetRemark(*v)
+	}
+	return _u
+}
+
+// ClearRemark clears the value of the "remark" field.
+func (_u *SysDictItemUpdate) ClearRemark() *SysDictItemUpdate {
+	_u.mutation.ClearRemark()
+	return _u
+}
+
 // Mutation returns the SysDictItemMutation object of the builder.
 func (_u *SysDictItemUpdate) Mutation() *SysDictItemMutation {
 	return _u.mutation
@@ -190,6 +245,11 @@ func (_u *SysDictItemUpdate) check() error {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "SysDictItem.value": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Remark(); ok {
+		if err := sysdictitem.RemarkValidator(v); err != nil {
+			return &ValidationError{Name: "remark", err: fmt.Errorf(`ent: validator failed for field "SysDictItem.remark": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -231,6 +291,21 @@ func (_u *SysDictItemUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.AddedSort(); ok {
 		_spec.AddField(sysdictitem.FieldSort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.ParentID(); ok {
+		_spec.SetField(sysdictitem.FieldParentID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedParentID(); ok {
+		_spec.AddField(sysdictitem.FieldParentID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.IsDefault(); ok {
+		_spec.SetField(sysdictitem.FieldIsDefault, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Remark(); ok {
+		_spec.SetField(sysdictitem.FieldRemark, field.TypeString, value)
+	}
+	if _u.mutation.RemarkCleared() {
+		_spec.ClearField(sysdictitem.FieldRemark, field.TypeString)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -356,6 +431,61 @@ func (_u *SysDictItemUpdateOne) AddSort(v int) *SysDictItemUpdateOne {
 	return _u
 }
 
+// SetParentID sets the "parent_id" field.
+func (_u *SysDictItemUpdateOne) SetParentID(v int64) *SysDictItemUpdateOne {
+	_u.mutation.ResetParentID()
+	_u.mutation.SetParentID(v)
+	return _u
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_u *SysDictItemUpdateOne) SetNillableParentID(v *int64) *SysDictItemUpdateOne {
+	if v != nil {
+		_u.SetParentID(*v)
+	}
+	return _u
+}
+
+// AddParentID adds value to the "parent_id" field.
+func (_u *SysDictItemUpdateOne) AddParentID(v int64) *SysDictItemUpdateOne {
+	_u.mutation.AddParentID(v)
+	return _u
+}
+
+// SetIsDefault sets the "is_default" field.
+func (_u *SysDictItemUpdateOne) SetIsDefault(v bool) *SysDictItemUpdateOne {
+	_u.mutation.SetIsDefault(v)
+	return _u
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_u *SysDictItemUpdateOne) SetNillableIsDefault(v *bool) *SysDictItemUpdateOne {
+	if v != nil {
+		_u.SetIsDefault(*v)
+	}
+	return _u
+}
+
+// SetRemark sets the "remark" field.
+func (_u *SysDictItemUpdateOne) SetRemark(v string) *SysDictItemUpdateOne {
+	_u.mutation.SetRemark(v)
+	return _u
+}
+
+// SetNillableRemark sets the "remark" field if the given value is not nil.
+func (_u *SysDictItemUpdateOne) SetNillableRemark(v *string) *SysDictItemUpdateOne {
+	if v != nil {
+		_u.SetRemark(*v)
+	}
+	return _u
+}
+
+// ClearRemark clears the value of the "remark" field.
+func (_u *SysDictItemUpdateOne) ClearRemark() *SysDictItemUpdateOne {
+	_u.mutation.ClearRemark()
+	return _u
+}
+
 // Mutation returns the SysDictItemMutation object of the builder.
 func (_u *SysDictItemUpdateOne) Mutation() *SysDictItemMutation {
 	return _u.mutation
@@ -427,6 +557,11 @@ func (_u *SysDictItemUpdateOne) check() error {
 			return &ValidationError{Name: "value", err: fmt.Errorf(`ent: validator failed for field "SysDictItem.value": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Remark(); ok {
+		if err := sysdictitem.RemarkValidator(v); err != nil {
+			return &ValidationError{Name: "remark", err: fmt.Errorf(`ent: validator failed for field "SysDictItem.remark": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -485,6 +620,21 @@ func (_u *SysDictItemUpdateOne) sqlSave(ctx context.Context) (_node *SysDictItem
 	}
 	if value, ok := _u.mutation.AddedSort(); ok {
 		_spec.AddField(sysdictitem.FieldSort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.ParentID(); ok {
+		_spec.SetField(sysdictitem.FieldParentID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedParentID(); ok {
+		_spec.AddField(sysdictitem.FieldParentID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.IsDefault(); ok {
+		_spec.SetField(sysdictitem.FieldIsDefault, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Remark(); ok {
+		_spec.SetField(sysdictitem.FieldRemark, field.TypeString, value)
+	}
+	if _u.mutation.RemarkCleared() {
+		_spec.ClearField(sysdictitem.FieldRemark, field.TypeString)
 	}
 	_node = &SysDictItem{config: _u.config}
 	_spec.Assign = _node.assignValues

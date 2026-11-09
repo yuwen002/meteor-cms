@@ -52,6 +52,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{AdminPermissionsColumns[3]},
 			},
+			{
+				Name:    "adminpermission_type_permission_method_api_path",
+				Unique:  true,
+				Columns: []*schema.Column{AdminPermissionsColumns[5], AdminPermissionsColumns[11], AdminPermissionsColumns[9], AdminPermissionsColumns[10]},
+			},
 		},
 	}
 	// AdminRolesColumns holds the columns for the "admin_roles" table.
@@ -326,6 +331,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{ArticlesColumns[3], ArticlesColumns[17], ArticlesColumns[9]},
 			},
+			{
+				Name:    "article_deleted_at_author_id_status_id",
+				Unique:  false,
+				Columns: []*schema.Column{ArticlesColumns[3], ArticlesColumns[10], ArticlesColumns[9], ArticlesColumns[0]},
+			},
 		},
 	}
 	// ArticleReviewsColumns holds the columns for the "article_reviews" table.
@@ -486,6 +496,48 @@ var (
 			},
 		},
 	}
+	// CommentsColumns holds the columns for the "comments" table.
+	CommentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "自增主键 ID"},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+		{Name: "article_id", Type: field.TypeInt64, Comment: "文章 ID"},
+		{Name: "parent_id", Type: field.TypeInt64, Comment: "父评论 ID，0 表示顶层评论", Default: 0},
+		{Name: "author", Type: field.TypeString, Size: 64, Comment: "显示昵称"},
+		{Name: "email", Type: field.TypeString, Size: 128, Comment: "联系邮箱，仅后台可见", Default: ""},
+		{Name: "content", Type: field.TypeString, Size: 2147483647, Comment: "评论正文"},
+		{Name: "status", Type: field.TypeInt, Comment: "0 待审 / 1 通过 / 2 拒绝", Default: 0},
+		{Name: "ip", Type: field.TypeString, Size: 64, Comment: "来源 IP", Default: ""},
+	}
+	// CommentsTable holds the schema information for the "comments" table.
+	CommentsTable = &schema.Table{
+		Name:       "comments",
+		Comment:    "文章评论表",
+		Columns:    CommentsColumns,
+		PrimaryKey: []*schema.Column{CommentsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "comment_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CommentsColumns[1]},
+			},
+			{
+				Name:    "comment_article_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{CommentsColumns[3], CommentsColumns[8]},
+			},
+			{
+				Name:    "comment_parent_id",
+				Unique:  false,
+				Columns: []*schema.Column{CommentsColumns[4]},
+			},
+			{
+				Name:    "comment_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{CommentsColumns[8], CommentsColumns[1]},
+			},
+		},
+	}
 	// DepartmentsColumns holds the columns for the "departments" table.
 	DepartmentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "部门ID"},
@@ -526,6 +578,43 @@ var (
 			},
 		},
 	}
+	// FriendLinksColumns holds the columns for the "friend_links" table.
+	FriendLinksColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "自增主键 ID"},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+		{Name: "name", Type: field.TypeString, Size: 100, Comment: "站点名称"},
+		{Name: "url", Type: field.TypeString, Size: 512, Comment: "站点地址"},
+		{Name: "logo", Type: field.TypeString, Size: 512, Comment: "Logo URL", Default: ""},
+		{Name: "description", Type: field.TypeString, Size: 255, Comment: "站点简介", Default: ""},
+		{Name: "link_type", Type: field.TypeString, Size: 32, Comment: "链接类型，取自字典 link_type", Default: "friend"},
+		{Name: "sort", Type: field.TypeInt, Comment: "排序值，越小越靠前", Default: 0},
+		{Name: "status", Type: field.TypeInt, Comment: "1 启用 / 0 停用", Default: 1},
+	}
+	// FriendLinksTable holds the schema information for the "friend_links" table.
+	FriendLinksTable = &schema.Table{
+		Name:       "friend_links",
+		Comment:    "友情链接表",
+		Columns:    FriendLinksColumns,
+		PrimaryKey: []*schema.Column{FriendLinksColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "friendlink_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{FriendLinksColumns[1]},
+			},
+			{
+				Name:    "friendlink_status_sort",
+				Unique:  false,
+				Columns: []*schema.Column{FriendLinksColumns[9], FriendLinksColumns[8]},
+			},
+			{
+				Name:    "friendlink_link_type",
+				Unique:  false,
+				Columns: []*schema.Column{FriendLinksColumns[7]},
+			},
+		},
+	}
 	// LoginLogsColumns holds the columns for the "login_logs" table.
 	LoginLogsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "自增主键 ID"},
@@ -538,6 +627,7 @@ var (
 		{Name: "status", Type: field.TypeInt, Comment: "登录结果：0 成功，1 失败", Default: 0},
 		{Name: "fail_reason", Type: field.TypeString, Nullable: true, Size: 255, Comment: "失败原因"},
 		{Name: "login_at", Type: field.TypeTime, Comment: "登录时间"},
+		{Name: "request_id", Type: field.TypeString, Nullable: true, Size: 64, Comment: "请求链路标识，用于串联登录日志与操作日志"},
 	}
 	// LoginLogsTable holds the schema information for the "login_logs" table.
 	LoginLogsTable = &schema.Table{
@@ -566,6 +656,53 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{LoginLogsColumns[9]},
 			},
+			{
+				Name:    "loginlog_request_id",
+				Unique:  false,
+				Columns: []*schema.Column{LoginLogsColumns[10]},
+			},
+			{
+				Name:    "loginlog_user_id_login_at",
+				Unique:  false,
+				Columns: []*schema.Column{LoginLogsColumns[3], LoginLogsColumns[9]},
+			},
+			{
+				Name:    "loginlog_status_login_at",
+				Unique:  false,
+				Columns: []*schema.Column{LoginLogsColumns[7], LoginLogsColumns[9]},
+			},
+		},
+	}
+	// MediaFilesColumns holds the columns for the "media_files" table.
+	MediaFilesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "自增主键 ID"},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+		{Name: "url", Type: field.TypeString, Unique: true, Size: 512, Comment: "站内访问路径，如 /uploads/2026/01/xxx.png"},
+		{Name: "original_name", Type: field.TypeString, Size: 255, Comment: "上传时的原始文件名", Default: ""},
+		{Name: "mime", Type: field.TypeString, Size: 128, Comment: "由文件内容探测出的 MIME 类型", Default: ""},
+		{Name: "size", Type: field.TypeInt64, Comment: "文件大小（字节）", Default: 0},
+		{Name: "width", Type: field.TypeInt, Comment: "图片宽度（像素），非图片为 0", Default: 0},
+		{Name: "height", Type: field.TypeInt, Comment: "图片高度（像素），非图片为 0", Default: 0},
+		{Name: "uploader_id", Type: field.TypeInt64, Nullable: true, Comment: "上传人管理员 ID"},
+	}
+	// MediaFilesTable holds the schema information for the "media_files" table.
+	MediaFilesTable = &schema.Table{
+		Name:       "media_files",
+		Comment:    "媒体库文件元数据表",
+		Columns:    MediaFilesColumns,
+		PrimaryKey: []*schema.Column{MediaFilesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "mediafile_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MediaFilesColumns[1]},
+			},
+			{
+				Name:    "mediafile_uploader_id",
+				Unique:  false,
+				Columns: []*schema.Column{MediaFilesColumns[9]},
+			},
 		},
 	}
 	// OperationLogsColumns holds the columns for the "operation_logs" table.
@@ -585,6 +722,10 @@ var (
 		{Name: "error_msg", Type: field.TypeString, Nullable: true, Size: 512, Comment: "失败原因"},
 		{Name: "duration_ms", Type: field.TypeInt64, Comment: "耗时（毫秒）", Default: 0},
 		{Name: "params", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "请求参数快照，敏感字段已脱敏并截断"},
+		{Name: "query", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "URL query / 表单参数快照，敏感字段已脱敏并截断"},
+		{Name: "request_id", Type: field.TypeString, Nullable: true, Size: 64, Comment: "请求链路标识，用于串联同一次请求产生的日志"},
+		{Name: "biz_code", Type: field.TypeInt, Comment: "业务响应码，0 表示成功", Default: 0},
+		{Name: "http_status", Type: field.TypeInt, Comment: "HTTP 响应状态码", Default: 200},
 	}
 	// OperationLogsTable holds the schema information for the "operation_logs" table.
 	OperationLogsTable = &schema.Table{
@@ -607,6 +748,44 @@ var (
 				Name:    "operationlog_status",
 				Unique:  false,
 				Columns: []*schema.Column{OperationLogsColumns[11]},
+			},
+			{
+				Name:    "operationlog_request_id",
+				Unique:  false,
+				Columns: []*schema.Column{OperationLogsColumns[16]},
+			},
+			{
+				Name:    "operationlog_user_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{OperationLogsColumns[3], OperationLogsColumns[1]},
+			},
+			{
+				Name:    "operationlog_status_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{OperationLogsColumns[11], OperationLogsColumns[1]},
+			},
+		},
+	}
+	// SchemaMigrationsColumns holds the columns for the "schema_migrations" table.
+	SchemaMigrationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "自增主键 ID"},
+		{Name: "version", Type: field.TypeString, Unique: true, Size: 64, Comment: "schema 版本号"},
+		{Name: "description", Type: field.TypeString, Size: 255, Comment: "本次变更说明", Default: ""},
+		{Name: "checksum", Type: field.TypeString, Size: 64, Comment: "期望表结构摘要（SHA-256）", Default: ""},
+		{Name: "duration_ms", Type: field.TypeInt64, Comment: "本次迁移耗时（毫秒）", Default: 0},
+		{Name: "applied_at", Type: field.TypeTime, Comment: "应用时间"},
+	}
+	// SchemaMigrationsTable holds the schema information for the "schema_migrations" table.
+	SchemaMigrationsTable = &schema.Table{
+		Name:       "schema_migrations",
+		Comment:    "数据库 schema 迁移版本记录",
+		Columns:    SchemaMigrationsColumns,
+		PrimaryKey: []*schema.Column{SchemaMigrationsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "schemamigration_applied_at",
+				Unique:  false,
+				Columns: []*schema.Column{SchemaMigrationsColumns[5]},
 			},
 		},
 	}
@@ -643,6 +822,34 @@ var (
 			},
 		},
 	}
+	// SubscribersColumns holds the columns for the "subscribers" table.
+	SubscribersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "自增主键 ID"},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间"},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间"},
+		{Name: "email", Type: field.TypeString, Unique: true, Size: 128, Comment: "订阅邮箱"},
+		{Name: "status", Type: field.TypeInt, Comment: "1 订阅中 / 0 已退订", Default: 1},
+		{Name: "source", Type: field.TypeString, Size: 64, Comment: "订阅来源", Default: "site"},
+	}
+	// SubscribersTable holds the schema information for the "subscribers" table.
+	SubscribersTable = &schema.Table{
+		Name:       "subscribers",
+		Comment:    "邮件订阅表",
+		Columns:    SubscribersColumns,
+		PrimaryKey: []*schema.Column{SubscribersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "subscriber_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SubscribersColumns[1]},
+			},
+			{
+				Name:    "subscriber_status",
+				Unique:  false,
+				Columns: []*schema.Column{SubscribersColumns[4]},
+			},
+		},
+	}
 	// SysConfigsColumns holds the columns for the "sys_configs" table.
 	SysConfigsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true, Comment: "自增主键 ID"},
@@ -653,6 +860,12 @@ var (
 		{Name: "name", Type: field.TypeString, Size: 128, Comment: "配置名称（展示用）"},
 		{Name: "remark", Type: field.TypeString, Nullable: true, Size: 512, Comment: "备注说明"},
 		{Name: "is_system", Type: field.TypeBool, Comment: "是否系统内置：内置配置禁止删除，避免误删导致功能异常", Default: false},
+		{Name: "config_group", Type: field.TypeString, Size: 64, Comment: "配置分组，如 site/seo/mail/security，用于分组渲染", Default: "general"},
+		{Name: "value_type", Type: field.TypeString, Size: 32, Comment: "值类型：string/int/bool/json/url/image/text，用于前端控件与服务端校验", Default: "string"},
+		{Name: "validation", Type: field.TypeString, Nullable: true, Size: 512, Comment: "校验规则：正则或内置规则名，保存前校验"},
+		{Name: "sort", Type: field.TypeInt, Comment: "同组内排序，从小到大", Default: 0},
+		{Name: "status", Type: field.TypeInt, Comment: "状态：1 启用 0 禁用，禁用项不参与运行时读取", Default: 1},
+		{Name: "is_secret", Type: field.TypeBool, Comment: "是否敏感值：加密存储、列表脱敏、审计快照过滤", Default: false},
 	}
 	// SysConfigsTable holds the schema information for the "sys_configs" table.
 	SysConfigsTable = &schema.Table{
@@ -671,6 +884,51 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{SysConfigsColumns[3]},
 			},
+			{
+				Name:    "sysconfig_config_group",
+				Unique:  false,
+				Columns: []*schema.Column{SysConfigsColumns[8]},
+			},
+			{
+				Name:    "sysconfig_status",
+				Unique:  false,
+				Columns: []*schema.Column{SysConfigsColumns[12]},
+			},
+		},
+	}
+	// SysConfigVersionsColumns holds the columns for the "sys_config_versions" table.
+	SysConfigVersionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "config_id", Type: field.TypeInt64},
+		{Name: "config_key", Type: field.TypeString, Size: 128},
+		{Name: "old_value", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "new_value", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "operator_id", Type: field.TypeInt64, Default: 0},
+		{Name: "operator_name", Type: field.TypeString, Nullable: true, Size: 64},
+	}
+	// SysConfigVersionsTable holds the schema information for the "sys_config_versions" table.
+	SysConfigVersionsTable = &schema.Table{
+		Name:       "sys_config_versions",
+		Columns:    SysConfigVersionsColumns,
+		PrimaryKey: []*schema.Column{SysConfigVersionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sysconfigversion_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysConfigVersionsColumns[1]},
+			},
+			{
+				Name:    "sysconfigversion_config_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{SysConfigVersionsColumns[3], SysConfigVersionsColumns[1]},
+			},
+			{
+				Name:    "sysconfigversion_config_key",
+				Unique:  false,
+				Columns: []*schema.Column{SysConfigVersionsColumns[4]},
+			},
 		},
 	}
 	// SysDictsColumns holds the columns for the "sys_dicts" table.
@@ -683,6 +941,8 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 512, Comment: "字典描述"},
 		{Name: "status", Type: field.TypeInt, Comment: "状态：1 启用 0 禁用", Default: 1},
 		{Name: "sort", Type: field.TypeInt, Comment: "排序，从小到大", Default: 0},
+		{Name: "dict_group", Type: field.TypeString, Size: 64, Comment: "字典分组，便于按业务域归类", Default: "general"},
+		{Name: "is_system", Type: field.TypeBool, Comment: "是否系统内置：内置字典禁止删除", Default: false},
 	}
 	// SysDictsTable holds the schema information for the "sys_dicts" table.
 	SysDictsTable = &schema.Table{
@@ -706,6 +966,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{SysDictsColumns[6]},
 			},
+			{
+				Name:    "sysdict_dict_group",
+				Unique:  false,
+				Columns: []*schema.Column{SysDictsColumns[8]},
+			},
 		},
 	}
 	// SysDictItemsColumns holds the columns for the "sys_dict_items" table.
@@ -718,6 +983,9 @@ var (
 		{Name: "value", Type: field.TypeString, Size: 128, Comment: "实际取值"},
 		{Name: "status", Type: field.TypeInt, Comment: "状态：1 启用 0 禁用", Default: 1},
 		{Name: "sort", Type: field.TypeInt, Comment: "排序，从小到大", Default: 0},
+		{Name: "parent_id", Type: field.TypeInt64, Comment: "父级字典项 ID，0 表示顶级，用于树形枚举（如省市区）", Default: 0},
+		{Name: "is_default", Type: field.TypeBool, Comment: "是否该字典的默认选中项", Default: false},
+		{Name: "remark", Type: field.TypeString, Nullable: true, Size: 512, Comment: "备注说明"},
 	}
 	// SysDictItemsTable holds the schema information for the "sys_dict_items" table.
 	SysDictItemsTable = &schema.Table{
@@ -740,6 +1008,11 @@ var (
 				Name:    "sysdictitem_dict_code_value",
 				Unique:  false,
 				Columns: []*schema.Column{SysDictItemsColumns[3], SysDictItemsColumns[5]},
+			},
+			{
+				Name:    "sysdictitem_dict_code_parent_id",
+				Unique:  false,
+				Columns: []*schema.Column{SysDictItemsColumns[3], SysDictItemsColumns[8]},
 			},
 		},
 	}
@@ -825,11 +1098,17 @@ var (
 		ArticleRevisionsTable,
 		ArticleTagsTable,
 		CategoriesTable,
+		CommentsTable,
 		DepartmentsTable,
+		FriendLinksTable,
 		LoginLogsTable,
+		MediaFilesTable,
 		OperationLogsTable,
+		SchemaMigrationsTable,
 		SlugRedirectsTable,
+		SubscribersTable,
 		SysConfigsTable,
+		SysConfigVersionsTable,
 		SysDictsTable,
 		SysDictItemsTable,
 		TagsTable,
@@ -883,12 +1162,27 @@ func init() {
 	CategoriesTable.Annotation = &entsql.Annotation{
 		Table: "categories",
 	}
+	CommentsTable.Annotation = &entsql.Annotation{
+		Table: "comments",
+	}
 	DepartmentsTable.ForeignKeys[0].RefTable = DepartmentsTable
 	DepartmentsTable.Annotation = &entsql.Annotation{
 		Table: "departments",
 	}
+	FriendLinksTable.Annotation = &entsql.Annotation{
+		Table: "friend_links",
+	}
+	MediaFilesTable.Annotation = &entsql.Annotation{
+		Table: "media_files",
+	}
+	SchemaMigrationsTable.Annotation = &entsql.Annotation{
+		Table: "schema_migrations",
+	}
 	SlugRedirectsTable.Annotation = &entsql.Annotation{
 		Table: "slug_redirects",
+	}
+	SubscribersTable.Annotation = &entsql.Annotation{
+		Table: "subscribers",
 	}
 	TagsTable.Annotation = &entsql.Annotation{
 		Table: "tags",

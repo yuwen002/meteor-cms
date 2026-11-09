@@ -10,8 +10,8 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/tag"
 )
 
 // TagCreate is the builder for creating a Tag entity.

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"html"
 	"net/http"
 	"net/url"
@@ -16,14 +17,20 @@ type PageData struct {
 	Title       string
 	Description string
 	Keywords    string
+	Lang        string
 	Redirect    string
 }
 
 // PageResolver 按文章 slug 解析页面元信息；ok=false 表示按普通 SPA 页面处理。
 type PageResolver func(slug string) (PageData, bool)
 
+// SiteValuesFunc 返回站点配置的 key -> 明文值快照。
+// 由 main 包延迟注入，避免 middleware 反向依赖 svc 包形成循环引用。
+type SiteValuesFunc func(ctx context.Context) map[string]string
+
 type spaOptions struct {
-	resolver PageResolver
+	resolver   PageResolver
+	siteValues SiteValuesFunc
 }
 
 // SPAOption 是 SPAHandler 的可选配置
@@ -35,7 +42,15 @@ func WithPageResolver(fn PageResolver) SPAOption {
 	return func(o *spaOptions) { o.resolver = fn }
 }
 
+// WithSiteValues 让站点名称、SEO 默认值、标题模板与语言作用到首屏 HTML。
+// 未注入时不会改写 index.html，保持原有纯静态托管行为。
+func WithSiteValues(fn SiteValuesFunc) SPAOption {
+	return func(o *spaOptions) { o.siteValues = fn }
+}
+
 var titleTagRe = regexp.MustCompile(`(?is)<title[^>]*>.*?</title>`)
+var langAttrRe = regexp.MustCompile(`(?is)(<html[^>]*\blang\s*=\s*")[^"]*(")`)
+var langValueRe = regexp.MustCompile(`[^a-zA-Z0-9_-]`)
 
 // SPAHandler 在配置了 StaticDir 时由本服务直接托管前端 SPA，作为自定义 404(NotFound) 处理器使用：
 //   - 跳过 API 前缀（/admin、/api）与静态资源前缀（/uploads），交由 go-zero 路由处理；
@@ -43,6 +58,8 @@ var titleTagRe = regexp.MustCompile(`(?is)<title[^>]*>.*?</title>`)
 //     否则回退到 index.html，以支持前端 history 路由（如 /system/roles 刷新不 404）。
 //   - 配置了 PageResolver 时，/articles/:slug 会由服务端注入 SEO meta（爬虫可抓取），
 //     历史 slug 则返回 301 到新地址。
+//   - 配置了 SiteValues 时，所有回退页面都会注入站点级 title/description/keywords/lang，
+//     文章页标题还会套用 seo_title_template。
 //
 // 必须以 rest.WithNotFoundHandler 注册，而不是 server.Use：
 // go-zero 的 server.Use 注册的全局中间件不会作用于 404（未匹配）路由，
@@ -84,6 +101,10 @@ func SPAHandler(staticDir string, opts ...SPAOption) http.Handler {
 		// SPA history 路由回退到 index.html
 		index := filepath.Join(staticDir, "index.html")
 		if _, err := os.Stat(index); err == nil {
+			var values map[string]string
+			if cfg.siteValues != nil {
+				values = cfg.siteValues(r.Context())
+			}
 			if cfg.resolver != nil {
 				if slug, ok := articleSlugFromPath(path); ok {
 					if data, found := cfg.resolver(slug); found {
@@ -91,10 +112,15 @@ func SPAHandler(staticDir string, opts ...SPAOption) http.Handler {
 							http.Redirect(w, r, "/articles/"+url.PathEscape(data.Redirect), http.StatusMovedPermanently)
 							return
 						}
-						serveInjectedIndex(w, r, index, data)
+						serveInjectedIndex(w, r, index, withSiteTemplate(data, values))
 						return
 					}
 				}
+			}
+			// 普通 SPA 页面也要带上站点级 meta，避免首页/后台 title 永远是构建时的固定值
+			if d := defaultPageData(values); d.Title != "" || d.Description != "" || d.Keywords != "" || d.Lang != "" {
+				serveInjectedIndex(w, r, index, d)
+				return
 			}
 			http.ServeFile(w, r, index)
 			return
@@ -103,6 +129,60 @@ func SPAHandler(staticDir string, opts ...SPAOption) http.Handler {
 		// 既无对应文件、也无 index.html：返回 404
 		http.NotFound(w, r)
 	})
+}
+
+func siteValue(values map[string]string, key, fallback string) string {
+	if v, ok := values[key]; ok && strings.TrimSpace(v) != "" {
+		return strings.TrimSpace(v)
+	}
+	return fallback
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+// defaultPageData 生成非文章页的站点级默认 meta。
+func defaultPageData(values map[string]string) PageData {
+	return PageData{
+		Title: siteValue(values, "site_name", ""),
+		Description: firstNonEmpty(
+			siteValue(values, "seo_default_description", ""),
+			siteValue(values, "site_description", ""),
+		),
+		Keywords: siteValue(values, "site_keywords", ""),
+		Lang:     siteValue(values, "site_language", ""),
+	}
+}
+
+// withSiteTemplate 合并文章页 meta 与站点配置：标题模板、默认描述/关键词、html lang。
+func withSiteTemplate(data PageData, values map[string]string) PageData {
+	siteName := siteValue(values, "site_name", "Meteor CMS")
+	title := firstNonEmpty(data.Title, siteName)
+	tpl := siteValue(values, "seo_title_template", "{title} - {site_name}")
+	if strings.Contains(tpl, "{title}") {
+		data.Title = strings.NewReplacer(
+			"{title}", title,
+			"{site_name}", siteName,
+			"{site}", siteName,
+		).Replace(tpl)
+	} else {
+		// 模板忘了写 {title} 时不能让所有文章页共用同一个标题
+		data.Title = title
+	}
+	data.Description = firstNonEmpty(
+		data.Description,
+		siteValue(values, "seo_default_description", ""),
+		siteValue(values, "site_description", ""),
+	)
+	data.Keywords = firstNonEmpty(data.Keywords, siteValue(values, "site_keywords", ""))
+	data.Lang = siteValue(values, "site_language", "")
+	return data
 }
 
 func articleSlugFromPath(p string) (string, bool) {
@@ -130,6 +210,12 @@ func serveInjectedIndex(w http.ResponseWriter, r *http.Request, index string, da
 
 // injectPageMeta 所有动态值都经 html.EscapeString，避免文章标题/SEO 字段注入标签。
 func injectPageMeta(page string, d PageData) string {
+	if d.Lang != "" {
+		lang := langValueRe.ReplaceAllString(d.Lang, "")
+		if lang != "" && langAttrRe.MatchString(page) {
+			page = langAttrRe.ReplaceAllString(page, "${1}"+lang+"${2}")
+		}
+	}
 	tags := make([]string, 0, 5)
 	if d.Title != "" {
 		esc := html.EscapeString(d.Title)

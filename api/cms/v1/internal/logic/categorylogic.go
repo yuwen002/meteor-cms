@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/category"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/category"
+	"github.com/yuwen002/meteor-cms/internal/common"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -50,16 +50,12 @@ func (l *CategoryLogic) CategoryList(req *types.CategoryListReq) (*types.Categor
 	for _, c := range rows {
 		names[c.ID] = c.Name
 	}
+	counts, err := categoryArticleCounts(l.ctx, l.svcCtx.EntClient)
+	if err != nil {
+		return nil, err
+	}
 	list := make([]types.CategoryItem, 0, len(rows))
 	for _, c := range rows {
-		// 分类数量有限，逐条统计文章数即可；软删除文章由拦截器自动排除。
-		count, err := l.svcCtx.EntClient.Article.Query().
-			Where(article.CategoryIDEQ(c.ID)).
-			Count(l.ctx)
-		if err != nil {
-			logx.Errorf("count category articles failed: %v", err)
-			return nil, common.NewBizError(common.ErrInternalServer)
-		}
 		item := types.CategoryItem{
 			ID:           c.ID,
 			Name:         c.Name,
@@ -67,7 +63,7 @@ func (l *CategoryLogic) CategoryList(req *types.CategoryListReq) (*types.Categor
 			Description:  c.Description,
 			Sort:         c.Sort,
 			IsActive:     c.IsActive,
-			ArticleCount: count,
+			ArticleCount: int(counts[c.ID]),
 			CreatedAt:    c.CreatedAt.Format(time.RFC3339),
 		}
 		if c.ParentID != nil {

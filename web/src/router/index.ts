@@ -79,6 +79,12 @@ const routes = [
         meta: { title: '系统配置', permission: 'system:config:list' },
       },
       {
+        path: 'system/siteext',
+        name: 'SystemSiteExt',
+        component: () => import('@/views/system/siteext/index.vue'),
+        meta: { title: '站点扩展', permission: 'system:siteext:list' },
+      },
+      {
         path: 'system/operation-log',
         name: 'OperationLog',
         component: () => import('@/views/system/log/operation.vue'),

@@ -10,7 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/operationlog"
+	"github.com/yuwen002/meteor-cms/ent/operationlog"
 )
 
 // OperationLogCreate is the builder for creating a OperationLog entity.
@@ -200,6 +200,62 @@ func (_c *OperationLogCreate) SetNillableParams(v *string) *OperationLogCreate {
 	return _c
 }
 
+// SetQuery sets the "query" field.
+func (_c *OperationLogCreate) SetQuery(v string) *OperationLogCreate {
+	_c.mutation.SetQuery(v)
+	return _c
+}
+
+// SetNillableQuery sets the "query" field if the given value is not nil.
+func (_c *OperationLogCreate) SetNillableQuery(v *string) *OperationLogCreate {
+	if v != nil {
+		_c.SetQuery(*v)
+	}
+	return _c
+}
+
+// SetRequestID sets the "request_id" field.
+func (_c *OperationLogCreate) SetRequestID(v string) *OperationLogCreate {
+	_c.mutation.SetRequestID(v)
+	return _c
+}
+
+// SetNillableRequestID sets the "request_id" field if the given value is not nil.
+func (_c *OperationLogCreate) SetNillableRequestID(v *string) *OperationLogCreate {
+	if v != nil {
+		_c.SetRequestID(*v)
+	}
+	return _c
+}
+
+// SetBizCode sets the "biz_code" field.
+func (_c *OperationLogCreate) SetBizCode(v int) *OperationLogCreate {
+	_c.mutation.SetBizCode(v)
+	return _c
+}
+
+// SetNillableBizCode sets the "biz_code" field if the given value is not nil.
+func (_c *OperationLogCreate) SetNillableBizCode(v *int) *OperationLogCreate {
+	if v != nil {
+		_c.SetBizCode(*v)
+	}
+	return _c
+}
+
+// SetHTTPStatus sets the "http_status" field.
+func (_c *OperationLogCreate) SetHTTPStatus(v int) *OperationLogCreate {
+	_c.mutation.SetHTTPStatus(v)
+	return _c
+}
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (_c *OperationLogCreate) SetNillableHTTPStatus(v *int) *OperationLogCreate {
+	if v != nil {
+		_c.SetHTTPStatus(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OperationLogCreate) SetID(v int64) *OperationLogCreate {
 	_c.mutation.SetID(v)
@@ -256,6 +312,14 @@ func (_c *OperationLogCreate) defaults() {
 	if _, ok := _c.mutation.DurationMs(); !ok {
 		v := operationlog.DefaultDurationMs
 		_c.mutation.SetDurationMs(v)
+	}
+	if _, ok := _c.mutation.BizCode(); !ok {
+		v := operationlog.DefaultBizCode
+		_c.mutation.SetBizCode(v)
+	}
+	if _, ok := _c.mutation.HTTPStatus(); !ok {
+		v := operationlog.DefaultHTTPStatus
+		_c.mutation.SetHTTPStatus(v)
 	}
 }
 
@@ -318,6 +382,17 @@ func (_c *OperationLogCreate) check() error {
 	}
 	if _, ok := _c.mutation.DurationMs(); !ok {
 		return &ValidationError{Name: "duration_ms", err: errors.New(`ent: missing required field "OperationLog.duration_ms"`)}
+	}
+	if v, ok := _c.mutation.RequestID(); ok {
+		if err := operationlog.RequestIDValidator(v); err != nil {
+			return &ValidationError{Name: "request_id", err: fmt.Errorf(`ent: validator failed for field "OperationLog.request_id": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.BizCode(); !ok {
+		return &ValidationError{Name: "biz_code", err: errors.New(`ent: missing required field "OperationLog.biz_code"`)}
+	}
+	if _, ok := _c.mutation.HTTPStatus(); !ok {
+		return &ValidationError{Name: "http_status", err: errors.New(`ent: missing required field "OperationLog.http_status"`)}
 	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := operationlog.IDValidator(v); err != nil {
@@ -411,6 +486,22 @@ func (_c *OperationLogCreate) createSpec() (*OperationLog, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.Params(); ok {
 		_spec.SetField(operationlog.FieldParams, field.TypeString, value)
 		_node.Params = value
+	}
+	if value, ok := _c.mutation.Query(); ok {
+		_spec.SetField(operationlog.FieldQuery, field.TypeString, value)
+		_node.Query = value
+	}
+	if value, ok := _c.mutation.RequestID(); ok {
+		_spec.SetField(operationlog.FieldRequestID, field.TypeString, value)
+		_node.RequestID = value
+	}
+	if value, ok := _c.mutation.BizCode(); ok {
+		_spec.SetField(operationlog.FieldBizCode, field.TypeInt, value)
+		_node.BizCode = value
+	}
+	if value, ok := _c.mutation.HTTPStatus(); ok {
+		_spec.SetField(operationlog.FieldHTTPStatus, field.TypeInt, value)
+		_node.HTTPStatus = value
 	}
 	return _node, _spec
 }

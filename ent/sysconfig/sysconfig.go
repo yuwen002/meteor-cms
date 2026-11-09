@@ -27,6 +27,18 @@ const (
 	FieldRemark = "remark"
 	// FieldIsSystem holds the string denoting the is_system field in the database.
 	FieldIsSystem = "is_system"
+	// FieldConfigGroup holds the string denoting the config_group field in the database.
+	FieldConfigGroup = "config_group"
+	// FieldValueType holds the string denoting the value_type field in the database.
+	FieldValueType = "value_type"
+	// FieldValidation holds the string denoting the validation field in the database.
+	FieldValidation = "validation"
+	// FieldSort holds the string denoting the sort field in the database.
+	FieldSort = "sort"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
+	// FieldIsSecret holds the string denoting the is_secret field in the database.
+	FieldIsSecret = "is_secret"
 	// Table holds the table name of the sysconfig in the database.
 	Table = "sys_configs"
 )
@@ -41,6 +53,12 @@ var Columns = []string{
 	FieldName,
 	FieldRemark,
 	FieldIsSystem,
+	FieldConfigGroup,
+	FieldValueType,
+	FieldValidation,
+	FieldSort,
+	FieldStatus,
+	FieldIsSecret,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -70,6 +88,22 @@ var (
 	RemarkValidator func(string) error
 	// DefaultIsSystem holds the default value on creation for the "is_system" field.
 	DefaultIsSystem bool
+	// DefaultConfigGroup holds the default value on creation for the "config_group" field.
+	DefaultConfigGroup string
+	// ConfigGroupValidator is a validator for the "config_group" field. It is called by the builders before save.
+	ConfigGroupValidator func(string) error
+	// DefaultValueType holds the default value on creation for the "value_type" field.
+	DefaultValueType string
+	// ValueTypeValidator is a validator for the "value_type" field. It is called by the builders before save.
+	ValueTypeValidator func(string) error
+	// ValidationValidator is a validator for the "validation" field. It is called by the builders before save.
+	ValidationValidator func(string) error
+	// DefaultSort holds the default value on creation for the "sort" field.
+	DefaultSort int
+	// DefaultStatus holds the default value on creation for the "status" field.
+	DefaultStatus int
+	// DefaultIsSecret holds the default value on creation for the "is_secret" field.
+	DefaultIsSecret bool
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(int64) error
 )
@@ -115,4 +149,34 @@ func ByRemark(opts ...sql.OrderTermOption) OrderOption {
 // ByIsSystem orders the results by the is_system field.
 func ByIsSystem(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsSystem, opts...).ToFunc()
+}
+
+// ByConfigGroup orders the results by the config_group field.
+func ByConfigGroup(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConfigGroup, opts...).ToFunc()
+}
+
+// ByValueType orders the results by the value_type field.
+func ByValueType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldValueType, opts...).ToFunc()
+}
+
+// ByValidation orders the results by the validation field.
+func ByValidation(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldValidation, opts...).ToFunc()
+}
+
+// BySort orders the results by the sort field.
+func BySort(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSort, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByIsSecret orders the results by the is_secret field.
+func ByIsSecret(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsSecret, opts...).ToFunc()
 }

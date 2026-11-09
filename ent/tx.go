@@ -34,16 +34,28 @@ type Tx struct {
 	ArticleTag *ArticleTagClient
 	// Category is the client for interacting with the Category builders.
 	Category *CategoryClient
+	// Comment is the client for interacting with the Comment builders.
+	Comment *CommentClient
 	// Department is the client for interacting with the Department builders.
 	Department *DepartmentClient
+	// FriendLink is the client for interacting with the FriendLink builders.
+	FriendLink *FriendLinkClient
 	// LoginLog is the client for interacting with the LoginLog builders.
 	LoginLog *LoginLogClient
+	// MediaFile is the client for interacting with the MediaFile builders.
+	MediaFile *MediaFileClient
 	// OperationLog is the client for interacting with the OperationLog builders.
 	OperationLog *OperationLogClient
+	// SchemaMigration is the client for interacting with the SchemaMigration builders.
+	SchemaMigration *SchemaMigrationClient
 	// SlugRedirect is the client for interacting with the SlugRedirect builders.
 	SlugRedirect *SlugRedirectClient
+	// Subscriber is the client for interacting with the Subscriber builders.
+	Subscriber *SubscriberClient
 	// SysConfig is the client for interacting with the SysConfig builders.
 	SysConfig *SysConfigClient
+	// SysConfigVersion is the client for interacting with the SysConfigVersion builders.
+	SysConfigVersion *SysConfigVersionClient
 	// SysDict is the client for interacting with the SysDict builders.
 	SysDict *SysDictClient
 	// SysDictItem is the client for interacting with the SysDictItem builders.
@@ -194,11 +206,17 @@ func (tx *Tx) init() {
 	tx.ArticleRevision = NewArticleRevisionClient(tx.config)
 	tx.ArticleTag = NewArticleTagClient(tx.config)
 	tx.Category = NewCategoryClient(tx.config)
+	tx.Comment = NewCommentClient(tx.config)
 	tx.Department = NewDepartmentClient(tx.config)
+	tx.FriendLink = NewFriendLinkClient(tx.config)
 	tx.LoginLog = NewLoginLogClient(tx.config)
+	tx.MediaFile = NewMediaFileClient(tx.config)
 	tx.OperationLog = NewOperationLogClient(tx.config)
+	tx.SchemaMigration = NewSchemaMigrationClient(tx.config)
 	tx.SlugRedirect = NewSlugRedirectClient(tx.config)
+	tx.Subscriber = NewSubscriberClient(tx.config)
 	tx.SysConfig = NewSysConfigClient(tx.config)
+	tx.SysConfigVersion = NewSysConfigVersionClient(tx.config)
 	tx.SysDict = NewSysDictClient(tx.config)
 	tx.SysDictItem = NewSysDictItemClient(tx.config)
 	tx.Tag = NewTagClient(tx.config)

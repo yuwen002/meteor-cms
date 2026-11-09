@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/rest"
 )
 

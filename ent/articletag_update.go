@@ -11,10 +11,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/articletag"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/articletag"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/tag"
 )
 
 // ArticleTagUpdate is the builder for updating ArticleTag entities.

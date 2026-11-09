@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/slugredirect"
+	"github.com/yuwen002/meteor-cms/ent/slugredirect"
 )
 
 // 内容实体历史 slug 表，用于 301 与回收站恢复

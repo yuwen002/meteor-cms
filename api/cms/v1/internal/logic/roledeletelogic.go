@@ -6,13 +6,13 @@ package logic
 import (
 	"context"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrolepermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuserrole"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminrolepermission"
+	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/internal/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -121,6 +121,9 @@ func (l *RoleDeleteLogic) RoleDelete(req *types.RoleDeleteReq) (resp *types.Comm
 		l.Logger.Errorf("删除角色失败，ID: %d, 错误: %v", req.ID, err)
 		return nil, common.NewBizError(common.ErrRoleDeleteFail)
 	}
+
+	// 角色停用/删除会影响其下所有用户的权限集合
+	l.svcCtx.PermissionChecker.InvalidateAll()
 
 	l.Logger.Infof("角色删除成功，ID: %d, 名称: %s", req.ID, role.Name)
 

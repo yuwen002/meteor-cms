@@ -27,6 +27,12 @@ const (
 	FieldStatus = "status"
 	// FieldSort holds the string denoting the sort field in the database.
 	FieldSort = "sort"
+	// FieldParentID holds the string denoting the parent_id field in the database.
+	FieldParentID = "parent_id"
+	// FieldIsDefault holds the string denoting the is_default field in the database.
+	FieldIsDefault = "is_default"
+	// FieldRemark holds the string denoting the remark field in the database.
+	FieldRemark = "remark"
 	// Table holds the table name of the sysdictitem in the database.
 	Table = "sys_dict_items"
 )
@@ -41,6 +47,9 @@ var Columns = []string{
 	FieldValue,
 	FieldStatus,
 	FieldSort,
+	FieldParentID,
+	FieldIsDefault,
+	FieldRemark,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -70,6 +79,12 @@ var (
 	DefaultStatus int
 	// DefaultSort holds the default value on creation for the "sort" field.
 	DefaultSort int
+	// DefaultParentID holds the default value on creation for the "parent_id" field.
+	DefaultParentID int64
+	// DefaultIsDefault holds the default value on creation for the "is_default" field.
+	DefaultIsDefault bool
+	// RemarkValidator is a validator for the "remark" field. It is called by the builders before save.
+	RemarkValidator func(string) error
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(int64) error
 )
@@ -115,4 +130,19 @@ func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 // BySort orders the results by the sort field.
 func BySort(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSort, opts...).ToFunc()
+}
+
+// ByParentID orders the results by the parent_id field.
+func ByParentID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldParentID, opts...).ToFunc()
+}
+
+// ByIsDefault orders the results by the is_default field.
+func ByIsDefault(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsDefault, opts...).ToFunc()
+}
+
+// ByRemark orders the results by the remark field.
+func ByRemark(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRemark, opts...).ToFunc()
 }

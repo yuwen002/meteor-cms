@@ -2,4 +2,4 @@
 
 package ent
 
-// The schema-stitching logic is generated in github.com/yuwen002/go-meteor-cms/ent/runtime/runtime.go
+// The schema-stitching logic is generated in github.com/yuwen002/meteor-cms/ent/runtime/runtime.go

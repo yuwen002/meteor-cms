@@ -31,6 +31,8 @@ const (
 	FieldFailReason = "fail_reason"
 	// FieldLoginAt holds the string denoting the login_at field in the database.
 	FieldLoginAt = "login_at"
+	// FieldRequestID holds the string denoting the request_id field in the database.
+	FieldRequestID = "request_id"
 	// Table holds the table name of the loginlog in the database.
 	Table = "login_logs"
 )
@@ -47,6 +49,7 @@ var Columns = []string{
 	FieldStatus,
 	FieldFailReason,
 	FieldLoginAt,
+	FieldRequestID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -78,6 +81,8 @@ var (
 	FailReasonValidator func(string) error
 	// DefaultLoginAt holds the default value on creation for the "login_at" field.
 	DefaultLoginAt func() time.Time
+	// RequestIDValidator is a validator for the "request_id" field. It is called by the builders before save.
+	RequestIDValidator func(string) error
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(int64) error
 )
@@ -133,4 +138,9 @@ func ByFailReason(opts ...sql.OrderTermOption) OrderOption {
 // ByLoginAt orders the results by the login_at field.
 func ByLoginAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLoginAt, opts...).ToFunc()
+}
+
+// ByRequestID orders the results by the request_id field.
+func ByRequestID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestID, opts...).ToFunc()
 }

@@ -5,16 +5,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/articlereview"
-	"github.com/yuwen002/go-meteor-cms/ent/articlerevision"
-	"github.com/yuwen002/go-meteor-cms/ent/category"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/articlereview"
+	"github.com/yuwen002/meteor-cms/ent/articlerevision"
+	"github.com/yuwen002/meteor-cms/ent/category"
+	"github.com/yuwen002/meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -47,7 +47,10 @@ func (l *ArticleLogic) ensureOwner(a *ent.Article) error {
 
 // ArticleList 后台文章列表：支持关键字、状态、分类、标签筛选与分页
 func (l *ArticleLogic) ArticleList(req *types.ArticleListReq) (*types.ArticleListResp, error) {
-	query := l.svcCtx.EntClient.Article.Query()
+	query, err := articleQueryVisible(l.ctx, l.svcCtx.EntClient.Article.Query())
+	if err != nil {
+		return nil, err
+	}
 	if kw := strings.TrimSpace(req.Keyword); kw != "" {
 		query = query.Where(article.Or(
 			article.TitleContainsFold(kw),
@@ -108,6 +111,9 @@ func (l *ArticleLogic) ArticleDetail(req *types.ArticleIDReq) (*types.ArticleDet
 		}
 		logx.Errorf("get article failed: %v", err)
 		return nil, common.NewBizError(common.ErrInternalServer)
+	}
+	if err := ensureArticleReadable(l.ctx, a); err != nil {
+		return nil, err
 	}
 	names := lookupAuthorNames(l.ctx, l.svcCtx.EntClient, articleAuthorIDs([]*ent.Article{a}))
 	return &types.ArticleDetailResp{
@@ -481,6 +487,9 @@ func (l *ArticleLogic) ArticleReject(req *types.ArticleRejectReq) error {
 
 // ArticleReviewList 返回最近 50 条审核动作，供编辑页展示审核轨迹
 func (l *ArticleLogic) ArticleReviewList(req *types.ArticleIDReq) (*types.ArticleReviewListResp, error) {
+	if err := ensureArticleIDReadable(l.ctx, l.svcCtx.EntClient, req.ID, false); err != nil {
+		return nil, err
+	}
 	rows, err := l.svcCtx.EntClient.ArticleReview.Query().
 		Where(articlereview.ArticleIDEQ(req.ID)).
 		Order(ent.Desc(articlereview.FieldID)).
@@ -509,6 +518,9 @@ func (l *ArticleLogic) ArticleReviewList(req *types.ArticleIDReq) (*types.Articl
 // ---------- 修订历史 ----------
 
 func (l *ArticleLogic) ArticleRevisionList(req *types.ArticleIDReq) (*types.ArticleRevisionListResp, error) {
+	if err := ensureArticleIDReadable(l.ctx, l.svcCtx.EntClient, req.ID, false); err != nil {
+		return nil, err
+	}
 	rows, err := l.svcCtx.EntClient.ArticleRevision.Query().
 		Where(articlerevision.ArticleIDEQ(req.ID)).
 		Order(ent.Desc(articlerevision.FieldID)).
@@ -532,6 +544,9 @@ func (l *ArticleLogic) ArticleRevisionList(req *types.ArticleIDReq) (*types.Arti
 }
 
 func (l *ArticleLogic) ArticleRevisionDetail(req *types.ArticleRevisionIDReq) (*types.ArticleRevisionDetailResp, error) {
+	if err := ensureArticleIDReadable(l.ctx, l.svcCtx.EntClient, req.ID, false); err != nil {
+		return nil, err
+	}
 	r, err := l.svcCtx.EntClient.ArticleRevision.Query().
 		Where(articlerevision.IDEQ(req.RevisionID), articlerevision.ArticleIDEQ(req.ID)).
 		Only(l.ctx)

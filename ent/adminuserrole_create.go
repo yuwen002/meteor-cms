@@ -10,9 +10,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
 )
 
 // AdminUserRoleCreate is the builder for creating a AdminUserRole entity.

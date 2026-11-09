@@ -39,20 +39,38 @@ type ArticleTag func(*sql.Selector)
 // Category is the predicate function for category builders.
 type Category func(*sql.Selector)
 
+// Comment is the predicate function for comment builders.
+type Comment func(*sql.Selector)
+
 // Department is the predicate function for department builders.
 type Department func(*sql.Selector)
+
+// FriendLink is the predicate function for friendlink builders.
+type FriendLink func(*sql.Selector)
 
 // LoginLog is the predicate function for loginlog builders.
 type LoginLog func(*sql.Selector)
 
+// MediaFile is the predicate function for mediafile builders.
+type MediaFile func(*sql.Selector)
+
 // OperationLog is the predicate function for operationlog builders.
 type OperationLog func(*sql.Selector)
+
+// SchemaMigration is the predicate function for schemamigration builders.
+type SchemaMigration func(*sql.Selector)
 
 // SlugRedirect is the predicate function for slugredirect builders.
 type SlugRedirect func(*sql.Selector)
 
+// Subscriber is the predicate function for subscriber builders.
+type Subscriber func(*sql.Selector)
+
 // SysConfig is the predicate function for sysconfig builders.
 type SysConfig func(*sql.Selector)
+
+// SysConfigVersion is the predicate function for sysconfigversion builders.
+type SysConfigVersion func(*sql.Selector)
 
 // SysDict is the predicate function for sysdict builders.
 type SysDict func(*sql.Selector)

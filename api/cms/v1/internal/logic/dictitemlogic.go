@@ -7,11 +7,11 @@ import (
 	"context"
 	"strings"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdictitem"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/sysdictitem"
+	"github.com/yuwen002/meteor-cms/internal/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -27,6 +27,12 @@ func NewDictItemLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DictItem
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
+	}
+}
+
+func (l *DictItemLogic) invalidate() {
+	if l.svcCtx != nil && l.svcCtx.Dicts != nil {
+		l.svcCtx.Dicts.Invalidate()
 	}
 }
 
@@ -53,25 +59,21 @@ func (l *DictItemLogic) DictItemList(req *types.DictItemListReq) (resp *types.Di
 		Order(ent.Asc(sysdictitem.FieldSort), ent.Asc(sysdictitem.FieldID)).
 		All(l.ctx)
 	if err != nil {
-		logx.Errorf("list dict items failed: %v", err)
 		return nil, common.NewBizError(common.ErrInternalServer)
 	}
 
 	list := make([]types.DictDataItem, 0, len(rows))
 	for _, it := range rows {
 		list = append(list, types.DictDataItem{
-			ID:       it.ID,
-			DictCode: it.DictCode,
-			Label:    it.Label,
-			Value:    it.Value,
-			Status:   it.Status,
-			Sort:     it.Sort,
+			ID: it.ID, DictCode: it.DictCode, Label: it.Label, Value: it.Value,
+			Status: it.Status, Sort: it.Sort,
+			ParentID: it.ParentID, IsDefault: it.IsDefault, Remark: it.Remark,
 		})
 	}
 	return &types.DictItemListResp{List: list}, nil
 }
 
-// DictItemCreate 新增字典项，同一字典下 value 不允许重复
+// DictItemCreate 新增字典项，同一字典下 value 不允许重复；status 显式传 0 表示创建即禁用。
 func (l *DictItemLogic) DictItemCreate(req *types.DictItemCreateReq) error {
 	dictCode := strings.TrimSpace(req.DictCode)
 	label := strings.TrimSpace(req.Label)
@@ -88,39 +90,51 @@ func (l *DictItemLogic) DictItemCreate(req *types.DictItemCreateReq) error {
 		).
 		Exist(l.ctx)
 	if err != nil {
-		logx.Errorf("check dict item failed: %v", err)
 		return common.NewBizError(common.ErrInternalServer)
 	}
 	if exists {
 		return common.NewBizError(common.ErrDictItemExists)
 	}
-
-	status := req.Status
-	if status == 0 {
-		status = 1
+	if req.ParentID > 0 {
+		parentExists, err := l.svcCtx.EntClient.SysDictItem.Query().
+			Where(sysdictitem.IDEQ(req.ParentID), sysdictitem.DictCodeEQ(dictCode)).
+			Exist(l.ctx)
+		if err != nil {
+			return common.NewBizError(common.ErrInternalServer)
+		}
+		if !parentExists {
+			return common.NewBizError(common.ErrInvalidParams)
+		}
 	}
-	if _, err := l.svcCtx.EntClient.SysDictItem.
-		Create().
+
+	status := 1
+	if req.Status != nil {
+		status = *req.Status
+	}
+	create := l.svcCtx.EntClient.SysDictItem.Create().
 		SetDictCode(dictCode).
 		SetLabel(label).
 		SetValue(value).
 		SetStatus(status).
 		SetSort(req.Sort).
-		Save(l.ctx); err != nil {
+		SetParentID(req.ParentID).
+		SetIsDefault(req.IsDefault).
+		SetRemark(req.Remark)
+	if _, err := create.Save(l.ctx); err != nil {
 		logx.Errorf("create dict item failed: %v", err)
 		return common.NewBizError(common.ErrDictCreateFail)
 	}
+	l.invalidate()
 	return nil
 }
 
-// DictItemUpdate 更新字典项，仅覆盖传入的字段
+// DictItemUpdate 更新字典项；指针字段区分「未传」与「显式清空」。
 func (l *DictItemLogic) DictItemUpdate(req *types.DictItemUpdateReq) error {
 	it, err := l.svcCtx.EntClient.SysDictItem.Get(l.ctx, req.ID)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return common.NewBizError(common.ErrDictItemNotFound)
 		}
-		logx.Errorf("get dict item failed: %v", err)
 		return common.NewBizError(common.ErrInternalServer)
 	}
 
@@ -137,29 +151,46 @@ func (l *DictItemLogic) DictItemUpdate(req *types.DictItemUpdateReq) error {
 	if req.Sort != nil {
 		update = update.SetSort(*req.Sort)
 	}
+	if req.ParentID != nil {
+		if *req.ParentID == req.ID {
+			return common.NewBizError(common.ErrInvalidParams)
+		}
+		update = update.SetParentID(*req.ParentID)
+	}
+	if req.IsDefault != nil {
+		update = update.SetIsDefault(*req.IsDefault)
+	}
+	if req.Remark != nil {
+		update = update.SetRemark(*req.Remark)
+	}
 	if _, err := update.Save(l.ctx); err != nil {
-		logx.Errorf("update dict item failed: %v", err)
 		return common.NewBizError(common.ErrDictUpdateFail)
 	}
+	l.invalidate()
 	return nil
 }
 
-// DictItemDelete 删除字典项
+// DictItemDelete 删除字典项；存在子项时拒绝删除，避免产生悬空层级。
 func (l *DictItemLogic) DictItemDelete(req *types.DictItemDetailReq) error {
-	exists, err := l.svcCtx.EntClient.SysDictItem.
-		Query().
-		Where(sysdictitem.IDEQ(req.ID)).
-		Exist(l.ctx)
+	it, err := l.svcCtx.EntClient.SysDictItem.Get(l.ctx, req.ID)
 	if err != nil {
-		logx.Errorf("check dict item failed: %v", err)
+		if ent.IsNotFound(err) {
+			return common.NewBizError(common.ErrDictItemNotFound)
+		}
 		return common.NewBizError(common.ErrInternalServer)
 	}
-	if !exists {
-		return common.NewBizError(common.ErrDictItemNotFound)
+	children, err := l.svcCtx.EntClient.SysDictItem.Query().
+		Where(sysdictitem.ParentIDEQ(req.ID)).
+		Count(l.ctx)
+	if err != nil {
+		return common.NewBizError(common.ErrInternalServer)
 	}
-	if err := l.svcCtx.EntClient.SysDictItem.DeleteOneID(req.ID).Exec(l.ctx); err != nil {
-		logx.Errorf("delete dict item failed: %v", err)
+	if children > 0 {
+		return common.NewBizError(common.ErrPermissionInUse)
+	}
+	if err := l.svcCtx.EntClient.SysDictItem.DeleteOneID(it.ID).Exec(l.ctx); err != nil {
 		return common.NewBizError(common.ErrDictDeleteFail)
 	}
+	l.invalidate()
 	return nil
 }

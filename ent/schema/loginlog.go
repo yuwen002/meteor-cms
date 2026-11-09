@@ -55,6 +55,10 @@ func (LoginLog) Fields() []ent.Field {
 		field.Time("login_at").
 			Default(time.Now).
 			Comment("登录时间"),
+		field.String("request_id").
+			MaxLen(64).
+			Optional().
+			Comment("请求链路标识，用于串联登录日志与操作日志"),
 	}
 }
 
@@ -72,6 +76,9 @@ func (LoginLog) Indexes() []ent.Index {
 		index.Fields("user_id"),
 		index.Fields("username"),
 		index.Fields("login_at"),
+		index.Fields("request_id"),
+		index.Fields("user_id", "login_at"),
+		index.Fields("status", "login_at"),
 	}
 }
 

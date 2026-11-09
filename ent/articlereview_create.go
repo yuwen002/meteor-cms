@@ -10,7 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/articlereview"
+	"github.com/yuwen002/meteor-cms/ent/articlereview"
 )
 
 // ArticleReviewCreate is the builder for creating a ArticleReview entity.

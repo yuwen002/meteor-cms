@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/operationlog"
+	"github.com/yuwen002/meteor-cms/ent/operationlog"
 )
 
 // 操作日志表，记录受保护接口的调用情况
@@ -45,7 +45,15 @@ type OperationLog struct {
 	// 耗时（毫秒）
 	DurationMs int64 `json:"duration_ms,omitempty"`
 	// 请求参数快照，敏感字段已脱敏并截断
-	Params       string `json:"params,omitempty"`
+	Params string `json:"params,omitempty"`
+	// URL query / 表单参数快照，敏感字段已脱敏并截断
+	Query string `json:"query,omitempty"`
+	// 请求链路标识，用于串联同一次请求产生的日志
+	RequestID string `json:"request_id,omitempty"`
+	// 业务响应码，0 表示成功
+	BizCode int `json:"biz_code,omitempty"`
+	// HTTP 响应状态码
+	HTTPStatus   int `json:"http_status,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -54,9 +62,9 @@ func (*OperationLog) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case operationlog.FieldID, operationlog.FieldUserID, operationlog.FieldStatus, operationlog.FieldDurationMs:
+		case operationlog.FieldID, operationlog.FieldUserID, operationlog.FieldStatus, operationlog.FieldDurationMs, operationlog.FieldBizCode, operationlog.FieldHTTPStatus:
 			values[i] = new(sql.NullInt64)
-		case operationlog.FieldUsername, operationlog.FieldModule, operationlog.FieldAction, operationlog.FieldMethod, operationlog.FieldPath, operationlog.FieldIP, operationlog.FieldUserAgent, operationlog.FieldErrorMsg, operationlog.FieldParams:
+		case operationlog.FieldUsername, operationlog.FieldModule, operationlog.FieldAction, operationlog.FieldMethod, operationlog.FieldPath, operationlog.FieldIP, operationlog.FieldUserAgent, operationlog.FieldErrorMsg, operationlog.FieldParams, operationlog.FieldQuery, operationlog.FieldRequestID:
 			values[i] = new(sql.NullString)
 		case operationlog.FieldCreatedAt, operationlog.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -165,6 +173,30 @@ func (_m *OperationLog) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Params = value.String
 			}
+		case operationlog.FieldQuery:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field query", values[i])
+			} else if value.Valid {
+				_m.Query = value.String
+			}
+		case operationlog.FieldRequestID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field request_id", values[i])
+			} else if value.Valid {
+				_m.RequestID = value.String
+			}
+		case operationlog.FieldBizCode:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field biz_code", values[i])
+			} else if value.Valid {
+				_m.BizCode = int(value.Int64)
+			}
+		case operationlog.FieldHTTPStatus:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field http_status", values[i])
+			} else if value.Valid {
+				_m.HTTPStatus = int(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -242,6 +274,18 @@ func (_m *OperationLog) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("params=")
 	builder.WriteString(_m.Params)
+	builder.WriteString(", ")
+	builder.WriteString("query=")
+	builder.WriteString(_m.Query)
+	builder.WriteString(", ")
+	builder.WriteString("request_id=")
+	builder.WriteString(_m.RequestID)
+	builder.WriteString(", ")
+	builder.WriteString("biz_code=")
+	builder.WriteString(fmt.Sprintf("%v", _m.BizCode))
+	builder.WriteString(", ")
+	builder.WriteString("http_status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.HTTPStatus))
 	builder.WriteByte(')')
 	return builder.String()
 }

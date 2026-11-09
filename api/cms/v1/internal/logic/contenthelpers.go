@@ -4,10 +4,10 @@ import (
 	"context"
 	"strings"
 
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/ent/slugredirect"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/slugredirect"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 

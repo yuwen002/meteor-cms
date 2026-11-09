@@ -6,15 +6,15 @@ package logic
 import (
 	"context"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminroledept"
-	"github.com/yuwen002/go-meteor-cms/ent/department"
-	entschema "github.com/yuwen002/go-meteor-cms/ent/schema"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/pkg/datascope"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminroledept"
+	"github.com/yuwen002/meteor-cms/ent/department"
+	entschema "github.com/yuwen002/meteor-cms/ent/schema"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/datascope"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

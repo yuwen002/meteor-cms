@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/articlereview"
+	"github.com/yuwen002/meteor-cms/ent/articlereview"
 )
 
 // 文章审核记录表

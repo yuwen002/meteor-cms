@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/ent/department"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/department"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // DepartmentUpdate is the builder for updating Department entities.

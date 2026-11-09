@@ -54,6 +54,19 @@ func (SysDictItem) Fields() []ent.Field {
 		field.Int("sort").
 			Default(0).
 			Comment("排序，从小到大"),
+
+		field.Int64("parent_id").
+			Default(0).
+			Comment("父级字典项 ID，0 表示顶级，用于树形枚举（如省市区）"),
+
+		field.Bool("is_default").
+			Default(false).
+			Comment("是否该字典的默认选中项"),
+
+		field.String("remark").
+			MaxLen(512).
+			Optional().
+			Comment("备注说明"),
 	}
 }
 
@@ -61,6 +74,7 @@ func (SysDictItem) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("dict_code"),
 		index.Fields("dict_code", "value"),
+		index.Fields("dict_code", "parent_id"),
 	}
 }
 

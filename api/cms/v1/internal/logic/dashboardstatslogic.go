@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent/loginlog"
-	"github.com/yuwen002/go-meteor-cms/ent/operationlog"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent/loginlog"
+	"github.com/yuwen002/meteor-cms/ent/operationlog"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

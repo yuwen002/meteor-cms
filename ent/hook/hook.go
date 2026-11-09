@@ -6,7 +6,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/yuwen002/go-meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent"
 )
 
 // The AdminPermissionFunc type is an adapter to allow the use of ordinary
@@ -141,6 +141,18 @@ func (f CategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CategoryMutation", m)
 }
 
+// The CommentFunc type is an adapter to allow the use of ordinary
+// function as Comment mutator.
+type CommentFunc func(context.Context, *ent.CommentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CommentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CommentMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CommentMutation", m)
+}
+
 // The DepartmentFunc type is an adapter to allow the use of ordinary
 // function as Department mutator.
 type DepartmentFunc func(context.Context, *ent.DepartmentMutation) (ent.Value, error)
@@ -151,6 +163,18 @@ func (f DepartmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.DepartmentMutation", m)
+}
+
+// The FriendLinkFunc type is an adapter to allow the use of ordinary
+// function as FriendLink mutator.
+type FriendLinkFunc func(context.Context, *ent.FriendLinkMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FriendLinkFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FriendLinkMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FriendLinkMutation", m)
 }
 
 // The LoginLogFunc type is an adapter to allow the use of ordinary
@@ -165,6 +189,18 @@ func (f LoginLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LoginLogMutation", m)
 }
 
+// The MediaFileFunc type is an adapter to allow the use of ordinary
+// function as MediaFile mutator.
+type MediaFileFunc func(context.Context, *ent.MediaFileMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MediaFileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.MediaFileMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MediaFileMutation", m)
+}
+
 // The OperationLogFunc type is an adapter to allow the use of ordinary
 // function as OperationLog mutator.
 type OperationLogFunc func(context.Context, *ent.OperationLogMutation) (ent.Value, error)
@@ -175,6 +211,18 @@ func (f OperationLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OperationLogMutation", m)
+}
+
+// The SchemaMigrationFunc type is an adapter to allow the use of ordinary
+// function as SchemaMigration mutator.
+type SchemaMigrationFunc func(context.Context, *ent.SchemaMigrationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SchemaMigrationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SchemaMigrationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SchemaMigrationMutation", m)
 }
 
 // The SlugRedirectFunc type is an adapter to allow the use of ordinary
@@ -189,6 +237,18 @@ func (f SlugRedirectFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SlugRedirectMutation", m)
 }
 
+// The SubscriberFunc type is an adapter to allow the use of ordinary
+// function as Subscriber mutator.
+type SubscriberFunc func(context.Context, *ent.SubscriberMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SubscriberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SubscriberMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SubscriberMutation", m)
+}
+
 // The SysConfigFunc type is an adapter to allow the use of ordinary
 // function as SysConfig mutator.
 type SysConfigFunc func(context.Context, *ent.SysConfigMutation) (ent.Value, error)
@@ -199,6 +259,18 @@ func (f SysConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SysConfigMutation", m)
+}
+
+// The SysConfigVersionFunc type is an adapter to allow the use of ordinary
+// function as SysConfigVersion mutator.
+type SysConfigVersionFunc func(context.Context, *ent.SysConfigVersionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SysConfigVersionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SysConfigVersionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SysConfigVersionMutation", m)
 }
 
 // The SysDictFunc type is an adapter to allow the use of ordinary

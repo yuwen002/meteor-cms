@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/pkg/mail"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/mail"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -91,7 +91,7 @@ func (l *ForgotPasswordLogic) ForgotPassword(req *types.ForgotPasswordReq) (resp
 	}
 	err = l.svcCtx.MailSender.Send(mail.Message{
 		To:      []string{u.Email},
-		Subject: "【Go Meteor CMS】重置密码",
+		Subject: "【Meteor CMS】重置密码",
 		Body:    body,
 	})
 	if err != nil {

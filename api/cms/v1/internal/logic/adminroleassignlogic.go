@@ -6,13 +6,13 @@ package logic
 import (
 	"context"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuserrole"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/internal/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -124,6 +124,9 @@ func (l *AdminRoleAssignLogic) AdminRoleAssign(req *types.AdminRoleAssignReq) (r
 		l.Logger.Errorf("提交事务失败: %v", err)
 		return nil, common.NewBizError(common.ErrInternalServer)
 	}
+
+	// 用户角色变更后只让该用户的权限快照失效
+	l.svcCtx.PermissionChecker.InvalidateUser(req.ID)
 
 	l.Logger.Infof("管理员角色分配成功，管理员ID: %d, 角色ID: %v", req.ID, roleIDs)
 

@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/operationlog"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/operationlog"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // OperationLogUpdate is the builder for updating OperationLog entities.
@@ -285,6 +285,88 @@ func (_u *OperationLogUpdate) ClearParams() *OperationLogUpdate {
 	return _u
 }
 
+// SetQuery sets the "query" field.
+func (_u *OperationLogUpdate) SetQuery(v string) *OperationLogUpdate {
+	_u.mutation.SetQuery(v)
+	return _u
+}
+
+// SetNillableQuery sets the "query" field if the given value is not nil.
+func (_u *OperationLogUpdate) SetNillableQuery(v *string) *OperationLogUpdate {
+	if v != nil {
+		_u.SetQuery(*v)
+	}
+	return _u
+}
+
+// ClearQuery clears the value of the "query" field.
+func (_u *OperationLogUpdate) ClearQuery() *OperationLogUpdate {
+	_u.mutation.ClearQuery()
+	return _u
+}
+
+// SetRequestID sets the "request_id" field.
+func (_u *OperationLogUpdate) SetRequestID(v string) *OperationLogUpdate {
+	_u.mutation.SetRequestID(v)
+	return _u
+}
+
+// SetNillableRequestID sets the "request_id" field if the given value is not nil.
+func (_u *OperationLogUpdate) SetNillableRequestID(v *string) *OperationLogUpdate {
+	if v != nil {
+		_u.SetRequestID(*v)
+	}
+	return _u
+}
+
+// ClearRequestID clears the value of the "request_id" field.
+func (_u *OperationLogUpdate) ClearRequestID() *OperationLogUpdate {
+	_u.mutation.ClearRequestID()
+	return _u
+}
+
+// SetBizCode sets the "biz_code" field.
+func (_u *OperationLogUpdate) SetBizCode(v int) *OperationLogUpdate {
+	_u.mutation.ResetBizCode()
+	_u.mutation.SetBizCode(v)
+	return _u
+}
+
+// SetNillableBizCode sets the "biz_code" field if the given value is not nil.
+func (_u *OperationLogUpdate) SetNillableBizCode(v *int) *OperationLogUpdate {
+	if v != nil {
+		_u.SetBizCode(*v)
+	}
+	return _u
+}
+
+// AddBizCode adds value to the "biz_code" field.
+func (_u *OperationLogUpdate) AddBizCode(v int) *OperationLogUpdate {
+	_u.mutation.AddBizCode(v)
+	return _u
+}
+
+// SetHTTPStatus sets the "http_status" field.
+func (_u *OperationLogUpdate) SetHTTPStatus(v int) *OperationLogUpdate {
+	_u.mutation.ResetHTTPStatus()
+	_u.mutation.SetHTTPStatus(v)
+	return _u
+}
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (_u *OperationLogUpdate) SetNillableHTTPStatus(v *int) *OperationLogUpdate {
+	if v != nil {
+		_u.SetHTTPStatus(*v)
+	}
+	return _u
+}
+
+// AddHTTPStatus adds value to the "http_status" field.
+func (_u *OperationLogUpdate) AddHTTPStatus(v int) *OperationLogUpdate {
+	_u.mutation.AddHTTPStatus(v)
+	return _u
+}
+
 // Mutation returns the OperationLogMutation object of the builder.
 func (_u *OperationLogUpdate) Mutation() *OperationLogMutation {
 	return _u.mutation
@@ -366,6 +448,11 @@ func (_u *OperationLogUpdate) check() error {
 	if v, ok := _u.mutation.ErrorMsg(); ok {
 		if err := operationlog.ErrorMsgValidator(v); err != nil {
 			return &ValidationError{Name: "error_msg", err: fmt.Errorf(`ent: validator failed for field "OperationLog.error_msg": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RequestID(); ok {
+		if err := operationlog.RequestIDValidator(v); err != nil {
+			return &ValidationError{Name: "request_id", err: fmt.Errorf(`ent: validator failed for field "OperationLog.request_id": %w`, err)}
 		}
 	}
 	return nil
@@ -457,6 +544,30 @@ func (_u *OperationLogUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.ParamsCleared() {
 		_spec.ClearField(operationlog.FieldParams, field.TypeString)
+	}
+	if value, ok := _u.mutation.Query(); ok {
+		_spec.SetField(operationlog.FieldQuery, field.TypeString, value)
+	}
+	if _u.mutation.QueryCleared() {
+		_spec.ClearField(operationlog.FieldQuery, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestID(); ok {
+		_spec.SetField(operationlog.FieldRequestID, field.TypeString, value)
+	}
+	if _u.mutation.RequestIDCleared() {
+		_spec.ClearField(operationlog.FieldRequestID, field.TypeString)
+	}
+	if value, ok := _u.mutation.BizCode(); ok {
+		_spec.SetField(operationlog.FieldBizCode, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedBizCode(); ok {
+		_spec.AddField(operationlog.FieldBizCode, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.HTTPStatus(); ok {
+		_spec.SetField(operationlog.FieldHTTPStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedHTTPStatus(); ok {
+		_spec.AddField(operationlog.FieldHTTPStatus, field.TypeInt, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -735,6 +846,88 @@ func (_u *OperationLogUpdateOne) ClearParams() *OperationLogUpdateOne {
 	return _u
 }
 
+// SetQuery sets the "query" field.
+func (_u *OperationLogUpdateOne) SetQuery(v string) *OperationLogUpdateOne {
+	_u.mutation.SetQuery(v)
+	return _u
+}
+
+// SetNillableQuery sets the "query" field if the given value is not nil.
+func (_u *OperationLogUpdateOne) SetNillableQuery(v *string) *OperationLogUpdateOne {
+	if v != nil {
+		_u.SetQuery(*v)
+	}
+	return _u
+}
+
+// ClearQuery clears the value of the "query" field.
+func (_u *OperationLogUpdateOne) ClearQuery() *OperationLogUpdateOne {
+	_u.mutation.ClearQuery()
+	return _u
+}
+
+// SetRequestID sets the "request_id" field.
+func (_u *OperationLogUpdateOne) SetRequestID(v string) *OperationLogUpdateOne {
+	_u.mutation.SetRequestID(v)
+	return _u
+}
+
+// SetNillableRequestID sets the "request_id" field if the given value is not nil.
+func (_u *OperationLogUpdateOne) SetNillableRequestID(v *string) *OperationLogUpdateOne {
+	if v != nil {
+		_u.SetRequestID(*v)
+	}
+	return _u
+}
+
+// ClearRequestID clears the value of the "request_id" field.
+func (_u *OperationLogUpdateOne) ClearRequestID() *OperationLogUpdateOne {
+	_u.mutation.ClearRequestID()
+	return _u
+}
+
+// SetBizCode sets the "biz_code" field.
+func (_u *OperationLogUpdateOne) SetBizCode(v int) *OperationLogUpdateOne {
+	_u.mutation.ResetBizCode()
+	_u.mutation.SetBizCode(v)
+	return _u
+}
+
+// SetNillableBizCode sets the "biz_code" field if the given value is not nil.
+func (_u *OperationLogUpdateOne) SetNillableBizCode(v *int) *OperationLogUpdateOne {
+	if v != nil {
+		_u.SetBizCode(*v)
+	}
+	return _u
+}
+
+// AddBizCode adds value to the "biz_code" field.
+func (_u *OperationLogUpdateOne) AddBizCode(v int) *OperationLogUpdateOne {
+	_u.mutation.AddBizCode(v)
+	return _u
+}
+
+// SetHTTPStatus sets the "http_status" field.
+func (_u *OperationLogUpdateOne) SetHTTPStatus(v int) *OperationLogUpdateOne {
+	_u.mutation.ResetHTTPStatus()
+	_u.mutation.SetHTTPStatus(v)
+	return _u
+}
+
+// SetNillableHTTPStatus sets the "http_status" field if the given value is not nil.
+func (_u *OperationLogUpdateOne) SetNillableHTTPStatus(v *int) *OperationLogUpdateOne {
+	if v != nil {
+		_u.SetHTTPStatus(*v)
+	}
+	return _u
+}
+
+// AddHTTPStatus adds value to the "http_status" field.
+func (_u *OperationLogUpdateOne) AddHTTPStatus(v int) *OperationLogUpdateOne {
+	_u.mutation.AddHTTPStatus(v)
+	return _u
+}
+
 // Mutation returns the OperationLogMutation object of the builder.
 func (_u *OperationLogUpdateOne) Mutation() *OperationLogMutation {
 	return _u.mutation
@@ -829,6 +1022,11 @@ func (_u *OperationLogUpdateOne) check() error {
 	if v, ok := _u.mutation.ErrorMsg(); ok {
 		if err := operationlog.ErrorMsgValidator(v); err != nil {
 			return &ValidationError{Name: "error_msg", err: fmt.Errorf(`ent: validator failed for field "OperationLog.error_msg": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RequestID(); ok {
+		if err := operationlog.RequestIDValidator(v); err != nil {
+			return &ValidationError{Name: "request_id", err: fmt.Errorf(`ent: validator failed for field "OperationLog.request_id": %w`, err)}
 		}
 	}
 	return nil
@@ -937,6 +1135,30 @@ func (_u *OperationLogUpdateOne) sqlSave(ctx context.Context) (_node *OperationL
 	}
 	if _u.mutation.ParamsCleared() {
 		_spec.ClearField(operationlog.FieldParams, field.TypeString)
+	}
+	if value, ok := _u.mutation.Query(); ok {
+		_spec.SetField(operationlog.FieldQuery, field.TypeString, value)
+	}
+	if _u.mutation.QueryCleared() {
+		_spec.ClearField(operationlog.FieldQuery, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestID(); ok {
+		_spec.SetField(operationlog.FieldRequestID, field.TypeString, value)
+	}
+	if _u.mutation.RequestIDCleared() {
+		_spec.ClearField(operationlog.FieldRequestID, field.TypeString)
+	}
+	if value, ok := _u.mutation.BizCode(); ok {
+		_spec.SetField(operationlog.FieldBizCode, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedBizCode(); ok {
+		_spec.AddField(operationlog.FieldBizCode, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.HTTPStatus(); ok {
+		_spec.SetField(operationlog.FieldHTTPStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedHTTPStatus(); ok {
+		_spec.AddField(operationlog.FieldHTTPStatus, field.TypeInt, value)
 	}
 	_node = &OperationLog{config: _u.config}
 	_spec.Assign = _node.assignValues

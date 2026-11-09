@@ -12,26 +12,32 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/yuwen002/go-meteor-cms/ent/adminpermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminroledept"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrolepermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuserrole"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/articlereview"
-	"github.com/yuwen002/go-meteor-cms/ent/articlerevision"
-	"github.com/yuwen002/go-meteor-cms/ent/articletag"
-	"github.com/yuwen002/go-meteor-cms/ent/category"
-	"github.com/yuwen002/go-meteor-cms/ent/department"
-	"github.com/yuwen002/go-meteor-cms/ent/loginlog"
-	"github.com/yuwen002/go-meteor-cms/ent/operationlog"
-	"github.com/yuwen002/go-meteor-cms/ent/slugredirect"
-	"github.com/yuwen002/go-meteor-cms/ent/sysconfig"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdict"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdictitem"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
-	"github.com/yuwen002/go-meteor-cms/ent/tokenblacklist"
+	"github.com/yuwen002/meteor-cms/ent/adminpermission"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminroledept"
+	"github.com/yuwen002/meteor-cms/ent/adminrolepermission"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/articlereview"
+	"github.com/yuwen002/meteor-cms/ent/articlerevision"
+	"github.com/yuwen002/meteor-cms/ent/articletag"
+	"github.com/yuwen002/meteor-cms/ent/category"
+	"github.com/yuwen002/meteor-cms/ent/comment"
+	"github.com/yuwen002/meteor-cms/ent/department"
+	"github.com/yuwen002/meteor-cms/ent/friendlink"
+	"github.com/yuwen002/meteor-cms/ent/loginlog"
+	"github.com/yuwen002/meteor-cms/ent/mediafile"
+	"github.com/yuwen002/meteor-cms/ent/operationlog"
+	"github.com/yuwen002/meteor-cms/ent/schemamigration"
+	"github.com/yuwen002/meteor-cms/ent/slugredirect"
+	"github.com/yuwen002/meteor-cms/ent/subscriber"
+	"github.com/yuwen002/meteor-cms/ent/sysconfig"
+	"github.com/yuwen002/meteor-cms/ent/sysconfigversion"
+	"github.com/yuwen002/meteor-cms/ent/sysdict"
+	"github.com/yuwen002/meteor-cms/ent/sysdictitem"
+	"github.com/yuwen002/meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/ent/tokenblacklist"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -103,11 +109,17 @@ func checkColumn(t, c string) error {
 			articlerevision.Table:     articlerevision.ValidColumn,
 			articletag.Table:          articletag.ValidColumn,
 			category.Table:            category.ValidColumn,
+			comment.Table:             comment.ValidColumn,
 			department.Table:          department.ValidColumn,
+			friendlink.Table:          friendlink.ValidColumn,
 			loginlog.Table:            loginlog.ValidColumn,
+			mediafile.Table:           mediafile.ValidColumn,
 			operationlog.Table:        operationlog.ValidColumn,
+			schemamigration.Table:     schemamigration.ValidColumn,
 			slugredirect.Table:        slugredirect.ValidColumn,
+			subscriber.Table:          subscriber.ValidColumn,
 			sysconfig.Table:           sysconfig.ValidColumn,
+			sysconfigversion.Table:    sysconfigversion.ValidColumn,
 			sysdict.Table:             sysdict.ValidColumn,
 			sysdictitem.Table:         sysdictitem.ValidColumn,
 			tag.Table:                 tag.ValidColumn,

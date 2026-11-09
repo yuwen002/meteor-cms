@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
@@ -82,6 +82,21 @@ func Status(v int) predicate.SysDictItem {
 // Sort applies equality check predicate on the "sort" field. It's identical to SortEQ.
 func Sort(v int) predicate.SysDictItem {
 	return predicate.SysDictItem(sql.FieldEQ(FieldSort, v))
+}
+
+// ParentID applies equality check predicate on the "parent_id" field. It's identical to ParentIDEQ.
+func ParentID(v int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldEQ(FieldParentID, v))
+}
+
+// IsDefault applies equality check predicate on the "is_default" field. It's identical to IsDefaultEQ.
+func IsDefault(v bool) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldEQ(FieldIsDefault, v))
+}
+
+// Remark applies equality check predicate on the "remark" field. It's identical to RemarkEQ.
+func Remark(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldEQ(FieldRemark, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -437,6 +452,131 @@ func SortLT(v int) predicate.SysDictItem {
 // SortLTE applies the LTE predicate on the "sort" field.
 func SortLTE(v int) predicate.SysDictItem {
 	return predicate.SysDictItem(sql.FieldLTE(FieldSort, v))
+}
+
+// ParentIDEQ applies the EQ predicate on the "parent_id" field.
+func ParentIDEQ(v int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldEQ(FieldParentID, v))
+}
+
+// ParentIDNEQ applies the NEQ predicate on the "parent_id" field.
+func ParentIDNEQ(v int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldNEQ(FieldParentID, v))
+}
+
+// ParentIDIn applies the In predicate on the "parent_id" field.
+func ParentIDIn(vs ...int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldIn(FieldParentID, vs...))
+}
+
+// ParentIDNotIn applies the NotIn predicate on the "parent_id" field.
+func ParentIDNotIn(vs ...int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldNotIn(FieldParentID, vs...))
+}
+
+// ParentIDGT applies the GT predicate on the "parent_id" field.
+func ParentIDGT(v int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldGT(FieldParentID, v))
+}
+
+// ParentIDGTE applies the GTE predicate on the "parent_id" field.
+func ParentIDGTE(v int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldGTE(FieldParentID, v))
+}
+
+// ParentIDLT applies the LT predicate on the "parent_id" field.
+func ParentIDLT(v int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldLT(FieldParentID, v))
+}
+
+// ParentIDLTE applies the LTE predicate on the "parent_id" field.
+func ParentIDLTE(v int64) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldLTE(FieldParentID, v))
+}
+
+// IsDefaultEQ applies the EQ predicate on the "is_default" field.
+func IsDefaultEQ(v bool) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldEQ(FieldIsDefault, v))
+}
+
+// IsDefaultNEQ applies the NEQ predicate on the "is_default" field.
+func IsDefaultNEQ(v bool) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldNEQ(FieldIsDefault, v))
+}
+
+// RemarkEQ applies the EQ predicate on the "remark" field.
+func RemarkEQ(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldEQ(FieldRemark, v))
+}
+
+// RemarkNEQ applies the NEQ predicate on the "remark" field.
+func RemarkNEQ(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldNEQ(FieldRemark, v))
+}
+
+// RemarkIn applies the In predicate on the "remark" field.
+func RemarkIn(vs ...string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldIn(FieldRemark, vs...))
+}
+
+// RemarkNotIn applies the NotIn predicate on the "remark" field.
+func RemarkNotIn(vs ...string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldNotIn(FieldRemark, vs...))
+}
+
+// RemarkGT applies the GT predicate on the "remark" field.
+func RemarkGT(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldGT(FieldRemark, v))
+}
+
+// RemarkGTE applies the GTE predicate on the "remark" field.
+func RemarkGTE(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldGTE(FieldRemark, v))
+}
+
+// RemarkLT applies the LT predicate on the "remark" field.
+func RemarkLT(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldLT(FieldRemark, v))
+}
+
+// RemarkLTE applies the LTE predicate on the "remark" field.
+func RemarkLTE(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldLTE(FieldRemark, v))
+}
+
+// RemarkContains applies the Contains predicate on the "remark" field.
+func RemarkContains(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldContains(FieldRemark, v))
+}
+
+// RemarkHasPrefix applies the HasPrefix predicate on the "remark" field.
+func RemarkHasPrefix(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldHasPrefix(FieldRemark, v))
+}
+
+// RemarkHasSuffix applies the HasSuffix predicate on the "remark" field.
+func RemarkHasSuffix(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldHasSuffix(FieldRemark, v))
+}
+
+// RemarkIsNil applies the IsNil predicate on the "remark" field.
+func RemarkIsNil() predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldIsNull(FieldRemark))
+}
+
+// RemarkNotNil applies the NotNil predicate on the "remark" field.
+func RemarkNotNil() predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldNotNull(FieldRemark))
+}
+
+// RemarkEqualFold applies the EqualFold predicate on the "remark" field.
+func RemarkEqualFold(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldEqualFold(FieldRemark, v))
+}
+
+// RemarkContainsFold applies the ContainsFold predicate on the "remark" field.
+func RemarkContainsFold(v string) predicate.SysDictItem {
+	return predicate.SysDictItem(sql.FieldContainsFold(FieldRemark, v))
 }
 
 // And groups predicates with the AND operator between them.

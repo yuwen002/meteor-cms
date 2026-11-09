@@ -76,3 +76,48 @@ export function getPublicArticle(slug: string) {
 export function getPublicTaxonomy() {
   return request({ url: '/api/taxonomy', method: 'get' }) as Promise<PublicTaxonomyResp>
 }
+
+export interface SiteInfo {
+  name: string
+  logo: string
+  description: string
+  keywords: string
+  icp: string
+  footer: string
+  language: string
+  title_template: string
+  theme: string
+  primary_color: string
+  comment_enabled: boolean
+}
+
+export interface PublicDictItem {
+  label: string
+  value: string
+  is_default: boolean
+  parent_id: number
+  sort: number
+}
+
+/** 站点级只读信息，字段白名单输出，不含任何密钥配置 */
+export function getSiteInfo() {
+  return request({ url: '/api/site', method: 'get' }) as Promise<SiteInfo>
+}
+
+export interface SearchResp extends PublicArticleListResp {
+  keyword: string
+  took_ms: number
+}
+
+/** 全文检索：标题 / 摘要 / 正文一起匹配，仅返回已发布文章 */
+export function getPublicSearch(params: PublicArticleParams & { keyword: string }) {
+  return request({ url: '/api/search', method: 'get', params }) as Promise<SearchResp>
+}
+
+/** 公开字典：只返回启用项，按 sort 排序 */
+export function getPublicDict(code: string) {
+  return request({ url: `/api/dicts/${encodeURIComponent(code)}`, method: 'get' }) as Promise<{
+    code: string
+    items: PublicDictItem[]
+  }>
+}

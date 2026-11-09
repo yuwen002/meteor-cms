@@ -1,0 +1,203 @@
+// 系统模块（数据字典 / 系统配置 / 强制下线）的 OpenAPI 文档源。
+//
+// 这些路由由 routes.go 手工注册，没有进入 cms.api；本文件只被 cmd/apidoc 读取并
+// 合并进 openapi.json，不参与 goctl 代码生成。字段与
+// api/cms/v1/internal/types/types.go 保持一致；新增手工路由时必须同步这里，
+// cmd/apidoc/main_test.go 会用 routes.go 的路由集合做覆盖校验。
+
+type (
+	SystemIDReq {
+		ID int64 `path:"id"`
+	}
+
+	DictItem {
+		ID          int64  `json:"id"`
+		Code        string `json:"code"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Status      int    `json:"status"`
+		Sort        int    `json:"sort"`
+		DictGroup   string `json:"dict_group"`
+		IsSystem    bool   `json:"is_system"`
+		CreatedAt   string `json:"created_at"`
+	}
+
+	DictListReq {
+		Keyword  string `form:"keyword,optional"`
+		Status   *int   `form:"status,optional"`
+		Group    string `form:"group,optional"`
+		Page     int64  `form:"page,optional"`
+		PageSize int64  `form:"page_size,optional"`
+	}
+
+	DictListResp {
+		List  []DictItem `json:"list"`
+		Total int64      `json:"total"`
+	}
+
+	DictCreateReq {
+		Code        string `json:"code"`
+		Name        string `json:"name"`
+		Description string `json:"description,optional"`
+		Status      int    `json:"status,optional"`
+		Sort        int    `json:"sort,optional"`
+		DictGroup   string `json:"dict_group,optional"`
+	}
+
+	DictUpdateReq {
+		ID          int64   `path:"id"`
+		Name        string  `json:"name,optional"`
+		Description string  `json:"description,optional"`
+		Status      *int    `json:"status,optional"`
+		Sort        *int    `json:"sort,optional"`
+		DictGroup   *string `json:"dict_group,optional"`
+	}
+
+	DictDataItem {
+		ID        int64  `json:"id"`
+		DictCode  string `json:"dict_code"`
+		Label     string `json:"label"`
+		Value     string `json:"value"`
+		Status    int    `json:"status"`
+		Sort      int    `json:"sort"`
+		ParentID  int64  `json:"parent_id"`
+		IsDefault bool   `json:"is_default"`
+		Remark    string `json:"remark"`
+	}
+
+	DictItemListReq {
+		DictCode string `form:"dict_code"`
+		Keyword  string `form:"keyword,optional"`
+		Status   *int   `form:"status,optional"`
+	}
+
+	DictItemListResp {
+		List []DictDataItem `json:"list"`
+	}
+
+	DictItemCreateReq {
+		DictCode  string `json:"dict_code"`
+		Label     string `json:"label"`
+		Value     string `json:"value"`
+		Status    int    `json:"status,optional"`
+		Sort      int    `json:"sort,optional"`
+		ParentID  int64  `json:"parent_id,optional"`
+		IsDefault bool   `json:"is_default,optional"`
+		Remark    string `json:"remark,optional"`
+	}
+
+	DictItemUpdateReq {
+		ID        int64   `path:"id"`
+		Label     string  `json:"label,optional"`
+		Value     string  `json:"value,optional"`
+		Status    *int    `json:"status,optional"`
+		Sort      *int    `json:"sort,optional"`
+		ParentID  *int64  `json:"parent_id,optional"`
+		IsDefault *bool   `json:"is_default,optional"`
+		Remark    string  `json:"remark,optional"`
+	}
+
+	ConfigItem {
+		ID          int64  `json:"id"`
+		ConfigKey   string `json:"config_key"`
+		ConfigValue string `json:"config_value"`
+		Name        string `json:"name"`
+		Remark      string `json:"remark"`
+		IsSystem    bool   `json:"is_system"`
+		ConfigGroup string `json:"config_group"`
+		ValueType   string `json:"value_type"`
+		Validation  string `json:"validation"`
+		Sort        int    `json:"sort"`
+		Status      int    `json:"status"`
+		IsSecret    bool   `json:"is_secret"`
+		CreatedAt   string `json:"created_at"`
+	}
+
+	ConfigListReq {
+		Keyword string `form:"keyword,optional"`
+		Group   string `form:"group,optional"`
+	}
+
+	ConfigListResp {
+		List []ConfigItem `json:"list"`
+	}
+
+	ConfigCreateReq {
+		ConfigKey   string `json:"config_key"`
+		ConfigValue string `json:"config_value,optional"`
+		Name        string `json:"name"`
+		Remark      string `json:"remark,optional"`
+		ConfigGroup string `json:"config_group,optional"`
+		ValueType   string `json:"value_type,optional"`
+		Validation  string `json:"validation,optional"`
+		Sort        int    `json:"sort,optional"`
+		Status      *int   `json:"status,optional"`
+		IsSecret    bool   `json:"is_secret,optional"`
+	}
+
+	ConfigUpdateReq {
+		ID          int64   `path:"id"`
+		ConfigValue *string `json:"config_value,optional"`
+		Name        *string `json:"name,optional"`
+		Remark      *string `json:"remark,optional"`
+		ConfigGroup *string `json:"config_group,optional"`
+		ValueType   *string `json:"value_type,optional"`
+		Validation  *string `json:"validation,optional"`
+		Sort        *int    `json:"sort,optional"`
+		Status      *int    `json:"status,optional"`
+	}
+
+	ForceLogoutByDeptReq {
+		DeptID int64 `json:"dept_id"`
+	}
+)
+
+service cms-system-api {
+	@handler dictList
+	get /admin/dicts (DictListReq) returns (DictListResp)
+
+	@handler dictCreate
+	post /admin/dicts (DictCreateReq) returns (CommonResp)
+
+	@handler dictUpdate
+	put /admin/dicts/:id (DictUpdateReq) returns (CommonResp)
+
+	@handler dictDelete
+	delete /admin/dicts/:id (SystemIDReq) returns (CommonResp)
+
+	@handler dictItemList
+	get /admin/dicts/items (DictItemListReq) returns (DictItemListResp)
+
+	@handler dictItemCreate
+	post /admin/dicts/items (DictItemCreateReq) returns (CommonResp)
+
+	@handler dictItemUpdate
+	put /admin/dicts/items/:id (DictItemUpdateReq) returns (CommonResp)
+
+	@handler dictItemDelete
+	delete /admin/dicts/items/:id (SystemIDReq) returns (CommonResp)
+
+	@handler configList
+	get /admin/configs (ConfigListReq) returns (ConfigListResp)
+
+	@handler configCreate
+	post /admin/configs (ConfigCreateReq) returns (CommonResp)
+
+	@handler configUpdate
+	put /admin/configs/:id (ConfigUpdateReq) returns (CommonResp)
+
+	@handler configDelete
+	delete /admin/configs/:id (SystemIDReq) returns (CommonResp)
+
+	@handler forceAdminLogout
+	put /admin/admin-users/:id/force-logout (SystemIDReq) returns (CommonResp)
+
+	@handler logoutAll
+	post /admin/logout-all returns (CommonResp)
+
+	@handler forceAdminLogoutByDept
+	post /admin/admin-users/force-logout-by-dept (ForceLogoutByDeptReq) returns (CommonResp)
+
+	@handler forceAdminLogoutAll
+	post /admin/admin-users/force-logout-all returns (CommonResp)
+}

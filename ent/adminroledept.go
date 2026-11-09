@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/adminroledept"
+	"github.com/yuwen002/meteor-cms/ent/adminroledept"
 )
 
 // 角色部门关联表

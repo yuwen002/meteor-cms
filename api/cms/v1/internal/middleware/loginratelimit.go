@@ -89,7 +89,7 @@ func (l *ipRateLimiter) memAllow(ip string) (bool, int) {
 
 // NewLoginRateLimitMiddleware 按客户端 IP 对登录接口做分布式固定窗口限流（防爆破）。
 // rds 为 nil 或 Redis 不可用时自动降级为单实例内存限流；未启用（enabled=false）时直接透传，零额外开销。
-func NewLoginRateLimitMiddleware(rds *redis.Redis, enabled bool, max, window, blockSeconds int) rest.Middleware {
+func NewLoginRateLimitMiddleware(rds *redis.Redis, enabled bool, max, window, blockSeconds int, onBlocked func(*http.Request)) rest.Middleware {
 	if !enabled {
 		return func(next http.HandlerFunc) http.HandlerFunc {
 			return next
@@ -107,6 +107,9 @@ func NewLoginRateLimitMiddleware(rds *redis.Redis, enabled bool, max, window, bl
 			}
 			blocked, retryAfter := limiter.allow(clientIP(r))
 			if blocked {
+				if onBlocked != nil {
+					onBlocked(r)
+				}
 				writeRateLimited(w, retryAfter)
 				return
 			}

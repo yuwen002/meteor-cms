@@ -10,7 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/sysconfig"
+	"github.com/yuwen002/meteor-cms/ent/sysconfig"
 )
 
 // SysConfigCreate is the builder for creating a SysConfig entity.
@@ -102,6 +102,90 @@ func (_c *SysConfigCreate) SetNillableIsSystem(v *bool) *SysConfigCreate {
 	return _c
 }
 
+// SetConfigGroup sets the "config_group" field.
+func (_c *SysConfigCreate) SetConfigGroup(v string) *SysConfigCreate {
+	_c.mutation.SetConfigGroup(v)
+	return _c
+}
+
+// SetNillableConfigGroup sets the "config_group" field if the given value is not nil.
+func (_c *SysConfigCreate) SetNillableConfigGroup(v *string) *SysConfigCreate {
+	if v != nil {
+		_c.SetConfigGroup(*v)
+	}
+	return _c
+}
+
+// SetValueType sets the "value_type" field.
+func (_c *SysConfigCreate) SetValueType(v string) *SysConfigCreate {
+	_c.mutation.SetValueType(v)
+	return _c
+}
+
+// SetNillableValueType sets the "value_type" field if the given value is not nil.
+func (_c *SysConfigCreate) SetNillableValueType(v *string) *SysConfigCreate {
+	if v != nil {
+		_c.SetValueType(*v)
+	}
+	return _c
+}
+
+// SetValidation sets the "validation" field.
+func (_c *SysConfigCreate) SetValidation(v string) *SysConfigCreate {
+	_c.mutation.SetValidation(v)
+	return _c
+}
+
+// SetNillableValidation sets the "validation" field if the given value is not nil.
+func (_c *SysConfigCreate) SetNillableValidation(v *string) *SysConfigCreate {
+	if v != nil {
+		_c.SetValidation(*v)
+	}
+	return _c
+}
+
+// SetSort sets the "sort" field.
+func (_c *SysConfigCreate) SetSort(v int) *SysConfigCreate {
+	_c.mutation.SetSort(v)
+	return _c
+}
+
+// SetNillableSort sets the "sort" field if the given value is not nil.
+func (_c *SysConfigCreate) SetNillableSort(v *int) *SysConfigCreate {
+	if v != nil {
+		_c.SetSort(*v)
+	}
+	return _c
+}
+
+// SetStatus sets the "status" field.
+func (_c *SysConfigCreate) SetStatus(v int) *SysConfigCreate {
+	_c.mutation.SetStatus(v)
+	return _c
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_c *SysConfigCreate) SetNillableStatus(v *int) *SysConfigCreate {
+	if v != nil {
+		_c.SetStatus(*v)
+	}
+	return _c
+}
+
+// SetIsSecret sets the "is_secret" field.
+func (_c *SysConfigCreate) SetIsSecret(v bool) *SysConfigCreate {
+	_c.mutation.SetIsSecret(v)
+	return _c
+}
+
+// SetNillableIsSecret sets the "is_secret" field if the given value is not nil.
+func (_c *SysConfigCreate) SetNillableIsSecret(v *bool) *SysConfigCreate {
+	if v != nil {
+		_c.SetIsSecret(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SysConfigCreate) SetID(v int64) *SysConfigCreate {
 	_c.mutation.SetID(v)
@@ -155,6 +239,26 @@ func (_c *SysConfigCreate) defaults() {
 		v := sysconfig.DefaultIsSystem
 		_c.mutation.SetIsSystem(v)
 	}
+	if _, ok := _c.mutation.ConfigGroup(); !ok {
+		v := sysconfig.DefaultConfigGroup
+		_c.mutation.SetConfigGroup(v)
+	}
+	if _, ok := _c.mutation.ValueType(); !ok {
+		v := sysconfig.DefaultValueType
+		_c.mutation.SetValueType(v)
+	}
+	if _, ok := _c.mutation.Sort(); !ok {
+		v := sysconfig.DefaultSort
+		_c.mutation.SetSort(v)
+	}
+	if _, ok := _c.mutation.Status(); !ok {
+		v := sysconfig.DefaultStatus
+		_c.mutation.SetStatus(v)
+	}
+	if _, ok := _c.mutation.IsSecret(); !ok {
+		v := sysconfig.DefaultIsSecret
+		_c.mutation.SetIsSecret(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -193,6 +297,36 @@ func (_c *SysConfigCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsSystem(); !ok {
 		return &ValidationError{Name: "is_system", err: errors.New(`ent: missing required field "SysConfig.is_system"`)}
+	}
+	if _, ok := _c.mutation.ConfigGroup(); !ok {
+		return &ValidationError{Name: "config_group", err: errors.New(`ent: missing required field "SysConfig.config_group"`)}
+	}
+	if v, ok := _c.mutation.ConfigGroup(); ok {
+		if err := sysconfig.ConfigGroupValidator(v); err != nil {
+			return &ValidationError{Name: "config_group", err: fmt.Errorf(`ent: validator failed for field "SysConfig.config_group": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ValueType(); !ok {
+		return &ValidationError{Name: "value_type", err: errors.New(`ent: missing required field "SysConfig.value_type"`)}
+	}
+	if v, ok := _c.mutation.ValueType(); ok {
+		if err := sysconfig.ValueTypeValidator(v); err != nil {
+			return &ValidationError{Name: "value_type", err: fmt.Errorf(`ent: validator failed for field "SysConfig.value_type": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.Validation(); ok {
+		if err := sysconfig.ValidationValidator(v); err != nil {
+			return &ValidationError{Name: "validation", err: fmt.Errorf(`ent: validator failed for field "SysConfig.validation": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Sort(); !ok {
+		return &ValidationError{Name: "sort", err: errors.New(`ent: missing required field "SysConfig.sort"`)}
+	}
+	if _, ok := _c.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "SysConfig.status"`)}
+	}
+	if _, ok := _c.mutation.IsSecret(); !ok {
+		return &ValidationError{Name: "is_secret", err: errors.New(`ent: missing required field "SysConfig.is_secret"`)}
 	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := sysconfig.IDValidator(v); err != nil {
@@ -258,6 +392,30 @@ func (_c *SysConfigCreate) createSpec() (*SysConfig, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IsSystem(); ok {
 		_spec.SetField(sysconfig.FieldIsSystem, field.TypeBool, value)
 		_node.IsSystem = value
+	}
+	if value, ok := _c.mutation.ConfigGroup(); ok {
+		_spec.SetField(sysconfig.FieldConfigGroup, field.TypeString, value)
+		_node.ConfigGroup = value
+	}
+	if value, ok := _c.mutation.ValueType(); ok {
+		_spec.SetField(sysconfig.FieldValueType, field.TypeString, value)
+		_node.ValueType = value
+	}
+	if value, ok := _c.mutation.Validation(); ok {
+		_spec.SetField(sysconfig.FieldValidation, field.TypeString, value)
+		_node.Validation = value
+	}
+	if value, ok := _c.mutation.Sort(); ok {
+		_spec.SetField(sysconfig.FieldSort, field.TypeInt, value)
+		_node.Sort = value
+	}
+	if value, ok := _c.mutation.Status(); ok {
+		_spec.SetField(sysconfig.FieldStatus, field.TypeInt, value)
+		_node.Status = value
+	}
+	if value, ok := _c.mutation.IsSecret(); ok {
+		_spec.SetField(sysconfig.FieldIsSecret, field.TypeBool, value)
+		_node.IsSecret = value
 	}
 	return _node, _spec
 }

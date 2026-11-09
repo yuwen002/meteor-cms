@@ -1,0 +1,63 @@
+// 日志模块（详情 / 导出 / 统计）的 OpenAPI 文档源。
+//
+// 这些路由由 logroutes.go 独立注册，没有进入 cms.api；本文件只被 cmd/apidoc 读取并
+// 合并进 openapi.json，不参与 goctl 代码生成。字段与
+// api/cms/v1/internal/types/logextras.go 保持一致；新增手工路由时必须同步这里，
+// cmd/apidoc/main_test.go 会用 Go 路由注册做覆盖校验。
+
+type (
+	LogIDReq {
+		ID int64 `path:"id"`
+	}
+
+	LogExportReq {
+		Type      string `form:"type,optional"`
+		Status    *int   `form:"status,optional"`
+		StartTime string `form:"start_time,optional"`
+		EndTime   string `form:"end_time,optional"`
+	}
+
+	LogStatsReq {
+		Days int `form:"days,optional"`
+	}
+
+	LogDayStat {
+		Date   string `json:"date"`
+		Total  int64  `json:"total"`
+		Failed int64  `json:"failed"`
+	}
+
+	LogModuleStat {
+		Module string `json:"module"`
+		Total  int64  `json:"total"`
+	}
+
+	LogBizCodeStat {
+		BizCode int   `json:"biz_code"`
+		Total   int64 `json:"total"`
+	}
+
+	LogStatsResp {
+		Days      int              `json:"days"`
+		Total     int64            `json:"total"`
+		Success   int64            `json:"success"`
+		Failed    int64            `json:"failed"`
+		ByDay     []LogDayStat     `json:"by_day"`
+		ByModule  []LogModuleStat  `json:"by_module"`
+		ByBizCode []LogBizCodeStat `json:"by_biz_code"`
+	}
+)
+
+service cms-log-api {
+	@handler operationLogDetail
+	get /admin/logs/operations/:id (LogIDReq) returns (OperationLogItem)
+
+	@handler loginLogDetail
+	get /admin/logs/logins/:id (LogIDReq) returns (LoginLogItem)
+
+	@handler logExport
+	get /admin/logs/export (LogExportReq)
+
+	@handler logStats
+	get /admin/logs/stats (LogStatsReq) returns (LogStatsResp)
+}

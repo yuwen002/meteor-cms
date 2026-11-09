@@ -6,10 +6,10 @@ package logic
 import (
 	"context"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent/adminpermission"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent/adminpermission"
+	"github.com/yuwen002/meteor-cms/internal/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -137,6 +137,7 @@ func (l *PermissionUpdateLogic) PermissionUpdate(req *types.PermissionUpdateReq)
 	}
 
 	l.Logger.Infof("更新权限成功，权限ID: %d, 权限名称: %s", permission.ID, permission.Name)
+	invalidatePermissionCache(l.svcCtx)
 
 	// 返回更新结果
 	return &types.CommonResp{

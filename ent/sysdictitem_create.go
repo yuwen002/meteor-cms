@@ -10,7 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdictitem"
+	"github.com/yuwen002/meteor-cms/ent/sysdictitem"
 )
 
 // SysDictItemCreate is the builder for creating a SysDictItem entity.
@@ -94,6 +94,48 @@ func (_c *SysDictItemCreate) SetNillableSort(v *int) *SysDictItemCreate {
 	return _c
 }
 
+// SetParentID sets the "parent_id" field.
+func (_c *SysDictItemCreate) SetParentID(v int64) *SysDictItemCreate {
+	_c.mutation.SetParentID(v)
+	return _c
+}
+
+// SetNillableParentID sets the "parent_id" field if the given value is not nil.
+func (_c *SysDictItemCreate) SetNillableParentID(v *int64) *SysDictItemCreate {
+	if v != nil {
+		_c.SetParentID(*v)
+	}
+	return _c
+}
+
+// SetIsDefault sets the "is_default" field.
+func (_c *SysDictItemCreate) SetIsDefault(v bool) *SysDictItemCreate {
+	_c.mutation.SetIsDefault(v)
+	return _c
+}
+
+// SetNillableIsDefault sets the "is_default" field if the given value is not nil.
+func (_c *SysDictItemCreate) SetNillableIsDefault(v *bool) *SysDictItemCreate {
+	if v != nil {
+		_c.SetIsDefault(*v)
+	}
+	return _c
+}
+
+// SetRemark sets the "remark" field.
+func (_c *SysDictItemCreate) SetRemark(v string) *SysDictItemCreate {
+	_c.mutation.SetRemark(v)
+	return _c
+}
+
+// SetNillableRemark sets the "remark" field if the given value is not nil.
+func (_c *SysDictItemCreate) SetNillableRemark(v *string) *SysDictItemCreate {
+	if v != nil {
+		_c.SetRemark(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SysDictItemCreate) SetID(v int64) *SysDictItemCreate {
 	_c.mutation.SetID(v)
@@ -151,6 +193,14 @@ func (_c *SysDictItemCreate) defaults() {
 		v := sysdictitem.DefaultSort
 		_c.mutation.SetSort(v)
 	}
+	if _, ok := _c.mutation.ParentID(); !ok {
+		v := sysdictitem.DefaultParentID
+		_c.mutation.SetParentID(v)
+	}
+	if _, ok := _c.mutation.IsDefault(); !ok {
+		v := sysdictitem.DefaultIsDefault
+		_c.mutation.SetIsDefault(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -190,6 +240,17 @@ func (_c *SysDictItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.Sort(); !ok {
 		return &ValidationError{Name: "sort", err: errors.New(`ent: missing required field "SysDictItem.sort"`)}
+	}
+	if _, ok := _c.mutation.ParentID(); !ok {
+		return &ValidationError{Name: "parent_id", err: errors.New(`ent: missing required field "SysDictItem.parent_id"`)}
+	}
+	if _, ok := _c.mutation.IsDefault(); !ok {
+		return &ValidationError{Name: "is_default", err: errors.New(`ent: missing required field "SysDictItem.is_default"`)}
+	}
+	if v, ok := _c.mutation.Remark(); ok {
+		if err := sysdictitem.RemarkValidator(v); err != nil {
+			return &ValidationError{Name: "remark", err: fmt.Errorf(`ent: validator failed for field "SysDictItem.remark": %w`, err)}
+		}
 	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := sysdictitem.IDValidator(v); err != nil {
@@ -255,6 +316,18 @@ func (_c *SysDictItemCreate) createSpec() (*SysDictItem, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Sort(); ok {
 		_spec.SetField(sysdictitem.FieldSort, field.TypeInt, value)
 		_node.Sort = value
+	}
+	if value, ok := _c.mutation.ParentID(); ok {
+		_spec.SetField(sysdictitem.FieldParentID, field.TypeInt64, value)
+		_node.ParentID = value
+	}
+	if value, ok := _c.mutation.IsDefault(); ok {
+		_spec.SetField(sysdictitem.FieldIsDefault, field.TypeBool, value)
+		_node.IsDefault = value
+	}
+	if value, ok := _c.mutation.Remark(); ok {
+		_spec.SetField(sysdictitem.FieldRemark, field.TypeString, value)
+		_node.Remark = value
 	}
 	return _node, _spec
 }

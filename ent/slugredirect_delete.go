@@ -8,8 +8,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
-	"github.com/yuwen002/go-meteor-cms/ent/slugredirect"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/slugredirect"
 )
 
 // SlugRedirectDelete is the builder for deleting a SlugRedirect entity.

@@ -14,7 +14,7 @@ func TestValidatePasswordComplexity(t *testing.T) {
 		{"ABCDEFGH", false},   // 仅大写
 		{"Abcdefgh", false},   // 大小写2类
 		{"Abcdef12", true},    // 大小写+数字3类
-		{"Admin123456", true}, // 种子密码合规
+		{"Admin123456", true}, // 合规密码样例（不是种子密码；种子为 admin/123456）
 		{"Ab!1wxyz", true},    // 大小写+数字+特殊4类（8位）
 		{"Abcdefg1", true},    // 大小写+数字3类
 	}

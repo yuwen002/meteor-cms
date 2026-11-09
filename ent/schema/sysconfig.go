@@ -56,12 +56,41 @@ func (SysConfig) Fields() []ent.Field {
 		field.Bool("is_system").
 			Default(false).
 			Comment("是否系统内置：内置配置禁止删除，避免误删导致功能异常"),
+
+		field.String("config_group").
+			MaxLen(64).
+			Default("general").
+			Comment("配置分组，如 site/seo/mail/security，用于分组渲染"),
+
+		field.String("value_type").
+			MaxLen(32).
+			Default("string").
+			Comment("值类型：string/int/bool/json/url/image/text，用于前端控件与服务端校验"),
+
+		field.String("validation").
+			MaxLen(512).
+			Optional().
+			Comment("校验规则：正则或内置规则名，保存前校验"),
+
+		field.Int("sort").
+			Default(0).
+			Comment("同组内排序，从小到大"),
+
+		field.Int("status").
+			Default(1).
+			Comment("状态：1 启用 0 禁用，禁用项不参与运行时读取"),
+
+		field.Bool("is_secret").
+			Default(false).
+			Comment("是否敏感值：加密存储、列表脱敏、审计快照过滤"),
 	}
 }
 
 func (SysConfig) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("config_key").Unique(),
+		index.Fields("config_group"),
+		index.Fields("status"),
 	}
 }
 

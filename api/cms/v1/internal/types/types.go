@@ -191,6 +191,7 @@ type LoginLogItem struct {
 	UserAgent  string `json:"user_agent"`
 	Status     int    `json:"status"`
 	FailReason string `json:"fail_reason"`
+	RequestID  string `json:"request_id"`
 	LoginAt    string `json:"login_at"`
 }
 
@@ -199,7 +200,7 @@ type LoginLogListReq struct {
 	PageSize  int    `form:"page_size,default=20"`
 	UserID    int64  `form:"user_id,optional"`
 	Username  string `form:"username,optional"`
-	Status    int    `form:"status,optional"`
+	Status    *int   `form:"status,optional"`
 	StartTime string `form:"start_time,optional"`
 	EndTime   string `form:"end_time,optional"`
 }
@@ -234,12 +235,17 @@ type RefreshTokenResp struct {
 
 // 文件管理
 type FileItem struct {
-	Name     string `json:"name"`
-	Path     string `json:"path"`     // 相对上传根目录的路径（使用 / 分隔）
-	Url      string `json:"url"`      // 可访问的 URL
-	Size     int64  `json:"size"`     // 字节；目录为 0
-	Modified int64  `json:"modified"` // 修改时间（Unix 秒）
-	IsDir    bool   `json:"is_dir"`
+	Name         string `json:"name"`
+	Path         string `json:"path"`     // 相对上传根目录的路径（使用 / 分隔）
+	Url          string `json:"url"`      // 可访问的 URL
+	Size         int64  `json:"size"`     // 字节；目录为 0
+	Modified     int64  `json:"modified"` // 修改时间（Unix 秒）
+	IsDir        bool   `json:"is_dir"`
+	OriginalName string `json:"original_name"` // 上传时的原始文件名，历史文件为空
+	Mime         string `json:"mime"`          // 真实 MIME，历史文件为空
+	Width        int    `json:"width"`         // 图片宽，非图片为 0
+	Height       int    `json:"height"`        // 图片高，非图片为 0
+	RefCount     int    `json:"ref_count"`     // 被文章封面/正文引用的篇数
 }
 
 // FileListReq 走 GET 查询串，必须用 form 标签：httpx 的 form 解析器只认 form 标签，
@@ -275,6 +281,8 @@ type DictItem struct {
 	Description string `json:"description"`
 	Status      int    `json:"status"`
 	Sort        int    `json:"sort"`
+	DictGroup   string `json:"dict_group"`
+	IsSystem    bool   `json:"is_system"`
 	CreatedAt   string `json:"created_at"`
 }
 
@@ -282,6 +290,7 @@ type DictItem struct {
 type DictListReq struct {
 	Keyword  string `form:"keyword,optional"`
 	Status   *int   `form:"status,optional"`
+	Group    string `form:"group,optional"`
 	Page     int64  `form:"page,optional"`
 	PageSize int64  `form:"page_size,optional"`
 }
@@ -295,16 +304,18 @@ type DictCreateReq struct {
 	Code        string `json:"code"`
 	Name        string `json:"name"`
 	Description string `json:"description,optional"`
-	Status      int    `json:"status,optional"`
+	Status      *int   `json:"status,optional"`
 	Sort        int    `json:"sort,optional"`
+	DictGroup   string `json:"dict_group,optional"`
 }
 
 type DictUpdateReq struct {
-	ID          int64  `path:"id"`
-	Name        string `json:"name,optional"`
-	Description string `json:"description,optional"`
-	Status      *int   `json:"status,optional"`
-	Sort        *int   `json:"sort,optional"`
+	ID          int64   `path:"id"`
+	Name        string  `json:"name,optional"`
+	Description *string `json:"description,optional"`
+	Status      *int    `json:"status,optional"`
+	Sort        *int    `json:"sort,optional"`
+	DictGroup   *string `json:"dict_group,optional"`
 }
 
 type DictDetailReq struct {
@@ -312,12 +323,15 @@ type DictDetailReq struct {
 }
 
 type DictDataItem struct {
-	ID       int64  `json:"id"`
-	DictCode string `json:"dict_code"`
-	Label    string `json:"label"`
-	Value    string `json:"value"`
-	Status   int    `json:"status"`
-	Sort     int    `json:"sort"`
+	ID        int64  `json:"id"`
+	DictCode  string `json:"dict_code"`
+	Label     string `json:"label"`
+	Value     string `json:"value"`
+	Status    int    `json:"status"`
+	Sort      int    `json:"sort"`
+	ParentID  int64  `json:"parent_id"`
+	IsDefault bool   `json:"is_default"`
+	Remark    string `json:"remark"`
 }
 
 // DictItemListReq GET 查询串，标签用 form；dict_code 为必填（无 optional）
@@ -332,19 +346,25 @@ type DictItemListResp struct {
 }
 
 type DictItemCreateReq struct {
-	DictCode string `json:"dict_code"`
-	Label    string `json:"label"`
-	Value    string `json:"value"`
-	Status   int    `json:"status,optional"`
-	Sort     int    `json:"sort,optional"`
+	DictCode  string `json:"dict_code"`
+	Label     string `json:"label"`
+	Value     string `json:"value"`
+	Status    *int   `json:"status,optional"`
+	Sort      int    `json:"sort,optional"`
+	ParentID  int64  `json:"parent_id,optional"`
+	IsDefault bool   `json:"is_default,optional"`
+	Remark    string `json:"remark,optional"`
 }
 
 type DictItemUpdateReq struct {
-	ID     int64  `path:"id"`
-	Label  string `json:"label,optional"`
-	Value  string `json:"value,optional"`
-	Status *int   `json:"status,optional"`
-	Sort   *int   `json:"sort,optional"`
+	ID        int64   `path:"id"`
+	Label     string  `json:"label,optional"`
+	Value     string  `json:"value,optional"`
+	Status    *int    `json:"status,optional"`
+	Sort      *int    `json:"sort,optional"`
+	ParentID  *int64  `json:"parent_id,optional"`
+	IsDefault *bool   `json:"is_default,optional"`
+	Remark    *string `json:"remark,optional"`
 }
 
 type DictItemDetailReq struct {
@@ -360,12 +380,19 @@ type ConfigItem struct {
 	Name        string `json:"name"`
 	Remark      string `json:"remark"`
 	IsSystem    bool   `json:"is_system"`
+	ConfigGroup string `json:"config_group"`
+	ValueType   string `json:"value_type"`
+	Validation  string `json:"validation"`
+	Sort        int    `json:"sort"`
+	Status      int    `json:"status"`
+	IsSecret    bool   `json:"is_secret"`
 	CreatedAt   string `json:"created_at"`
 }
 
 // ConfigListReq GET 查询串，标签用 form
 type ConfigListReq struct {
 	Keyword string `form:"keyword,optional"`
+	Group   string `form:"group,optional"`
 }
 
 type ConfigListResp struct {
@@ -377,13 +404,24 @@ type ConfigCreateReq struct {
 	ConfigValue string `json:"config_value,optional"`
 	Name        string `json:"name"`
 	Remark      string `json:"remark,optional"`
+	ConfigGroup string `json:"config_group,optional"`
+	ValueType   string `json:"value_type,optional"`
+	Validation  string `json:"validation,optional"`
+	Sort        int    `json:"sort,optional"`
+	Status      *int   `json:"status,optional"`
+	IsSecret    bool   `json:"is_secret,optional"`
 }
 
 type ConfigUpdateReq struct {
-	ID          int64  `path:"id"`
-	ConfigValue string `json:"config_value,optional"`
-	Name        string `json:"name,optional"`
-	Remark      string `json:"remark,optional"`
+	ID          int64   `path:"id"`
+	ConfigValue *string `json:"config_value,optional"`
+	Name        *string `json:"name,optional"`
+	Remark      *string `json:"remark,optional"`
+	ConfigGroup *string `json:"config_group,optional"`
+	ValueType   *string `json:"value_type,optional"`
+	Validation  *string `json:"validation,optional"`
+	Sort        *int    `json:"sort,optional"`
+	Status      *int    `json:"status,optional"`
 }
 
 type ConfigDetailReq struct {
@@ -422,6 +460,10 @@ type OperationLogItem struct {
 	ErrorMsg   string `json:"error_msg"`
 	DurationMs int64  `json:"duration_ms"`
 	Params     string `json:"params"`
+	Query      string `json:"query"`
+	RequestID  string `json:"request_id"`
+	BizCode    int    `json:"biz_code"`
+	HTTPStatus int    `json:"http_status"`
 	CreatedAt  string `json:"created_at"`
 }
 
@@ -432,7 +474,7 @@ type OperationLogListReq struct {
 	Username  string `form:"username,optional"`
 	Module    string `form:"module,optional"`
 	Path      string `form:"path,optional"`
-	Status    int    `form:"status,optional"`
+	Status    *int   `form:"status,optional"`
 	StartTime string `form:"start_time,optional"`
 	EndTime   string `form:"end_time,optional"`
 }

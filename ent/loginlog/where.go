@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
@@ -97,6 +97,11 @@ func FailReason(v string) predicate.LoginLog {
 // LoginAt applies equality check predicate on the "login_at" field. It's identical to LoginAtEQ.
 func LoginAt(v time.Time) predicate.LoginLog {
 	return predicate.LoginLog(sql.FieldEQ(FieldLoginAt, v))
+}
+
+// RequestID applies equality check predicate on the "request_id" field. It's identical to RequestIDEQ.
+func RequestID(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldEQ(FieldRequestID, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -597,6 +602,81 @@ func LoginAtLT(v time.Time) predicate.LoginLog {
 // LoginAtLTE applies the LTE predicate on the "login_at" field.
 func LoginAtLTE(v time.Time) predicate.LoginLog {
 	return predicate.LoginLog(sql.FieldLTE(FieldLoginAt, v))
+}
+
+// RequestIDEQ applies the EQ predicate on the "request_id" field.
+func RequestIDEQ(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldEQ(FieldRequestID, v))
+}
+
+// RequestIDNEQ applies the NEQ predicate on the "request_id" field.
+func RequestIDNEQ(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldNEQ(FieldRequestID, v))
+}
+
+// RequestIDIn applies the In predicate on the "request_id" field.
+func RequestIDIn(vs ...string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldIn(FieldRequestID, vs...))
+}
+
+// RequestIDNotIn applies the NotIn predicate on the "request_id" field.
+func RequestIDNotIn(vs ...string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldNotIn(FieldRequestID, vs...))
+}
+
+// RequestIDGT applies the GT predicate on the "request_id" field.
+func RequestIDGT(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldGT(FieldRequestID, v))
+}
+
+// RequestIDGTE applies the GTE predicate on the "request_id" field.
+func RequestIDGTE(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldGTE(FieldRequestID, v))
+}
+
+// RequestIDLT applies the LT predicate on the "request_id" field.
+func RequestIDLT(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldLT(FieldRequestID, v))
+}
+
+// RequestIDLTE applies the LTE predicate on the "request_id" field.
+func RequestIDLTE(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldLTE(FieldRequestID, v))
+}
+
+// RequestIDContains applies the Contains predicate on the "request_id" field.
+func RequestIDContains(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldContains(FieldRequestID, v))
+}
+
+// RequestIDHasPrefix applies the HasPrefix predicate on the "request_id" field.
+func RequestIDHasPrefix(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldHasPrefix(FieldRequestID, v))
+}
+
+// RequestIDHasSuffix applies the HasSuffix predicate on the "request_id" field.
+func RequestIDHasSuffix(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldHasSuffix(FieldRequestID, v))
+}
+
+// RequestIDIsNil applies the IsNil predicate on the "request_id" field.
+func RequestIDIsNil() predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldIsNull(FieldRequestID))
+}
+
+// RequestIDNotNil applies the NotNil predicate on the "request_id" field.
+func RequestIDNotNil() predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldNotNull(FieldRequestID))
+}
+
+// RequestIDEqualFold applies the EqualFold predicate on the "request_id" field.
+func RequestIDEqualFold(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldEqualFold(FieldRequestID, v))
+}
+
+// RequestIDContainsFold applies the ContainsFold predicate on the "request_id" field.
+func RequestIDContainsFold(v string) predicate.LoginLog {
+	return predicate.LoginLog(sql.FieldContainsFold(FieldRequestID, v))
 }
 
 // And groups predicates with the AND operator between them.

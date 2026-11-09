@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/category"
+	"github.com/yuwen002/meteor-cms/ent/category"
 )
 
 // 文章分类表，支持父子层级

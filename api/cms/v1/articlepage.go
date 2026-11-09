@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/middleware"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/slugredirect"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/middleware"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/slugredirect"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 

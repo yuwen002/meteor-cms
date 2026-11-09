@@ -55,6 +55,15 @@ func (SysDict) Fields() []ent.Field {
 		field.Int("sort").
 			Default(0).
 			Comment("排序，从小到大"),
+
+		field.String("dict_group").
+			MaxLen(64).
+			Default("general").
+			Comment("字典分组，便于按业务域归类"),
+
+		field.Bool("is_system").
+			Default(false).
+			Comment("是否系统内置：内置字典禁止删除"),
 	}
 }
 
@@ -62,6 +71,7 @@ func (SysDict) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("code").Unique(),
 		index.Fields("status"),
+		index.Fields("dict_group"),
 	}
 }
 

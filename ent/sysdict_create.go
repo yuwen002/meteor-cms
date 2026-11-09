@@ -10,7 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdict"
+	"github.com/yuwen002/meteor-cms/ent/sysdict"
 )
 
 // SysDictCreate is the builder for creating a SysDict entity.
@@ -102,6 +102,34 @@ func (_c *SysDictCreate) SetNillableSort(v *int) *SysDictCreate {
 	return _c
 }
 
+// SetDictGroup sets the "dict_group" field.
+func (_c *SysDictCreate) SetDictGroup(v string) *SysDictCreate {
+	_c.mutation.SetDictGroup(v)
+	return _c
+}
+
+// SetNillableDictGroup sets the "dict_group" field if the given value is not nil.
+func (_c *SysDictCreate) SetNillableDictGroup(v *string) *SysDictCreate {
+	if v != nil {
+		_c.SetDictGroup(*v)
+	}
+	return _c
+}
+
+// SetIsSystem sets the "is_system" field.
+func (_c *SysDictCreate) SetIsSystem(v bool) *SysDictCreate {
+	_c.mutation.SetIsSystem(v)
+	return _c
+}
+
+// SetNillableIsSystem sets the "is_system" field if the given value is not nil.
+func (_c *SysDictCreate) SetNillableIsSystem(v *bool) *SysDictCreate {
+	if v != nil {
+		_c.SetIsSystem(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SysDictCreate) SetID(v int64) *SysDictCreate {
 	_c.mutation.SetID(v)
@@ -159,6 +187,14 @@ func (_c *SysDictCreate) defaults() {
 		v := sysdict.DefaultSort
 		_c.mutation.SetSort(v)
 	}
+	if _, ok := _c.mutation.DictGroup(); !ok {
+		v := sysdict.DefaultDictGroup
+		_c.mutation.SetDictGroup(v)
+	}
+	if _, ok := _c.mutation.IsSystem(); !ok {
+		v := sysdict.DefaultIsSystem
+		_c.mutation.SetIsSystem(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -195,6 +231,17 @@ func (_c *SysDictCreate) check() error {
 	}
 	if _, ok := _c.mutation.Sort(); !ok {
 		return &ValidationError{Name: "sort", err: errors.New(`ent: missing required field "SysDict.sort"`)}
+	}
+	if _, ok := _c.mutation.DictGroup(); !ok {
+		return &ValidationError{Name: "dict_group", err: errors.New(`ent: missing required field "SysDict.dict_group"`)}
+	}
+	if v, ok := _c.mutation.DictGroup(); ok {
+		if err := sysdict.DictGroupValidator(v); err != nil {
+			return &ValidationError{Name: "dict_group", err: fmt.Errorf(`ent: validator failed for field "SysDict.dict_group": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.IsSystem(); !ok {
+		return &ValidationError{Name: "is_system", err: errors.New(`ent: missing required field "SysDict.is_system"`)}
 	}
 	if v, ok := _c.mutation.ID(); ok {
 		if err := sysdict.IDValidator(v); err != nil {
@@ -260,6 +307,14 @@ func (_c *SysDictCreate) createSpec() (*SysDict, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Sort(); ok {
 		_spec.SetField(sysdict.FieldSort, field.TypeInt, value)
 		_node.Sort = value
+	}
+	if value, ok := _c.mutation.DictGroup(); ok {
+		_spec.SetField(sysdict.FieldDictGroup, field.TypeString, value)
+		_node.DictGroup = value
+	}
+	if value, ok := _c.mutation.IsSystem(); ok {
+		_spec.SetField(sysdict.FieldIsSystem, field.TypeBool, value)
+		_node.IsSystem = value
 	}
 	return _node, _spec
 }

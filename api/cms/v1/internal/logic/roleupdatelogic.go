@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/internal/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -107,6 +107,9 @@ func (l *RoleUpdateLogic) RoleUpdate(req *types.RoleUpdateReq) (resp *types.Comm
 		l.Logger.Errorf("更新角色失败: %v", err)
 		return nil, common.NewBizError(common.ErrRoleUpdateFail)
 	}
+
+	// 角色启用状态变更会改变其下所有用户的有效权限
+	l.svcCtx.PermissionChecker.InvalidateAll()
 
 	// 7. 返回成功响应
 	return &types.CommonResp{

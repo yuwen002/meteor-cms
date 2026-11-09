@@ -39,6 +39,15 @@
           批量删除<span v-if="selected.length"> ({{ selected.length }})</span>
         </el-button>
         <el-button v-if="canTrash" @click="openTrash">回收站</el-button>
+        <el-button v-if="canExport" :loading="exporting" @click="onExport">导出内容</el-button>
+        <el-button v-if="canImport" :loading="importing" @click="pickImportFile">导入内容</el-button>
+        <input
+          ref="fileInput"
+          type="file"
+          accept="application/json,.json"
+          class="file-input"
+          @change="onImportFile"
+        />
       </div>
 
       <el-table v-loading="loading" :data="list" stripe @selection-change="onSelectionChange">
@@ -203,11 +212,14 @@ import {
   type CategoryItem,
   type TagItem,
 } from '@/api/content'
+import { downloadContentBundle, importContentBundle } from '@/api/transfer'
 
 type TagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
 
 const router = useRouter()
 const userStore = useUserStore()
+const canExport = computed(() => userStore.hasPermission('cms:content:export'))
+const canImport = computed(() => userStore.hasPermission('cms:content:import'))
 const canAdd = computed(() => userStore.hasPermission('cms:article:add'))
 const canEdit = computed(() => userStore.hasPermission('cms:article:edit'))
 const canDelete = computed(() => userStore.hasPermission('cms:article:delete'))
@@ -523,6 +535,71 @@ async function onBatchDelete() {
   }
 }
 
+const exporting = ref(false)
+const importing = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await downloadContentBundle()
+    ElMessage.success('内容包已导出')
+  } catch (e) {
+    ElMessage.error((e as Error).message || '导出失败')
+  } finally {
+    exporting.value = false
+  }
+}
+
+function pickImportFile() {
+  fileInput.value?.click()
+}
+
+async function onImportFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+
+  let bundle: unknown
+  try {
+    bundle = JSON.parse(await file.text())
+  } catch {
+    ElMessage.error('文件不是合法的 JSON 内容包')
+    return
+  }
+
+  let overwrite = false
+  try {
+    await ElMessageBox.confirm(
+      '「覆盖并导入」会用文件中的文章覆盖同 slug 文章；「仅新增」只补齐缺失内容。',
+      '导入内容包',
+      {
+        confirmButtonText: '覆盖并导入',
+        cancelButtonText: '仅新增',
+        distinguishCancelAndClose: true,
+        type: 'warning',
+      },
+    )
+    overwrite = true
+  } catch (action) {
+    if (action !== 'cancel') return
+  }
+
+  importing.value = true
+  try {
+    const res = await importContentBundle(bundle, overwrite)
+    ElMessage.success(
+      `导入完成：文章新建 ${res.articles_created} / 覆盖 ${res.articles_updated} / 跳过 ${res.articles_skipped}`,
+    )
+    await Promise.all([loadList(), loadCategories(), loadTags()])
+  } catch (e) {
+    ElMessage.error((e as Error).message || '导入失败')
+  } finally {
+    importing.value = false
+  }
+}
+
 onMounted(() => {
   void loadList()
   void loadCategories()
@@ -536,6 +613,9 @@ onMounted(() => {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 14px;
+}
+.file-input {
+  display: none;
 }
 .article-title {
   margin-right: 6px;

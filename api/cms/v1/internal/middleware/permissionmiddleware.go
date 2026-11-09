@@ -3,18 +3,14 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/config"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminpermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
-	"github.com/zeromicro/go-zero/core/collection"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/config"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/permcheck"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -32,9 +28,9 @@ var permissionBypassRoutes = map[string]struct{}{
 }
 
 type PermissionMiddleware struct {
-	config    *config.Config
-	db        *ent.Client
-	permCache *collection.Cache
+	config  *config.Config
+	db      *ent.Client
+	checker *permcheck.Checker
 }
 
 type matchedPermission struct {
@@ -42,15 +38,11 @@ type matchedPermission struct {
 	staticHits int
 }
 
-func NewPermissionMiddleware(c *config.Config, db *ent.Client) rest.Middleware {
-	cache, err := collection.NewCache(60 * time.Second)
-	if err != nil {
-		panic(err)
-	}
+func NewPermissionMiddleware(c *config.Config, db *ent.Client, checker *permcheck.Checker) rest.Middleware {
 	m := &PermissionMiddleware{
-		config:    c,
-		db:        db,
-		permCache: cache,
+		config:  c,
+		db:      db,
+		checker: checker,
 	}
 	return m.Handle
 }
@@ -88,6 +80,13 @@ func (m *PermissionMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		perms, err := m.checker.UserPermissions(r.Context(), userID)
+		if err != nil {
+			logx.Errorf("load user permissions failed: user_id=%d err=%v", userID, err)
+			common.Fail(w, common.ErrInternalServer, common.GetErrorMessage(common.ErrInternalServer))
+			return
+		}
+
 		permission, err := m.findPermissionForRequest(r.Context(), r.Method, r.URL.Path)
 		if err != nil {
 			logx.Errorf("match api permission failed: method=%s path=%s err=%v", r.Method, r.URL.Path, err)
@@ -99,96 +98,32 @@ func (m *PermissionMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 			common.Fail(w, common.ErrPermissionDenied, common.GetErrorMessage(common.ErrPermissionDenied))
 			return
 		}
-
-		hasPermission, err := m.checkUserPermission(r.Context(), userID, permission.Permission)
-		if err != nil {
-			logx.Errorf("check user permission failed: user_id=%d permission=%s err=%v", userID, permission.Permission, err)
-			common.Fail(w, common.ErrInternalServer, common.GetErrorMessage(common.ErrInternalServer))
-			return
-		}
-		if !hasPermission {
+		if !permcheck.Has(perms, permission.Permission) {
 			logx.Errorf("permission denied: user_id=%d method=%s path=%s permission=%s", userID, r.Method, r.URL.Path, permission.Permission)
 			common.Fail(w, common.ErrPermissionDenied, common.GetErrorMessage(common.ErrPermissionDenied))
 			return
 		}
 
+		// 把中间件判定所用的同一份权限快照传给下游 logic，
+		// 文章行级守卫据此判定审核角色，避免重复查库与两套结论不一致。
+		r = r.WithContext(permcheck.WithPermissions(r.Context(), perms))
 		next(w, r)
 	}
 }
 
-func (m *PermissionMiddleware) checkUserPermission(ctx context.Context, userID int64, permission string) (bool, error) {
-	perms, err := m.loadUserPermissions(ctx, userID)
-	if err != nil {
-		return false, err
-	}
-	for _, p := range perms {
-		if p == permission {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// loadUserPermissions 加载用户拥有的全部权限标识，结果按 userID 缓存（短 TTL），
-// 避免每次请求都走「用户→角色→权限」多表查询。注意：用户记录（is_super / is_active）
-// 仍每请求查库，以保证权限变更实时生效（见任务1），此处只缓存「角色→权限」映射。
-func (m *PermissionMiddleware) loadUserPermissions(ctx context.Context, userID int64) ([]string, error) {
-	key := "perm:" + strconv.FormatInt(userID, 10)
-	v, err := m.permCache.Take(key, func() (interface{}, error) {
-		var perms []string
-		err := m.db.AdminUser.
-			Query().
-			Where(adminuser.IDEQ(userID)).
-			QueryRoles().
-			Where(adminrole.IsActive(true)).
-			QueryPermissions().
-			Where(adminpermission.IsActive(true)).
-			Select(adminpermission.FieldPermission).
-			Scan(ctx, &perms)
-		if err != nil {
-			return nil, err
-		}
-		return perms, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return v.([]string), nil
-}
-
+// findPermissionForRequest 从共享缓存取全量 API 权限定义后在内存中做路径匹配。
+// 缓存 key 与具体 URL 无关，路径型接口不会随 ID 增长产生大量缓存条目。
 func (m *PermissionMiddleware) findPermissionForRequest(ctx context.Context, method, requestPath string) (*ent.AdminPermission, error) {
-	key := "apiperm:" + strings.ToUpper(method) + ":" + normalizePath(requestPath)
-	v, err := m.permCache.Take(key, func() (interface{}, error) {
-		return m.findPermissionForRequestUncached(ctx, method, requestPath)
-	})
-	if err != nil {
-		return nil, err
-	}
-	if v == nil {
-		return nil, nil
-	}
-	p, ok := v.(*ent.AdminPermission)
-	if !ok || p == nil {
-		return nil, nil
-	}
-	return p, nil
-}
-
-func (m *PermissionMiddleware) findPermissionForRequestUncached(ctx context.Context, method, requestPath string) (*ent.AdminPermission, error) {
-	permissions, err := m.db.AdminPermission.
-		Query().
-		Where(
-			adminpermission.TypeEQ(3),
-			adminpermission.IsActive(true),
-			adminpermission.MethodEqualFold(strings.ToUpper(method)),
-		).
-		All(ctx)
+	permissions, err := m.checker.APIPermissions(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var best *matchedPermission
 	for _, permission := range permissions {
+		if !strings.EqualFold(permission.Method, method) {
+			continue
+		}
 		staticHits, matched := matchPermissionPath(permission.APIPath, requestPath)
 		if !matched {
 			continue

@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/pkg/tokenversion"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/audit"
+	"github.com/yuwen002/meteor-cms/internal/pkg/tokenversion"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -162,11 +163,9 @@ func (l *LoginLogic) recordLoginLog(userID int64, username, reason string) {
 func (l *LoginLogic) saveLoginLog(userID int64, username string, status int, reason string) {
 	ip := utils.GetClientIP(l.ctx)
 	ua := utils.Truncate(utils.GetUserAgent(l.ctx), 512)
+	requestID := utils.RequestIDFromCtx(l.ctx)
 
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-
+	audit.Submit("login_log", func(ctx context.Context) error {
 		create := l.svcCtx.EntClient.LoginLog.Create().
 			SetUserID(userID).
 			SetUsername(username).
@@ -177,11 +176,12 @@ func (l *LoginLogic) saveLoginLog(userID int64, username string, status int, rea
 		if reason != "" {
 			create = create.SetFailReason(reason)
 		}
-
-		if _, err := create.Save(ctx); err != nil {
-			logx.WithContext(ctx).Errorf("写入登录日志失败: %v", err)
+		if requestID != "" {
+			create = create.SetRequestID(requestID)
 		}
-	}()
+		_, err := create.Save(ctx)
+		return err
+	})
 }
 
 // increaseLoginFail 登录失败后累加失败次数；达到阈值（Login.MaxFailCount）时锁定账号一段时间。

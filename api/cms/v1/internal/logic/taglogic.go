@@ -5,12 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/internal/common"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -46,16 +45,12 @@ func (l *TagLogic) TagList(req *types.TagListReq) (*types.TagListResp, error) {
 		return nil, common.NewBizError(common.ErrInternalServer)
 	}
 
+	counts, err := tagArticleCounts(l.ctx, l.svcCtx.EntClient)
+	if err != nil {
+		return nil, err
+	}
 	list := make([]types.TagItem, 0, len(rows))
 	for _, tg := range rows {
-		// 走 Article 查询而非中间表，软删除的文章会被拦截器自动排除。
-		count, err := l.svcCtx.EntClient.Article.Query().
-			Where(article.HasTagsWith(tag.IDEQ(tg.ID))).
-			Count(l.ctx)
-		if err != nil {
-			logx.Errorf("count tag articles failed: %v", err)
-			return nil, common.NewBizError(common.ErrInternalServer)
-		}
 		list = append(list, types.TagItem{
 			ID:           tg.ID,
 			Name:         tg.Name,
@@ -63,7 +58,7 @@ func (l *TagLogic) TagList(req *types.TagListReq) (*types.TagListResp, error) {
 			Description:  tg.Description,
 			Sort:         tg.Sort,
 			IsActive:     tg.IsActive,
-			ArticleCount: count,
+			ArticleCount: int(counts[tg.ID]),
 			CreatedAt:    tg.CreatedAt.Format(time.RFC3339),
 		})
 	}

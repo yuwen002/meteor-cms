@@ -3,7 +3,7 @@ package datascope
 import (
 	"testing"
 
-	"github.com/yuwen002/go-meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent"
 )
 
 // dept 快速构造部门实体（仅使用 tree 需要的字段）

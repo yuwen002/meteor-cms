@@ -445,7 +445,7 @@ type (
 		Username  string `form:"username,optional"`
 		Module    string `form:"module,optional"`
 		Path      string `form:"path,optional"`
-		Status    int    `form:"status,optional"`
+		Status    *int   `form:"status,optional"`
 		StartTime string `form:"start_time,optional"`
 		EndTime   string `form:"end_time,optional"`
 	}
@@ -464,6 +464,10 @@ type (
 		ErrorMsg   string `json:"error_msg"`
 		DurationMs int64  `json:"duration_ms"`
 		Params     string `json:"params"`
+		Query      string `json:"query"`
+		RequestID  string `json:"request_id"`
+		BizCode    int    `json:"biz_code"`
+		HTTPStatus int    `json:"http_status"`
 		CreatedAt  string `json:"created_at"`
 	}
 	// 操作日志列表响应
@@ -479,7 +483,7 @@ type (
 		PageSize  int    `form:"page_size,default=20"`
 		UserID    int64  `form:"user_id,optional"`
 		Username  string `form:"username,optional"`
-		Status    int    `form:"status,optional"`
+		Status    *int   `form:"status,optional"`
 		StartTime string `form:"start_time,optional"`
 		EndTime   string `form:"end_time,optional"`
 	}
@@ -492,6 +496,7 @@ type (
 		UserAgent  string `json:"user_agent"`
 		Status     int    `json:"status"`
 		FailReason string `json:"fail_reason"`
+		RequestID  string `json:"request_id"`
 		LoginAt    string `json:"login_at"`
 	}
 	// 登录日志列表响应
@@ -704,12 +709,17 @@ type DashboardStatsResp {
 
 // 文件管理
 type FileItem {
-	Name     string `json:"name"`
-	Path     string `json:"path"`     // 相对上传根目录的路径（使用 / 分隔）
-	Url      string `json:"url"`      // 可访问的 URL
-	Size     int64  `json:"size"`     // 字节；目录为 0
-	Modified int64  `json:"modified"` // 修改时间（Unix 秒）
-	IsDir    bool   `json:"is_dir"`
+	Name         string `json:"name"`
+	Path         string `json:"path"`     // 相对上传根目录的路径（使用 / 分隔）
+	Url          string `json:"url"`      // 可访问的 URL
+	Size         int64  `json:"size"`     // 字节；目录为 0
+	Modified     int64  `json:"modified"` // 修改时间（Unix 秒）
+	IsDir        bool   `json:"is_dir"`
+	OriginalName string `json:"original_name"` // 上传时的原始文件名，历史文件为空
+	Mime         string `json:"mime"`          // 真实 MIME，历史文件为空
+	Width        int    `json:"width"`         // 图片宽，非图片为 0
+	Height       int    `json:"height"`        // 图片高，非图片为 0
+	RefCount     int    `json:"ref_count"`     // 被文章封面/正文引用的篇数
 }
 
 type FileListReq {

@@ -3,10 +3,11 @@ package cleanup
 
 import (
 	"context"
+	"sync"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/tokenblacklist"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/tokenblacklist"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -32,12 +33,14 @@ func PurgeExpiredTokenBlacklist(ctx context.Context, client *ent.Client) (int, e
 //
 // 启动时立即执行一次，之后按 interval 周期执行；ctx 取消后任务退出。
 // interval <= 0 时使用 DefaultCleanInterval。
-func StartTokenBlacklistCleaner(ctx context.Context, client *ent.Client, interval time.Duration) {
+func StartTokenBlacklistCleaner(ctx context.Context, client *ent.Client, interval time.Duration, wg *sync.WaitGroup) {
 	if interval <= 0 {
 		interval = DefaultCleanInterval
 	}
+	wg.Add(1)
 
 	go func() {
+		defer wg.Done()
 		run := func() {
 			deleted, err := PurgeExpiredTokenBlacklist(ctx, client)
 			if err != nil {

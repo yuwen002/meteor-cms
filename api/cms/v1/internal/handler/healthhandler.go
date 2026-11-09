@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 

@@ -4,7 +4,7 @@
 package config
 
 import (
-	baseconfig "github.com/yuwen002/go-meteor-cms/internal/config"
+	baseconfig "github.com/yuwen002/meteor-cms/internal/config"
 	"github.com/zeromicro/go-zero/core/stores/redis"
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -19,6 +19,11 @@ type Config struct {
 	Database struct {
 		Driver string
 		Source string
+		// 连接池参数。database/sql 默认不限制连接数，生产环境高并发下容易把 MySQL 打满，
+		// 因此在这里显式给默认值，并允许通过 DB_MAX_* 环境变量覆盖。
+		MaxOpenConns    int
+		MaxIdleConns    int
+		ConnMaxLifetime int // 秒；默认值由 etc/cms-api.yaml 显式给出
 	}
 	Auth struct {
 		AccessSecret  string
@@ -70,6 +75,12 @@ type Config struct {
 			Window       int  `json:",default=60"` // 统计窗口（秒）
 			BlockSeconds int  `json:",default=60"` // 触发限流后拒绝时长（秒）
 		}
+		// CommentRate 公开评论提交的独立配额。全局限流是 /api/ 共享的，
+		// 评论功能开启后需要更严格的写入配额；默认值由 etc/cms-api.yaml 显式给出。
+		CommentRate struct {
+			Max    int // 窗口内允许提交的最大评论数，<=0 表示不限流
+			Window int // 统计窗口（秒）
+		}
 	}
 	// WebBaseURL 前端站点地址，用于拼接找回密码邮件链接与文章 canonical / RSS / sitemap 绝对地址
 	WebBaseURL string
@@ -78,4 +89,19 @@ type Config struct {
 	// optional：仅托管 API 时配置文件里可以不写这一项，否则 go-zero 严格解析会直接启动失败。
 	StaticDir string `json:",optional"`
 	Upload    baseconfig.Upload
+
+	// 运行开关：均可在 cms.go 里通过同名大写环境变量覆盖。
+	// SQLDebug 默认关闭；生产若显式打开会把每条 SQL（含参数）写入日志，需谨慎。
+	SQLDebug bool
+	// StrictSecurity=true 时把「示例密钥 / 关闭限流」等告警升级为启动失败。
+	StrictSecurity bool
+	// SchemaStrict=true 时启动即校验 schema_migrations 的当前版本。
+	SchemaStrict bool
 }
+
+// 与 cms-api.yaml 中随仓库分发的示例值一致。生产必须通过环境变量覆盖，
+// 否则所有实例的 JWT 签名密钥相同，任何拿到仓库的人都能伪造管理员令牌。
+const (
+	ExampleAccessSecret  = "8x!A%D*G-KaPdSgVkYp3s6v9y$B?E(H+MbQeThWmZq4t7w!z%C*F-J@NcRfUjXn2"
+	ExampleRefreshSecret = "rEfReSh-6KpVq2Jx!YmN3sLz8Wb@TcE5HgU7DfA1"
+)

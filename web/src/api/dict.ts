@@ -7,6 +7,8 @@ export interface DictItem {
   description: string
   status: number
   sort: number
+  dict_group: string
+  is_system: boolean
   created_at: string
 }
 
@@ -22,11 +24,15 @@ export interface DictDataItem {
   value: string
   status: number
   sort: number
+  parent_id: number
+  is_default: boolean
+  remark: string
 }
 
 export function getDicts(params: {
   keyword?: string
   status?: number
+  group?: string
   page?: number
   page_size?: number
 }) {
@@ -39,13 +45,20 @@ export function createDict(data: {
   description?: string
   status?: number
   sort?: number
+  dict_group?: string
 }) {
   return request({ url: '/admin/dicts', method: 'post', data })
 }
 
 export function updateDict(
   id: number,
-  data: { name?: string; description?: string; status?: number; sort?: number },
+  data: {
+    name?: string
+    description?: string
+    status?: number
+    sort?: number
+    dict_group?: string
+  },
 ) {
   return request({ url: `/admin/dicts/${id}`, method: 'put', data })
 }
@@ -68,13 +81,24 @@ export function createDictItem(data: {
   value: string
   status?: number
   sort?: number
+  parent_id?: number
+  is_default?: boolean
+  remark?: string
 }) {
   return request({ url: '/admin/dicts/items', method: 'post', data })
 }
 
 export function updateDictItem(
   id: number,
-  data: { label?: string; value?: string; status?: number; sort?: number },
+  data: {
+    label?: string
+    value?: string
+    status?: number
+    sort?: number
+    parent_id?: number
+    is_default?: boolean
+    remark?: string
+  },
 ) {
   return request({ url: `/admin/dicts/items/${id}`, method: 'put', data })
 }

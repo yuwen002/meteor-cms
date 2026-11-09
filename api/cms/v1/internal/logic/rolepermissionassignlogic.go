@@ -6,13 +6,13 @@ package logic
 import (
 	"context"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminpermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrolepermission"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminpermission"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminrolepermission"
+	"github.com/yuwen002/meteor-cms/internal/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -136,6 +136,9 @@ func (l *RolePermissionAssignLogic) RolePermissionAssign(req *types.RolePermissi
 		l.Logger.Errorf("提交事务失败: %v", err)
 		return nil, common.NewBizError(common.ErrInternalServer)
 	}
+
+	// 角色权限变更影响该角色下所有用户，立即让全局权限快照失效
+	l.svcCtx.PermissionChecker.InvalidateAll()
 
 	l.Logger.Infof("角色权限分配成功，角色ID: %d, 角色名称: %s, 权限数量: %d",
 		req.RoleID, role.Name, len(req.PermissionIDs))

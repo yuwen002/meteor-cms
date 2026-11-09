@@ -71,6 +71,19 @@ func (OperationLog) Fields() []ent.Field {
 		field.Text("params").
 			Optional().
 			Comment("请求参数快照，敏感字段已脱敏并截断"),
+		field.Text("query").
+			Optional().
+			Comment("URL query / 表单参数快照，敏感字段已脱敏并截断"),
+		field.String("request_id").
+			MaxLen(64).
+			Optional().
+			Comment("请求链路标识，用于串联同一次请求产生的日志"),
+		field.Int("biz_code").
+			Default(0).
+			Comment("业务响应码，0 表示成功"),
+		field.Int("http_status").
+			Default(200).
+			Comment("HTTP 响应状态码"),
 	}
 }
 
@@ -87,6 +100,10 @@ func (OperationLog) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("user_id"),
 		index.Fields("status"),
+		index.Fields("request_id"),
+		// 列表按时间倒序并支持按操作人/结果/时间范围组合筛选，单列索引不足以覆盖
+		index.Fields("user_id", "created_at"),
+		index.Fields("status", "created_at"),
 	}
 }
 

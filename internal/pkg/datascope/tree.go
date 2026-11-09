@@ -1,7 +1,7 @@
 package datascope
 
 import (
-	"github.com/yuwen002/go-meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent"
 )
 
 // BuildChildrenIndex 构建父部门到子部门列表的索引

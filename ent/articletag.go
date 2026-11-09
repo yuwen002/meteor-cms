@@ -9,9 +9,9 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/articletag"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/articletag"
+	"github.com/yuwen002/meteor-cms/ent/tag"
 )
 
 // 文章标签关联表

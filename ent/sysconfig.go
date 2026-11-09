@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/sysconfig"
+	"github.com/yuwen002/meteor-cms/ent/sysconfig"
 )
 
 // 系统配置表，以键值对形式存放站点级参数
@@ -31,7 +31,19 @@ type SysConfig struct {
 	// 备注说明
 	Remark string `json:"remark,omitempty"`
 	// 是否系统内置：内置配置禁止删除，避免误删导致功能异常
-	IsSystem     bool `json:"is_system,omitempty"`
+	IsSystem bool `json:"is_system,omitempty"`
+	// 配置分组，如 site/seo/mail/security，用于分组渲染
+	ConfigGroup string `json:"config_group,omitempty"`
+	// 值类型：string/int/bool/json/url/image/text，用于前端控件与服务端校验
+	ValueType string `json:"value_type,omitempty"`
+	// 校验规则：正则或内置规则名，保存前校验
+	Validation string `json:"validation,omitempty"`
+	// 同组内排序，从小到大
+	Sort int `json:"sort,omitempty"`
+	// 状态：1 启用 0 禁用，禁用项不参与运行时读取
+	Status int `json:"status,omitempty"`
+	// 是否敏感值：加密存储、列表脱敏、审计快照过滤
+	IsSecret     bool `json:"is_secret,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -40,11 +52,11 @@ func (*SysConfig) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sysconfig.FieldIsSystem:
+		case sysconfig.FieldIsSystem, sysconfig.FieldIsSecret:
 			values[i] = new(sql.NullBool)
-		case sysconfig.FieldID:
+		case sysconfig.FieldID, sysconfig.FieldSort, sysconfig.FieldStatus:
 			values[i] = new(sql.NullInt64)
-		case sysconfig.FieldConfigKey, sysconfig.FieldConfigValue, sysconfig.FieldName, sysconfig.FieldRemark:
+		case sysconfig.FieldConfigKey, sysconfig.FieldConfigValue, sysconfig.FieldName, sysconfig.FieldRemark, sysconfig.FieldConfigGroup, sysconfig.FieldValueType, sysconfig.FieldValidation:
 			values[i] = new(sql.NullString)
 		case sysconfig.FieldCreatedAt, sysconfig.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -111,6 +123,42 @@ func (_m *SysConfig) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.IsSystem = value.Bool
 			}
+		case sysconfig.FieldConfigGroup:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field config_group", values[i])
+			} else if value.Valid {
+				_m.ConfigGroup = value.String
+			}
+		case sysconfig.FieldValueType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field value_type", values[i])
+			} else if value.Valid {
+				_m.ValueType = value.String
+			}
+		case sysconfig.FieldValidation:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field validation", values[i])
+			} else if value.Valid {
+				_m.Validation = value.String
+			}
+		case sysconfig.FieldSort:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sort", values[i])
+			} else if value.Valid {
+				_m.Sort = int(value.Int64)
+			}
+		case sysconfig.FieldStatus:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				_m.Status = int(value.Int64)
+			}
+		case sysconfig.FieldIsSecret:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_secret", values[i])
+			} else if value.Valid {
+				_m.IsSecret = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -167,6 +215,24 @@ func (_m *SysConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_system=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IsSystem))
+	builder.WriteString(", ")
+	builder.WriteString("config_group=")
+	builder.WriteString(_m.ConfigGroup)
+	builder.WriteString(", ")
+	builder.WriteString("value_type=")
+	builder.WriteString(_m.ValueType)
+	builder.WriteString(", ")
+	builder.WriteString("validation=")
+	builder.WriteString(_m.Validation)
+	builder.WriteString(", ")
+	builder.WriteString("sort=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Sort))
+	builder.WriteString(", ")
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
+	builder.WriteString("is_secret=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsSecret))
 	builder.WriteByte(')')
 	return builder.String()
 }

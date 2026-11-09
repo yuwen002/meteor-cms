@@ -5,15 +5,14 @@ package logic
 
 import (
 	"context"
-	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/loginlog"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/loginlog"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -39,17 +38,14 @@ func (l *LoginLogListLogic) LoginLogList(req *types.LoginLogListReq) (resp *type
 	query := l.svcCtx.EntClient.LoginLog.Query()
 
 	conds := make([]predicate.LoginLog, 0, 6)
-	// 数据权限：非超管只能查看自己的登录日志（is_super 取 DB 真值），忽略外部传入的 user_id，防止越权检索
-	isSuper, err := currentUserIsSuper(l.ctx, l.svcCtx.EntClient)
+	// 数据权限：超管或持有 system:log:view_all 的审计员可看全量，其余人只能看自己；
+	// user_id 仅对全量可见者生效，避免越权检索他人日志。
+	uid, scoped, err := logScopeUserID(l.ctx, l.svcCtx.EntClient)
 	if err != nil {
-		l.Logger.Errorf("查询当前用户是否超管失败: %v", err)
-		return nil, common.NewBizError(common.ErrInternalServer)
+		l.Logger.Errorf("判定日志可见范围失败: %v", err)
+		return nil, err
 	}
-	if !isSuper {
-		uid, ok := utils.CurrentUserID(l.ctx)
-		if !ok || uid <= 0 {
-			return nil, common.NewBizError(common.ErrUnauthorized)
-		}
+	if scoped {
 		conds = append(conds, loginlog.UserIDEQ(uid))
 	} else if req.UserID > 0 {
 		conds = append(conds, loginlog.UserIDEQ(req.UserID))
@@ -57,13 +53,14 @@ func (l *LoginLogListLogic) LoginLogList(req *types.LoginLogListReq) (resp *type
 	if req.Username != "" {
 		conds = append(conds, loginlog.UsernameContainsFold(req.Username))
 	}
-	if req.Status > 0 {
-		conds = append(conds, loginlog.StatusEQ(req.Status))
+	// Status 为指针：0（成功）与「未筛选」必须区分开
+	if req.Status != nil {
+		conds = append(conds, loginlog.StatusEQ(*req.Status))
 	}
 	if start, ok := parseLogTime(req.StartTime); ok {
 		conds = append(conds, loginlog.LoginAtGTE(start))
 	}
-	if end, ok := parseLogTime(req.EndTime); ok {
+	if end, ok := parseLogEndTime(req.EndTime); ok {
 		conds = append(conds, loginlog.LoginAtLTE(end))
 	}
 	if len(conds) > 0 {
@@ -88,16 +85,7 @@ func (l *LoginLogListLogic) LoginLogList(req *types.LoginLogListReq) (resp *type
 
 	items := make([]types.LoginLogItem, 0, len(list))
 	for _, item := range list {
-		items = append(items, types.LoginLogItem{
-			ID:         item.ID,
-			UserID:     item.UserID,
-			Username:   item.Username,
-			IP:         item.IP,
-			UserAgent:  item.UserAgent,
-			Status:     item.Status,
-			FailReason: item.FailReason,
-			LoginAt:    item.LoginAt.Format(time.RFC3339),
-		})
+		items = append(items, loginLogItem(item))
 	}
 
 	return &types.LoginLogListResp{

@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 )
 
 // AdminPermission 后台权限表
@@ -86,6 +87,16 @@ func (AdminPermission) Fields() []ent.Field {
 		field.Int("sort").
 			Default(0).
 			Comment("排序"),
+	}
+}
+
+// Indexes 给权限记录加业务唯一约束，使并发迁移无法插入重复权限。
+// 去重键与 UpsertPermissions 的判重条件完全一致：菜单/按钮的 method、api_path 为空串，
+// 等价于按 (type, permission) 唯一；API 权限则允许同一权限码绑定多条不同接口。
+// 升级前 cmd/migrate 会先执行 DedupePermissions 清理历史重复数据，否则建索引会失败。
+func (AdminPermission) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("type", "permission", "method", "api_path").Unique(),
 	}
 }
 

@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdict"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/sysdict"
 )
 
 // SysDictUpdate is the builder for updating SysDict entities.
@@ -138,6 +138,34 @@ func (_u *SysDictUpdate) AddSort(v int) *SysDictUpdate {
 	return _u
 }
 
+// SetDictGroup sets the "dict_group" field.
+func (_u *SysDictUpdate) SetDictGroup(v string) *SysDictUpdate {
+	_u.mutation.SetDictGroup(v)
+	return _u
+}
+
+// SetNillableDictGroup sets the "dict_group" field if the given value is not nil.
+func (_u *SysDictUpdate) SetNillableDictGroup(v *string) *SysDictUpdate {
+	if v != nil {
+		_u.SetDictGroup(*v)
+	}
+	return _u
+}
+
+// SetIsSystem sets the "is_system" field.
+func (_u *SysDictUpdate) SetIsSystem(v bool) *SysDictUpdate {
+	_u.mutation.SetIsSystem(v)
+	return _u
+}
+
+// SetNillableIsSystem sets the "is_system" field if the given value is not nil.
+func (_u *SysDictUpdate) SetNillableIsSystem(v *bool) *SysDictUpdate {
+	if v != nil {
+		_u.SetIsSystem(*v)
+	}
+	return _u
+}
+
 // Mutation returns the SysDictMutation object of the builder.
 func (_u *SysDictUpdate) Mutation() *SysDictMutation {
 	return _u.mutation
@@ -196,6 +224,11 @@ func (_u *SysDictUpdate) check() error {
 			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "SysDict.description": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DictGroup(); ok {
+		if err := sysdict.DictGroupValidator(v); err != nil {
+			return &ValidationError{Name: "dict_group", err: fmt.Errorf(`ent: validator failed for field "SysDict.dict_group": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -240,6 +273,12 @@ func (_u *SysDictUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedSort(); ok {
 		_spec.AddField(sysdict.FieldSort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.DictGroup(); ok {
+		_spec.SetField(sysdict.FieldDictGroup, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.IsSystem(); ok {
+		_spec.SetField(sysdict.FieldIsSystem, field.TypeBool, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -371,6 +410,34 @@ func (_u *SysDictUpdateOne) AddSort(v int) *SysDictUpdateOne {
 	return _u
 }
 
+// SetDictGroup sets the "dict_group" field.
+func (_u *SysDictUpdateOne) SetDictGroup(v string) *SysDictUpdateOne {
+	_u.mutation.SetDictGroup(v)
+	return _u
+}
+
+// SetNillableDictGroup sets the "dict_group" field if the given value is not nil.
+func (_u *SysDictUpdateOne) SetNillableDictGroup(v *string) *SysDictUpdateOne {
+	if v != nil {
+		_u.SetDictGroup(*v)
+	}
+	return _u
+}
+
+// SetIsSystem sets the "is_system" field.
+func (_u *SysDictUpdateOne) SetIsSystem(v bool) *SysDictUpdateOne {
+	_u.mutation.SetIsSystem(v)
+	return _u
+}
+
+// SetNillableIsSystem sets the "is_system" field if the given value is not nil.
+func (_u *SysDictUpdateOne) SetNillableIsSystem(v *bool) *SysDictUpdateOne {
+	if v != nil {
+		_u.SetIsSystem(*v)
+	}
+	return _u
+}
+
 // Mutation returns the SysDictMutation object of the builder.
 func (_u *SysDictUpdateOne) Mutation() *SysDictMutation {
 	return _u.mutation
@@ -442,6 +509,11 @@ func (_u *SysDictUpdateOne) check() error {
 			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "SysDict.description": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DictGroup(); ok {
+		if err := sysdict.DictGroupValidator(v); err != nil {
+			return &ValidationError{Name: "dict_group", err: fmt.Errorf(`ent: validator failed for field "SysDict.dict_group": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -503,6 +575,12 @@ func (_u *SysDictUpdateOne) sqlSave(ctx context.Context) (_node *SysDict, err er
 	}
 	if value, ok := _u.mutation.AddedSort(); ok {
 		_spec.AddField(sysdict.FieldSort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.DictGroup(); ok {
+		_spec.SetField(sysdict.FieldDictGroup, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.IsSystem(); ok {
+		_spec.SetField(sysdict.FieldIsSystem, field.TypeBool, value)
 	}
 	_node = &SysDict{config: _u.config}
 	_spec.Assign = _node.assignValues

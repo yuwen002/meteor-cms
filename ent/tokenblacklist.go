@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/tokenblacklist"
+	"github.com/yuwen002/meteor-cms/ent/tokenblacklist"
 )
 
 // JWT Token 黑名单表，用于存储已注销或失效的 JWT token

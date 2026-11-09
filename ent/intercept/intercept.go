@@ -7,28 +7,34 @@ import (
 	"fmt"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminpermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminroledept"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrolepermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuserrole"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/articlereview"
-	"github.com/yuwen002/go-meteor-cms/ent/articlerevision"
-	"github.com/yuwen002/go-meteor-cms/ent/articletag"
-	"github.com/yuwen002/go-meteor-cms/ent/category"
-	"github.com/yuwen002/go-meteor-cms/ent/department"
-	"github.com/yuwen002/go-meteor-cms/ent/loginlog"
-	"github.com/yuwen002/go-meteor-cms/ent/operationlog"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
-	"github.com/yuwen002/go-meteor-cms/ent/slugredirect"
-	"github.com/yuwen002/go-meteor-cms/ent/sysconfig"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdict"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdictitem"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
-	"github.com/yuwen002/go-meteor-cms/ent/tokenblacklist"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminpermission"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminroledept"
+	"github.com/yuwen002/meteor-cms/ent/adminrolepermission"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/articlereview"
+	"github.com/yuwen002/meteor-cms/ent/articlerevision"
+	"github.com/yuwen002/meteor-cms/ent/articletag"
+	"github.com/yuwen002/meteor-cms/ent/category"
+	"github.com/yuwen002/meteor-cms/ent/comment"
+	"github.com/yuwen002/meteor-cms/ent/department"
+	"github.com/yuwen002/meteor-cms/ent/friendlink"
+	"github.com/yuwen002/meteor-cms/ent/loginlog"
+	"github.com/yuwen002/meteor-cms/ent/mediafile"
+	"github.com/yuwen002/meteor-cms/ent/operationlog"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/schemamigration"
+	"github.com/yuwen002/meteor-cms/ent/slugredirect"
+	"github.com/yuwen002/meteor-cms/ent/subscriber"
+	"github.com/yuwen002/meteor-cms/ent/sysconfig"
+	"github.com/yuwen002/meteor-cms/ent/sysconfigversion"
+	"github.com/yuwen002/meteor-cms/ent/sysdict"
+	"github.com/yuwen002/meteor-cms/ent/sysdictitem"
+	"github.com/yuwen002/meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/ent/tokenblacklist"
 )
 
 // The Query interface represents an operation that queries a graph.
@@ -384,6 +390,33 @@ func (f TraverseCategory) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.CategoryQuery", q)
 }
 
+// The CommentFunc type is an adapter to allow the use of ordinary function as a Querier.
+type CommentFunc func(context.Context, *ent.CommentQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f CommentFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.CommentQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.CommentQuery", q)
+}
+
+// The TraverseComment type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseComment func(context.Context, *ent.CommentQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseComment) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseComment) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.CommentQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.CommentQuery", q)
+}
+
 // The DepartmentFunc type is an adapter to allow the use of ordinary function as a Querier.
 type DepartmentFunc func(context.Context, *ent.DepartmentQuery) (ent.Value, error)
 
@@ -409,6 +442,33 @@ func (f TraverseDepartment) Traverse(ctx context.Context, q ent.Query) error {
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.DepartmentQuery", q)
+}
+
+// The FriendLinkFunc type is an adapter to allow the use of ordinary function as a Querier.
+type FriendLinkFunc func(context.Context, *ent.FriendLinkQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f FriendLinkFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.FriendLinkQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.FriendLinkQuery", q)
+}
+
+// The TraverseFriendLink type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseFriendLink func(context.Context, *ent.FriendLinkQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseFriendLink) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseFriendLink) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.FriendLinkQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.FriendLinkQuery", q)
 }
 
 // The LoginLogFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -438,6 +498,33 @@ func (f TraverseLoginLog) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.LoginLogQuery", q)
 }
 
+// The MediaFileFunc type is an adapter to allow the use of ordinary function as a Querier.
+type MediaFileFunc func(context.Context, *ent.MediaFileQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f MediaFileFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.MediaFileQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.MediaFileQuery", q)
+}
+
+// The TraverseMediaFile type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseMediaFile func(context.Context, *ent.MediaFileQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseMediaFile) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseMediaFile) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.MediaFileQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.MediaFileQuery", q)
+}
+
 // The OperationLogFunc type is an adapter to allow the use of ordinary function as a Querier.
 type OperationLogFunc func(context.Context, *ent.OperationLogQuery) (ent.Value, error)
 
@@ -463,6 +550,33 @@ func (f TraverseOperationLog) Traverse(ctx context.Context, q ent.Query) error {
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.OperationLogQuery", q)
+}
+
+// The SchemaMigrationFunc type is an adapter to allow the use of ordinary function as a Querier.
+type SchemaMigrationFunc func(context.Context, *ent.SchemaMigrationQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f SchemaMigrationFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.SchemaMigrationQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.SchemaMigrationQuery", q)
+}
+
+// The TraverseSchemaMigration type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSchemaMigration func(context.Context, *ent.SchemaMigrationQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSchemaMigration) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSchemaMigration) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.SchemaMigrationQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.SchemaMigrationQuery", q)
 }
 
 // The SlugRedirectFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -492,6 +606,33 @@ func (f TraverseSlugRedirect) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.SlugRedirectQuery", q)
 }
 
+// The SubscriberFunc type is an adapter to allow the use of ordinary function as a Querier.
+type SubscriberFunc func(context.Context, *ent.SubscriberQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f SubscriberFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.SubscriberQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.SubscriberQuery", q)
+}
+
+// The TraverseSubscriber type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSubscriber func(context.Context, *ent.SubscriberQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSubscriber) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSubscriber) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.SubscriberQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.SubscriberQuery", q)
+}
+
 // The SysConfigFunc type is an adapter to allow the use of ordinary function as a Querier.
 type SysConfigFunc func(context.Context, *ent.SysConfigQuery) (ent.Value, error)
 
@@ -517,6 +658,33 @@ func (f TraverseSysConfig) Traverse(ctx context.Context, q ent.Query) error {
 		return f(ctx, q)
 	}
 	return fmt.Errorf("unexpected query type %T. expect *ent.SysConfigQuery", q)
+}
+
+// The SysConfigVersionFunc type is an adapter to allow the use of ordinary function as a Querier.
+type SysConfigVersionFunc func(context.Context, *ent.SysConfigVersionQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f SysConfigVersionFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.SysConfigVersionQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.SysConfigVersionQuery", q)
+}
+
+// The TraverseSysConfigVersion type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSysConfigVersion func(context.Context, *ent.SysConfigVersionQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSysConfigVersion) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSysConfigVersion) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.SysConfigVersionQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.SysConfigVersionQuery", q)
 }
 
 // The SysDictFunc type is an adapter to allow the use of ordinary function as a Querier.
@@ -652,16 +820,28 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.ArticleTagQuery, predicate.ArticleTag, articletag.OrderOption]{typ: ent.TypeArticleTag, tq: q}, nil
 	case *ent.CategoryQuery:
 		return &query[*ent.CategoryQuery, predicate.Category, category.OrderOption]{typ: ent.TypeCategory, tq: q}, nil
+	case *ent.CommentQuery:
+		return &query[*ent.CommentQuery, predicate.Comment, comment.OrderOption]{typ: ent.TypeComment, tq: q}, nil
 	case *ent.DepartmentQuery:
 		return &query[*ent.DepartmentQuery, predicate.Department, department.OrderOption]{typ: ent.TypeDepartment, tq: q}, nil
+	case *ent.FriendLinkQuery:
+		return &query[*ent.FriendLinkQuery, predicate.FriendLink, friendlink.OrderOption]{typ: ent.TypeFriendLink, tq: q}, nil
 	case *ent.LoginLogQuery:
 		return &query[*ent.LoginLogQuery, predicate.LoginLog, loginlog.OrderOption]{typ: ent.TypeLoginLog, tq: q}, nil
+	case *ent.MediaFileQuery:
+		return &query[*ent.MediaFileQuery, predicate.MediaFile, mediafile.OrderOption]{typ: ent.TypeMediaFile, tq: q}, nil
 	case *ent.OperationLogQuery:
 		return &query[*ent.OperationLogQuery, predicate.OperationLog, operationlog.OrderOption]{typ: ent.TypeOperationLog, tq: q}, nil
+	case *ent.SchemaMigrationQuery:
+		return &query[*ent.SchemaMigrationQuery, predicate.SchemaMigration, schemamigration.OrderOption]{typ: ent.TypeSchemaMigration, tq: q}, nil
 	case *ent.SlugRedirectQuery:
 		return &query[*ent.SlugRedirectQuery, predicate.SlugRedirect, slugredirect.OrderOption]{typ: ent.TypeSlugRedirect, tq: q}, nil
+	case *ent.SubscriberQuery:
+		return &query[*ent.SubscriberQuery, predicate.Subscriber, subscriber.OrderOption]{typ: ent.TypeSubscriber, tq: q}, nil
 	case *ent.SysConfigQuery:
 		return &query[*ent.SysConfigQuery, predicate.SysConfig, sysconfig.OrderOption]{typ: ent.TypeSysConfig, tq: q}, nil
+	case *ent.SysConfigVersionQuery:
+		return &query[*ent.SysConfigVersionQuery, predicate.SysConfigVersion, sysconfigversion.OrderOption]{typ: ent.TypeSysConfigVersion, tq: q}, nil
 	case *ent.SysDictQuery:
 		return &query[*ent.SysDictQuery, predicate.SysDict, sysdict.OrderOption]{typ: ent.TypeSysDict, tq: q}, nil
 	case *ent.SysDictItemQuery:

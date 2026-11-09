@@ -10,10 +10,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/mediafile"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -36,6 +38,7 @@ func NewFileListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *FileList
 
 // FileList 列出上传目录下指定子目录中的文件，支持关键字过滤与分页。
 // 目录在前、其次按名称排序；单页上限 100。
+// 媒体元数据（原始文件名 / MIME / 宽高）与文章引用数在这里一次性补齐。
 func (l *FileListLogic) FileList(req *types.FileListReq) (resp *types.FileListResp, err error) {
 	root := l.svcCtx.Config.Upload.Defaults().Dir
 	dir, err := utils.SafeResolve(root, req.Dir)
@@ -84,6 +87,8 @@ func (l *FileListLogic) FileList(req *types.FileListReq) (resp *types.FileListRe
 		return items[i].Name < items[j].Name
 	})
 
+	l.attachMediaMeta(items)
+
 	total := int64(len(items))
 	page := req.Page
 	if page < 1 {
@@ -107,4 +112,42 @@ func (l *FileListLogic) FileList(req *types.FileListReq) (resp *types.FileListRe
 		Total:      total,
 		CurrentDir: strings.ReplaceAll(strings.TrimPrefix(req.Dir, "/"), string(os.PathSeparator), "/"),
 	}, nil
+}
+
+// attachMediaMeta 合并媒体表元数据与文章引用数；历史文件没有元数据行时留空，
+// 不影响文件列表可用性。
+func (l *FileListLogic) attachMediaMeta(items []types.FileItem) {
+	urls := make([]string, 0, len(items))
+	for _, it := range items {
+		if !it.IsDir {
+			urls = append(urls, it.Url)
+		}
+	}
+	if len(urls) == 0 {
+		return
+	}
+	metaByURL := make(map[string]*ent.MediaFile, len(urls))
+	rows, err := l.svcCtx.EntClient.MediaFile.Query().
+		Where(mediafile.URLIn(urls...)).
+		All(l.ctx)
+	if err != nil {
+		logx.Errorf("读取媒体元数据失败: %v", err)
+	} else {
+		for _, m := range rows {
+			metaByURL[m.URL] = m
+		}
+	}
+	refs := mediaRefCounts(l.ctx, l.svcCtx.EntClient, urls)
+	for i := range items {
+		if items[i].IsDir {
+			continue
+		}
+		if m, ok := metaByURL[items[i].Url]; ok {
+			items[i].OriginalName = m.OriginalName
+			items[i].Mime = m.Mime
+			items[i].Width = m.Width
+			items[i].Height = m.Height
+		}
+		items[i].RefCount = refs[items[i].Url]
+	}
 }

@@ -74,7 +74,7 @@ func TestLoginRateLimitMiddlewareDisabled(t *testing.T) {
 		called++
 		w.WriteHeader(http.StatusNoContent)
 	}
-	mw := NewLoginRateLimitMiddleware(nil, false, 1, 60, 30)(next)
+	mw := NewLoginRateLimitMiddleware(nil, false, 1, 60, 30, nil)(next)
 	for i := 0; i < 3; i++ {
 		rec := httptest.NewRecorder()
 		mw(rec, httptest.NewRequest(http.MethodPost, "/admin/login", nil))

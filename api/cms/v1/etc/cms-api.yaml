@@ -20,6 +20,15 @@ Cors:
 Database:
   Driver: "mysql"
   Source: "root:123456@tcp(127.0.0.1:3306)/go_meteor_cms?parseTime=True&loc=Local"
+  # 连接池：可用 DB_MAX_OPEN_CONNS / DB_MAX_IDLE_CONNS / DB_CONN_MAX_LIFETIME 覆盖
+  MaxOpenConns: 20
+  MaxIdleConns: 10
+  ConnMaxLifetime: 3600        # 秒
+
+# 运行开关（均可通过同名大写环境变量覆盖）
+SQLDebug: false                # true 会把每条 SQL 及参数写入日志，仅排障时开启
+StrictSecurity: false          # true 时示例密钥 / 关闭限流等告警升级为启动失败
+SchemaStrict: true             # 启动时校验 schema_migrations 版本；漏跑迁移则拒绝启动
 
 Auth:
   AccessSecret: "8x!A%D*G-KaPdSgVkYp3s6v9y$B?E(H+MbQeThWmZq4t7w!z%C*F-J@NcRfUjXn2"   # 用于签发 Token
@@ -44,6 +53,9 @@ Public:
     Max: 60                      # 窗口内允许的最大请求数
     Window: 60                   # 统计窗口（秒）
     BlockSeconds: 60             # 触发限流后拒绝时长（秒）
+  CommentRate:                   # 公开评论提交的独立配额（feature_comment_enabled=true 时生效）
+    Max: 5                       # 窗口内允许提交的最大评论数；<=0 表示不限流
+    Window: 60                   # 统计窗口（秒）
 
 # 登录限流与公开接口限流的分布式存储。Host 为空时，登录限流自动降级为单实例内存模式（重启即清空、多实例不共享）。
 # 多实例 / 容器化部署务必配置，否则各实例独立计数、限流形同虚设。
@@ -58,6 +70,7 @@ WebBaseURL: ""
 
 Maintenance:
   TokenBlacklistCleanInterval: 3600   # 过期 token 黑名单清理间隔（秒），<=0 时按 3600 处理
+  AuditLogRetentionDays: 90           # 操作/登录日志保留天数，<=0 表示永久保留
 
 Upload:
   Dir: "public/uploads"                 # 文件保存根目录
@@ -75,4 +88,4 @@ Mail:
   Port: 587                       # 常用端口：587(STARTTLS) / 465(SSL) / 25
   Username: "noreply@example.com" # 登录账号
   Password: ""                    # 登录密码或授权码
-  From: "Go Meteor CMS <noreply@example.com>"
+  From: "Meteor CMS <noreply@example.com>"

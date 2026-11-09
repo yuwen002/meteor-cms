@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
 )
 
 func TestNormalizeSlug(t *testing.T) {
@@ -15,7 +15,7 @@ func TestNormalizeSlug(t *testing.T) {
 		want string
 	}{
 		{"英文标题", "Hello World", "hello-world"},
-		{"大小写与下划线", "  Go_Meteor  CMS ", "go-meteor-cms"},
+		{"大小写与下划线", "  Foo_Meteor  Bar ", "foo-meteor-bar"},
 		{"压缩连续分隔符", "a---b   c", "a-b-c"},
 		{"纯中文返回空", "文章发布", ""},
 		{"中文混排保留英文", "Go 语言入门", "go"},

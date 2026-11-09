@@ -10,9 +10,9 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"entgo.io/ent/schema/mixin"
-	gen "github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/hook"
-	"github.com/yuwen002/go-meteor-cms/ent/intercept"
+	gen "github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/hook"
+	"github.com/yuwen002/meteor-cms/ent/intercept"
 )
 
 // SoftDeleteMixin implements the soft delete pattern for schemas.

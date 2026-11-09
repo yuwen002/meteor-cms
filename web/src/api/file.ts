@@ -7,6 +7,11 @@ export interface FileItem {
   size: number
   modified: number
   is_dir: boolean
+  original_name: string
+  mime: string
+  width: number
+  height: number
+  ref_count: number
 }
 
 export interface FileListResp {

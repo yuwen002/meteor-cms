@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/articlerevision"
+	"github.com/yuwen002/meteor-cms/ent/articlerevision"
 )
 
 // 文章修订历史表

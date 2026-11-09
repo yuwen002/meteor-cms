@@ -1,8 +1,11 @@
 <template>
-  <div class="portal">
+  <div class="portal" :style="{ '--site-primary': site.primary_color || '#409EFF' }">
     <header class="site-header">
       <div class="header-inner">
-        <router-link to="/articles" class="brand">Meteor<span>CMS</span></router-link>
+        <router-link to="/articles" class="brand">
+          <img v-if="site.logo" :src="site.logo" :alt="site.name" class="brand-logo" />
+          <template v-else>{{ site.name }}</template>
+        </router-link>
         <nav class="nav-links">
           <router-link to="/articles">全部文章</router-link>
           <a href="/api/rss" target="_blank" rel="noopener noreferrer">RSS</a>
@@ -14,7 +17,7 @@
     <main class="container">
       <section class="hero">
         <h1>文章</h1>
-        <p>记录、分享与沉淀</p>
+        <p>{{ site.description || '记录、分享与沉淀' }}</p>
         <div class="search-bar">
           <el-input
             v-model="keyword"
@@ -106,9 +109,18 @@
     </main>
 
     <footer class="site-footer">
-      Powered by Go Meteor CMS ·
-      <a href="/api/rss" target="_blank" rel="noopener noreferrer">RSS</a> ·
-      <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
+      <div>{{ site.footer || 'Powered by Meteor CMS' }}</div>
+      <div v-if="site.icp" class="site-icp">{{ site.icp }}</div>
+      <div class="footer-links">
+        <a href="/api/rss" target="_blank" rel="noopener noreferrer">RSS</a> ·
+        <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer">Sitemap</a>
+      </div>
+      <div v-if="siteLinks.length" class="friend-links">
+        友情链接：
+        <a v-for="l in siteLinks" :key="l.id" :href="l.url" target="_blank" rel="noopener noreferrer">
+          {{ l.name }}
+        </a>
+      </div>
     </footer>
   </div>
 </template>
@@ -118,15 +130,19 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   getPublicArticles,
+  getPublicSearch,
   getPublicTaxonomy,
   type PublicArticle,
   type PublicCategory,
   type PublicTaxonomyResp,
 } from '@/api/public'
+import { loadSiteInfo, loadSiteLinks, siteInfo, siteLinks as siteLinksRef } from '@/utils/site'
 
 type CategoryNode = PublicCategory & { depth: number }
 
 const router = useRouter()
+const site = computed(() => siteInfo.value)
+const siteLinks = computed(() => siteLinksRef.value)
 const list = ref<PublicArticle[]>([])
 const total = ref(0)
 const loading = ref(false)
@@ -172,13 +188,17 @@ function formatDate(s: string): string {
 async function load() {
   loading.value = true
   try {
-    const res = await getPublicArticles({
+    const params = {
       page: query.page,
       page_size: query.page_size,
-      keyword: keyword.value || undefined,
       category: query.category || undefined,
       tag: query.tag || undefined,
-    })
+    }
+    // 有关键词时走全文检索（标题/摘要/正文），无关键词时走普通列表
+    const kw = keyword.value.trim()
+    const res = kw
+      ? await getPublicSearch({ ...params, keyword: kw })
+      : await getPublicArticles(params)
     list.value = res.list ?? []
     total.value = res.total ?? 0
   } catch {
@@ -225,6 +245,8 @@ function openDetail(a: PublicArticle) {
 }
 
 onMounted(() => {
+  void loadSiteInfo()
+  void loadSiteLinks()
   void load()
   void loadTaxonomy()
 })
@@ -476,5 +498,37 @@ onMounted(() => {
   .side-col {
     order: -1;
   }
+}
+
+/* 站点配置：Logo、主题主色与页脚文本 */
+.brand-logo {
+  height: 26px;
+  max-width: 160px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+.site-header {
+  background: linear-gradient(120deg, var(--site-primary, #1d4ed8), #0ea5e9);
+}
+.chip,
+.side-link:hover,
+.side-link.active {
+  color: var(--site-primary, #2563eb);
+}
+.cloud-tag:hover,
+.cloud-tag.active {
+  background: var(--site-primary, #2563eb);
+}
+.site-icp {
+  margin-top: 6px;
+}
+.footer-links {
+  margin-top: 6px;
+}
+.friend-links {
+  margin-top: 8px;
+}
+.friend-links a {
+  margin: 0 6px;
 }
 </style>

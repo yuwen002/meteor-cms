@@ -41,6 +41,14 @@ const (
 	FieldDurationMs = "duration_ms"
 	// FieldParams holds the string denoting the params field in the database.
 	FieldParams = "params"
+	// FieldQuery holds the string denoting the query field in the database.
+	FieldQuery = "query"
+	// FieldRequestID holds the string denoting the request_id field in the database.
+	FieldRequestID = "request_id"
+	// FieldBizCode holds the string denoting the biz_code field in the database.
+	FieldBizCode = "biz_code"
+	// FieldHTTPStatus holds the string denoting the http_status field in the database.
+	FieldHTTPStatus = "http_status"
 	// Table holds the table name of the operationlog in the database.
 	Table = "operation_logs"
 )
@@ -62,6 +70,10 @@ var Columns = []string{
 	FieldErrorMsg,
 	FieldDurationMs,
 	FieldParams,
+	FieldQuery,
+	FieldRequestID,
+	FieldBizCode,
+	FieldHTTPStatus,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -101,6 +113,12 @@ var (
 	ErrorMsgValidator func(string) error
 	// DefaultDurationMs holds the default value on creation for the "duration_ms" field.
 	DefaultDurationMs int64
+	// RequestIDValidator is a validator for the "request_id" field. It is called by the builders before save.
+	RequestIDValidator func(string) error
+	// DefaultBizCode holds the default value on creation for the "biz_code" field.
+	DefaultBizCode int
+	// DefaultHTTPStatus holds the default value on creation for the "http_status" field.
+	DefaultHTTPStatus int
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(int64) error
 )
@@ -181,4 +199,24 @@ func ByDurationMs(opts ...sql.OrderTermOption) OrderOption {
 // ByParams orders the results by the params field.
 func ByParams(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldParams, opts...).ToFunc()
+}
+
+// ByQuery orders the results by the query field.
+func ByQuery(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldQuery, opts...).ToFunc()
+}
+
+// ByRequestID orders the results by the request_id field.
+func ByRequestID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestID, opts...).ToFunc()
+}
+
+// ByBizCode orders the results by the biz_code field.
+func ByBizCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBizCode, opts...).ToFunc()
+}
+
+// ByHTTPStatus orders the results by the http_status field.
+func ByHTTPStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHTTPStatus, opts...).ToFunc()
 }

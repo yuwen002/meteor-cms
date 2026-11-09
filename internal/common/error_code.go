@@ -146,6 +146,7 @@ const (
 	ErrArticleApproveForbid = 6034 // 缺少审核权限
 	ErrArticlePublishForbid = 6035 // 缺少发布权限
 	ErrArticleInvalidEntity = 6036 // 内容实体类型不合法
+	ErrArticleReadForbidden = 6037 // 无权查看他人文章
 )
 
 var errorMessages = map[int]string{
@@ -277,6 +278,7 @@ var errorMessages = map[int]string{
 	ErrArticleApproveForbid: "缺少文章审核权限",
 	ErrArticlePublishForbid: "缺少文章发布权限",
 	ErrArticleInvalidEntity: "内容实体类型不合法",
+	ErrArticleReadForbidden: "无权查看他人文章",
 }
 
 // GetErrorMessage 获取错误码对应的错误信息

@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdict"
+	"github.com/yuwen002/meteor-cms/ent/sysdict"
 )
 
 // 数据字典类型表，用于维护系统中可枚举的业务字典
@@ -31,7 +31,11 @@ type SysDict struct {
 	// 状态：1 启用 0 禁用
 	Status int `json:"status,omitempty"`
 	// 排序，从小到大
-	Sort         int `json:"sort,omitempty"`
+	Sort int `json:"sort,omitempty"`
+	// 字典分组，便于按业务域归类
+	DictGroup string `json:"dict_group,omitempty"`
+	// 是否系统内置：内置字典禁止删除
+	IsSystem     bool `json:"is_system,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -40,9 +44,11 @@ func (*SysDict) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case sysdict.FieldIsSystem:
+			values[i] = new(sql.NullBool)
 		case sysdict.FieldID, sysdict.FieldStatus, sysdict.FieldSort:
 			values[i] = new(sql.NullInt64)
-		case sysdict.FieldCode, sysdict.FieldName, sysdict.FieldDescription:
+		case sysdict.FieldCode, sysdict.FieldName, sysdict.FieldDescription, sysdict.FieldDictGroup:
 			values[i] = new(sql.NullString)
 		case sysdict.FieldCreatedAt, sysdict.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -109,6 +115,18 @@ func (_m *SysDict) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Sort = int(value.Int64)
 			}
+		case sysdict.FieldDictGroup:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field dict_group", values[i])
+			} else if value.Valid {
+				_m.DictGroup = value.String
+			}
+		case sysdict.FieldIsSystem:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_system", values[i])
+			} else if value.Valid {
+				_m.IsSystem = value.Bool
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -165,6 +183,12 @@ func (_m *SysDict) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sort=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Sort))
+	builder.WriteString(", ")
+	builder.WriteString("dict_group=")
+	builder.WriteString(_m.DictGroup)
+	builder.WriteString(", ")
+	builder.WriteString("is_system=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsSystem))
 	builder.WriteByte(')')
 	return builder.String()
 }

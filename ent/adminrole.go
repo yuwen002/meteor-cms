@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
 )
 
 // 后台角色表

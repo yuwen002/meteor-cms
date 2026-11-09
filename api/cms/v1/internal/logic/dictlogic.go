@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdict"
-	"github.com/yuwen002/go-meteor-cms/ent/sysdictitem"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/sysdict"
+	"github.com/yuwen002/meteor-cms/ent/sysdictitem"
+	"github.com/yuwen002/meteor-cms/internal/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -32,7 +32,13 @@ func NewDictLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DictLogic {
 	}
 }
 
-// DictList 分页查询字典类型，支持按编码/名称模糊搜索与状态过滤
+func (l *DictLogic) invalidate() {
+	if l.svcCtx != nil && l.svcCtx.Dicts != nil {
+		l.svcCtx.Dicts.Invalidate()
+	}
+}
+
+// DictList 分页查询字典类型，支持按编码/名称模糊搜索、状态与分组过滤
 func (l *DictLogic) DictList(req *types.DictListReq) (resp *types.DictListResp, err error) {
 	query := l.svcCtx.EntClient.SysDict.Query()
 	if kw := strings.TrimSpace(req.Keyword); kw != "" {
@@ -43,6 +49,9 @@ func (l *DictLogic) DictList(req *types.DictListReq) (resp *types.DictListResp, 
 	}
 	if req.Status != nil {
 		query = query.Where(sysdict.StatusEQ(*req.Status))
+	}
+	if g := strings.TrimSpace(req.Group); g != "" {
+		query = query.Where(sysdict.DictGroupEQ(g))
 	}
 
 	total, err := query.Clone().Count(l.ctx)
@@ -72,19 +81,16 @@ func (l *DictLogic) DictList(req *types.DictListReq) (resp *types.DictListResp, 
 	list := make([]types.DictItem, 0, len(rows))
 	for _, d := range rows {
 		list = append(list, types.DictItem{
-			ID:          d.ID,
-			Code:        d.Code,
-			Name:        d.Name,
-			Description: d.Description,
-			Status:      d.Status,
-			Sort:        d.Sort,
-			CreatedAt:   d.CreatedAt.Format(time.RFC3339),
+			ID: d.ID, Code: d.Code, Name: d.Name, Description: d.Description,
+			Status: d.Status, Sort: d.Sort,
+			DictGroup: d.DictGroup, IsSystem: d.IsSystem,
+			CreatedAt: d.CreatedAt.Format(time.RFC3339),
 		})
 	}
 	return &types.DictListResp{List: list, Total: int64(total)}, nil
 }
 
-// DictCreate 新增字典类型，编码全局唯一
+// DictCreate 新增字典类型，编码全局唯一；status 不传默认 1，显式传 0 表示创建即禁用。
 func (l *DictLogic) DictCreate(req *types.DictCreateReq) error {
 	code := strings.TrimSpace(req.Code)
 	name := strings.TrimSpace(req.Name)
@@ -96,39 +102,43 @@ func (l *DictLogic) DictCreate(req *types.DictCreateReq) error {
 		Where(sysdict.CodeEQ(code)).
 		Exist(l.ctx)
 	if err != nil {
-		logx.Errorf("check dict code failed: %v", err)
 		return common.NewBizError(common.ErrInternalServer)
 	}
 	if exists {
 		return common.NewBizError(common.ErrDictCodeExists)
 	}
 
-	status := req.Status
-	if status == 0 {
-		status = 1
+	status := 1
+	if req.Status != nil {
+		status = *req.Status
 	}
-	if _, err := l.svcCtx.EntClient.SysDict.
-		Create().
+	group := strings.TrimSpace(req.DictGroup)
+	if group == "" {
+		group = "general"
+	}
+	if _, err := l.svcCtx.EntClient.SysDict.Create().
 		SetCode(code).
 		SetName(name).
 		SetDescription(req.Description).
 		SetStatus(status).
 		SetSort(req.Sort).
+		SetDictGroup(group).
+		SetIsSystem(false).
 		Save(l.ctx); err != nil {
 		logx.Errorf("create dict failed: %v", err)
 		return common.NewBizError(common.ErrDictCreateFail)
 	}
+	l.invalidate()
 	return nil
 }
 
-// DictUpdate 更新字典类型，仅覆盖传入的字段
+// DictUpdate 更新字典类型；指针字段区分「未传」与「显式清空」。
 func (l *DictLogic) DictUpdate(req *types.DictUpdateReq) error {
 	d, err := l.svcCtx.EntClient.SysDict.Get(l.ctx, req.ID)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return common.NewBizError(common.ErrDictNotFound)
 		}
-		logx.Errorf("get dict failed: %v", err)
 		return common.NewBizError(common.ErrInternalServer)
 	}
 
@@ -136,8 +146,8 @@ func (l *DictLogic) DictUpdate(req *types.DictUpdateReq) error {
 	if name := strings.TrimSpace(req.Name); name != "" {
 		update = update.SetName(name)
 	}
-	if req.Description != "" {
-		update = update.SetDescription(req.Description)
+	if req.Description != nil {
+		update = update.SetDescription(*req.Description)
 	}
 	if req.Status != nil {
 		update = update.SetStatus(*req.Status)
@@ -145,34 +155,57 @@ func (l *DictLogic) DictUpdate(req *types.DictUpdateReq) error {
 	if req.Sort != nil {
 		update = update.SetSort(*req.Sort)
 	}
+	if req.DictGroup != nil {
+		update = update.SetDictGroup(strings.TrimSpace(*req.DictGroup))
+	}
 	if _, err := update.Save(l.ctx); err != nil {
 		logx.Errorf("update dict failed: %v", err)
 		return common.NewBizError(common.ErrDictUpdateFail)
 	}
+	l.invalidate()
 	return nil
 }
 
-// DictDelete 删除字典类型，并级联清理其下的字典项
+// DictDelete 在同一事务内级联删除字典项与字典类型；内置字典禁止删除。
 func (l *DictLogic) DictDelete(req *types.DictDetailReq) error {
 	d, err := l.svcCtx.EntClient.SysDict.Get(l.ctx, req.ID)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return common.NewBizError(common.ErrDictNotFound)
 		}
-		logx.Errorf("get dict failed: %v", err)
 		return common.NewBizError(common.ErrInternalServer)
 	}
+	if d.IsSystem {
+		return common.NewBizError(common.ErrPermissionInUse)
+	}
 
-	if _, err := l.svcCtx.EntClient.SysDictItem.
-		Delete().
+	txCtx := &l.ctx
+	cancel := newTxContext(txCtx)
+	defer cancel()
+	tx, err := l.svcCtx.EntClient.Tx(*txCtx)
+	if err != nil {
+		return common.NewBizError(common.ErrInternalServer)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+	if _, err := tx.SysDictItem.Delete().
 		Where(sysdictitem.DictCodeEQ(d.Code)).
-		Exec(l.ctx); err != nil {
+		Exec(*txCtx); err != nil {
 		logx.Errorf("delete dict items failed: %v", err)
 		return common.NewBizError(common.ErrDictDeleteFail)
 	}
-	if err := l.svcCtx.EntClient.SysDict.DeleteOneID(req.ID).Exec(l.ctx); err != nil {
+	if err := tx.SysDict.DeleteOneID(req.ID).Exec(*txCtx); err != nil {
 		logx.Errorf("delete dict failed: %v", err)
 		return common.NewBizError(common.ErrDictDeleteFail)
 	}
+	if err := tx.Commit(); err != nil {
+		return common.NewBizError(common.ErrInternalServer)
+	}
+	committed = true
+	l.invalidate()
 	return nil
 }

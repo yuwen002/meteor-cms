@@ -1,0 +1,314 @@
+// 内容导入导出 / 运行监控 / 全文检索等手工注册路由的 OpenAPI 文档源。
+// 只被 cmd/apidoc 读取；新增手工路由时必须同步这里，
+// cmd/apidoc/main_test.go 会以 Go 路由注册为基准做覆盖校验。
+
+type (
+	ContentCategoryItem {
+		Name        string `json:"name"`
+		Slug        string `json:"slug"`
+		Description string `json:"description"`
+		ParentSlug  string `json:"parent_slug"`
+		Sort        int    `json:"sort"`
+		IsActive    bool   `json:"is_active"`
+	}
+
+	ContentTagItem {
+		Name        string `json:"name"`
+		Slug        string `json:"slug"`
+		Description string `json:"description"`
+		Sort        int    `json:"sort"`
+		IsActive    bool   `json:"is_active"`
+	}
+
+	ContentArticleItem {
+		Title          string   `json:"title"`
+		Slug           string   `json:"slug"`
+		Summary        string   `json:"summary"`
+		Cover          string   `json:"cover"`
+		Content        string   `json:"content"`
+		Status         int      `json:"status"`
+		CategorySlug   string   `json:"category_slug"`
+		TagSlugs       []string `json:"tag_slugs"`
+		PublishedAt    string   `json:"published_at"`
+		IsTop          bool     `json:"is_top"`
+		ViewCount      int64    `json:"view_count"`
+		SeoTitle       string   `json:"seo_title"`
+		SeoDescription string   `json:"seo_description"`
+		SeoKeywords    string   `json:"seo_keywords"`
+	}
+
+	ContentConfigItem {
+		Key        string `json:"key"`
+		Name       string `json:"name"`
+		Value      string `json:"value"`
+		Remark     string `json:"remark"`
+		Group      string `json:"group"`
+		ValueType  string `json:"value_type"`
+		Validation string `json:"validation"`
+		Sort       int    `json:"sort"`
+		Status     int    `json:"status"`
+		IsSystem   bool   `json:"is_system"`
+	}
+
+	ContentDictEntryItem {
+		Label       string `json:"label"`
+		Value       string `json:"value"`
+		Remark      string `json:"remark"`
+		ParentValue string `json:"parent_value"`
+		Sort        int    `json:"sort"`
+		Status      int    `json:"status"`
+		IsDefault   bool   `json:"is_default"`
+	}
+
+	ContentDictEntry {
+		Code        string                  `json:"code"`
+		Name        string                  `json:"name"`
+		Description string                  `json:"description"`
+		Group       string                  `json:"group"`
+		Status      int                     `json:"status"`
+		Sort        int                     `json:"sort"`
+		IsSystem    bool                    `json:"is_system"`
+		Items       []ContentDictEntryItem  `json:"items"`
+	}
+
+	ContentBundle {
+		Version    string                 `json:"version"`
+		ExportedAt string                 `json:"exported_at"`
+		Categories []ContentCategoryItem  `json:"categories"`
+		Tags       []ContentTagItem       `json:"tags"`
+		Articles   []ContentArticleItem   `json:"articles"`
+		Configs    []ContentConfigItem    `json:"configs"`
+		Dicts      []ContentDictEntry     `json:"dicts"`
+	}
+
+	// 导入请求体即 ContentBundle 本体；overwrite 为 query 参数
+	ContentImportReq {
+		Overwrite  bool                   `form:"overwrite,optional"`
+		Version    string                 `json:"version"`
+		ExportedAt string                 `json:"exported_at"`
+		Categories []ContentCategoryItem  `json:"categories"`
+		Tags       []ContentTagItem       `json:"tags"`
+		Articles   []ContentArticleItem   `json:"articles"`
+		Configs    []ContentConfigItem    `json:"configs"`
+		Dicts      []ContentDictEntry     `json:"dicts"`
+	}
+
+	ContentImportResult {
+		CategoriesCreated int `json:"categories_created"`
+		CategoriesSkipped int `json:"categories_skipped"`
+		TagsCreated       int `json:"tags_created"`
+		TagsSkipped       int `json:"tags_skipped"`
+		ArticlesCreated   int `json:"articles_created"`
+		ArticlesUpdated   int `json:"articles_updated"`
+		ArticlesSkipped   int `json:"articles_skipped"`
+		ConfigsCreated    int `json:"configs_created"`
+		ConfigsSkipped    int `json:"configs_skipped"`
+		DictsCreated      int `json:"dicts_created"`
+		DictsSkipped      int `json:"dicts_skipped"`
+		DictItemsCreated  int `json:"dict_items_created"`
+		DictItemsSkipped  int `json:"dict_items_skipped"`
+	}
+
+	MonitorResp {
+		Status              string  `json:"status"`
+		Database            string  `json:"database"`
+		Redis               string  `json:"redis"`
+		UptimeSeconds       int64   `json:"uptime_seconds"`
+		GoVersion           string  `json:"go_version"`
+		Goroutines          int     `json:"goroutines"`
+		HeapAllocMB         float64 `json:"heap_alloc_mb"`
+		SysMB               float64 `json:"sys_mb"`
+		NumGC               uint32  `json:"num_gc"`
+		RequestsTotal       int64   `json:"requests_total"`
+		RequestsServerError int64   `json:"requests_server_error"`
+		RequestsInFlight    int64   `json:"requests_in_flight"`
+		AvgQPS              float64 `json:"avg_qps"`
+		AuditQueueDepth     int     `json:"audit_queue_depth"`
+		AuditQueueDropped   int64   `json:"audit_queue_dropped"`
+	}
+
+	SearchReq {
+		Keyword  string `form:"keyword"`
+		Page     int    `form:"page,optional"`
+		PageSize int    `form:"page_size,optional"`
+		Category string `form:"category,optional"`
+		Tag      string `form:"tag,optional"`
+	}
+
+	SearchResp {
+		Keyword  string               `json:"keyword"`
+		TookMs   int64                `json:"took_ms"`
+		Total    int64                `json:"total"`
+		Page     int                  `json:"page"`
+		PageSize int                  `json:"page_size"`
+		List     []PublicArticleItem  `json:"list"`
+	}
+	LinkItem {
+		ID          int64  `json:"id"`
+		Name        string `json:"name"`
+		URL         string `json:"url"`
+		Logo        string `json:"logo"`
+		Description string `json:"description"`
+		LinkType    string `json:"link_type"`
+		Sort        int    `json:"sort"`
+		Status      int    `json:"status"`
+		CreatedAt   string `json:"created_at"`
+	}
+
+	LinkWriteReq {
+		Name        string `json:"name"`
+		URL         string `json:"url"`
+		Logo        string `json:"logo"`
+		Description string `json:"description"`
+		LinkType    string `json:"link_type"`
+		Sort        int    `json:"sort"`
+		Status      int    `json:"status"`
+	}
+
+	LinkUpdateReq {
+		ID          int64  `path:"id"`
+		Name        string `json:"name"`
+		URL         string `json:"url"`
+		Logo        string `json:"logo"`
+		Description string `json:"description"`
+		LinkType    string `json:"link_type"`
+		Sort        int    `json:"sort"`
+		Status      int    `json:"status"`
+	}
+
+	LinkListResp {
+		List  []LinkItem `json:"list"`
+		Total int        `json:"total"`
+	}
+
+	PublicLinkListResp {
+		List []LinkItem `json:"list"`
+	}
+
+	PublicCommentItem {
+		ID        int64  `json:"id"`
+		ParentID  int64  `json:"parent_id"`
+		Author    string `json:"author"`
+		Content   string `json:"content"`
+		CreatedAt string `json:"created_at"`
+	}
+
+	PublicCommentListResp {
+		List []PublicCommentItem `json:"list"`
+	}
+
+	CreateCommentReq {
+		Slug     string `json:"slug"`
+		ParentID int64  `json:"parent_id"`
+		Author   string `json:"author"`
+		Email    string `json:"email"`
+		Content  string `json:"content"`
+	}
+
+	CreateCommentResp {
+		ID         int64 `json:"id"`
+		Status     int   `json:"status"`
+		NeedReview bool  `json:"need_review"`
+	}
+
+	CommentItem {
+		ID        int64  `json:"id"`
+		ArticleID int64  `json:"article_id"`
+		ParentID  int64  `json:"parent_id"`
+		Author    string `json:"author"`
+		Email     string `json:"email"`
+		Content   string `json:"content"`
+		Status    int    `json:"status"`
+		IP        string `json:"ip"`
+		CreatedAt string `json:"created_at"`
+	}
+
+	CommentListResp {
+		List  []CommentItem `json:"list"`
+		Total int           `json:"total"`
+	}
+
+	CommentStatusReq {
+		ID     int64 `path:"id"`
+		Status int   `json:"status"`
+	}
+
+	SubscriberItem {
+		ID        int64  `json:"id"`
+		Email     string `json:"email"`
+		Status    int    `json:"status"`
+		Source    string `json:"source"`
+		CreatedAt string `json:"created_at"`
+	}
+
+	SubscriberListResp {
+		List  []SubscriberItem `json:"list"`
+		Total int              `json:"total"`
+	}
+
+	SubscribeReq {
+		Email  string `json:"email"`
+		Source string `json:"source"`
+	}
+
+	IDPathReq {
+		ID int64 `path:"id"`
+	}
+
+	SlugPathReq {
+		Slug string `path:"slug"`
+	}
+)
+
+service cms-ops-api {
+	@handler contentExport
+	get /admin/content/export returns (ContentBundle)
+
+	@handler contentImport
+	post /admin/content/import (ContentImportReq) returns (ContentImportResult)
+
+	@handler monitor
+	get /admin/monitor returns (MonitorResp)
+
+	@handler publicSearch
+	get /api/search (SearchReq) returns (SearchResp)
+
+	@handler publicLinks
+	get /api/links returns (PublicLinkListResp)
+
+	@handler publicComments
+	get /api/comments/:slug (SlugPathReq) returns (PublicCommentListResp)
+
+	@handler publicCommentCreate
+	post /api/comments (CreateCommentReq) returns (CreateCommentResp)
+
+	@handler publicSubscribe
+	post /api/subscribe (SubscribeReq) returns (SubscribeReq)
+
+	@handler adminLinkList
+	get /admin/links returns (LinkListResp)
+
+	@handler adminLinkCreate
+	post /admin/links (LinkWriteReq) returns (LinkItem)
+
+	@handler adminLinkUpdate
+	put /admin/links/:id (LinkUpdateReq) returns (LinkItem)
+
+	@handler adminLinkDelete
+	delete /admin/links/:id (IDPathReq) returns (LinkItem)
+
+	@handler adminCommentList
+	get /admin/comments returns (CommentListResp)
+
+	@handler adminCommentStatus
+	put /admin/comments/:id/status (CommentStatusReq) returns (CommentItem)
+
+	@handler adminCommentDelete
+	delete /admin/comments/:id (IDPathReq) returns (CommentItem)
+
+	@handler adminSubscriberList
+	get /admin/subscribers returns (SubscriberListResp)
+
+	@handler adminSubscriberDelete
+	delete /admin/subscribers/:id (IDPathReq) returns (SubscriberItem)
+}

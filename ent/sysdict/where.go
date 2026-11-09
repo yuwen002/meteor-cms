@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.
@@ -87,6 +87,16 @@ func Status(v int) predicate.SysDict {
 // Sort applies equality check predicate on the "sort" field. It's identical to SortEQ.
 func Sort(v int) predicate.SysDict {
 	return predicate.SysDict(sql.FieldEQ(FieldSort, v))
+}
+
+// DictGroup applies equality check predicate on the "dict_group" field. It's identical to DictGroupEQ.
+func DictGroup(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldEQ(FieldDictGroup, v))
+}
+
+// IsSystem applies equality check predicate on the "is_system" field. It's identical to IsSystemEQ.
+func IsSystem(v bool) predicate.SysDict {
+	return predicate.SysDict(sql.FieldEQ(FieldIsSystem, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -452,6 +462,81 @@ func SortLT(v int) predicate.SysDict {
 // SortLTE applies the LTE predicate on the "sort" field.
 func SortLTE(v int) predicate.SysDict {
 	return predicate.SysDict(sql.FieldLTE(FieldSort, v))
+}
+
+// DictGroupEQ applies the EQ predicate on the "dict_group" field.
+func DictGroupEQ(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldEQ(FieldDictGroup, v))
+}
+
+// DictGroupNEQ applies the NEQ predicate on the "dict_group" field.
+func DictGroupNEQ(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldNEQ(FieldDictGroup, v))
+}
+
+// DictGroupIn applies the In predicate on the "dict_group" field.
+func DictGroupIn(vs ...string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldIn(FieldDictGroup, vs...))
+}
+
+// DictGroupNotIn applies the NotIn predicate on the "dict_group" field.
+func DictGroupNotIn(vs ...string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldNotIn(FieldDictGroup, vs...))
+}
+
+// DictGroupGT applies the GT predicate on the "dict_group" field.
+func DictGroupGT(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldGT(FieldDictGroup, v))
+}
+
+// DictGroupGTE applies the GTE predicate on the "dict_group" field.
+func DictGroupGTE(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldGTE(FieldDictGroup, v))
+}
+
+// DictGroupLT applies the LT predicate on the "dict_group" field.
+func DictGroupLT(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldLT(FieldDictGroup, v))
+}
+
+// DictGroupLTE applies the LTE predicate on the "dict_group" field.
+func DictGroupLTE(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldLTE(FieldDictGroup, v))
+}
+
+// DictGroupContains applies the Contains predicate on the "dict_group" field.
+func DictGroupContains(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldContains(FieldDictGroup, v))
+}
+
+// DictGroupHasPrefix applies the HasPrefix predicate on the "dict_group" field.
+func DictGroupHasPrefix(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldHasPrefix(FieldDictGroup, v))
+}
+
+// DictGroupHasSuffix applies the HasSuffix predicate on the "dict_group" field.
+func DictGroupHasSuffix(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldHasSuffix(FieldDictGroup, v))
+}
+
+// DictGroupEqualFold applies the EqualFold predicate on the "dict_group" field.
+func DictGroupEqualFold(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldEqualFold(FieldDictGroup, v))
+}
+
+// DictGroupContainsFold applies the ContainsFold predicate on the "dict_group" field.
+func DictGroupContainsFold(v string) predicate.SysDict {
+	return predicate.SysDict(sql.FieldContainsFold(FieldDictGroup, v))
+}
+
+// IsSystemEQ applies the EQ predicate on the "is_system" field.
+func IsSystemEQ(v bool) predicate.SysDict {
+	return predicate.SysDict(sql.FieldEQ(FieldIsSystem, v))
+}
+
+// IsSystemNEQ applies the NEQ predicate on the "is_system" field.
+func IsSystemNEQ(v bool) predicate.SysDict {
+	return predicate.SysDict(sql.FieldNEQ(FieldIsSystem, v))
 }
 
 // And groups predicates with the AND operator between them.

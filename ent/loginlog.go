@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/loginlog"
+	"github.com/yuwen002/meteor-cms/ent/loginlog"
 )
 
 // 登录日志表，记录登录成功与失败尝试
@@ -35,7 +35,9 @@ type LoginLog struct {
 	// 失败原因
 	FailReason string `json:"fail_reason,omitempty"`
 	// 登录时间
-	LoginAt      time.Time `json:"login_at,omitempty"`
+	LoginAt time.Time `json:"login_at,omitempty"`
+	// 请求链路标识，用于串联登录日志与操作日志
+	RequestID    string `json:"request_id,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -46,7 +48,7 @@ func (*LoginLog) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case loginlog.FieldID, loginlog.FieldUserID, loginlog.FieldStatus:
 			values[i] = new(sql.NullInt64)
-		case loginlog.FieldUsername, loginlog.FieldIP, loginlog.FieldUserAgent, loginlog.FieldFailReason:
+		case loginlog.FieldUsername, loginlog.FieldIP, loginlog.FieldUserAgent, loginlog.FieldFailReason, loginlog.FieldRequestID:
 			values[i] = new(sql.NullString)
 		case loginlog.FieldCreatedAt, loginlog.FieldUpdatedAt, loginlog.FieldLoginAt:
 			values[i] = new(sql.NullTime)
@@ -125,6 +127,12 @@ func (_m *LoginLog) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.LoginAt = value.Time
 			}
+		case loginlog.FieldRequestID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field request_id", values[i])
+			} else if value.Valid {
+				_m.RequestID = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -187,6 +195,9 @@ func (_m *LoginLog) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("login_at=")
 	builder.WriteString(_m.LoginAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("request_id=")
+	builder.WriteString(_m.RequestID)
 	builder.WriteByte(')')
 	return builder.String()
 }

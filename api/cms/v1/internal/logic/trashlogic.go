@@ -7,20 +7,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/articlereview"
-	"github.com/yuwen002/go-meteor-cms/ent/articlerevision"
-	"github.com/yuwen002/go-meteor-cms/ent/articletag"
-	"github.com/yuwen002/go-meteor-cms/ent/category"
-	entschema "github.com/yuwen002/go-meteor-cms/ent/schema"
-	"github.com/yuwen002/go-meteor-cms/ent/slugredirect"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/pkg/upload"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/articlereview"
+	"github.com/yuwen002/meteor-cms/ent/articlerevision"
+	"github.com/yuwen002/meteor-cms/ent/articletag"
+	"github.com/yuwen002/meteor-cms/ent/category"
+	entschema "github.com/yuwen002/meteor-cms/ent/schema"
+	"github.com/yuwen002/meteor-cms/ent/slugredirect"
+	"github.com/yuwen002/meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/upload"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -53,8 +53,12 @@ func (l *TrashLogic) TrashList(req *types.TrashListReq) (*types.TrashListResp, e
 	items := make([]types.TrashItem, 0)
 
 	if kind == "" || kind == EntityTypeArticle {
-		rows, err := l.svcCtx.EntClient.Article.Query().
-			Where(article.DeletedAtNotNil()).All(skipCtx)
+		q, err := articleQueryVisible(l.ctx,
+			l.svcCtx.EntClient.Article.Query().Where(article.DeletedAtNotNil()))
+		if err != nil {
+			return nil, err
+		}
+		rows, err := q.All(skipCtx)
 		if err != nil {
 			return nil, common.NewBizError(common.ErrInternalServer)
 		}
@@ -121,6 +125,15 @@ func (l *TrashLogic) TrashRestore(req *types.TrashEntityReq) (*types.CommonResp,
 	skipCtx := entschema.SkipSoftDelete(l.ctx)
 	if err := l.ensureInTrash(skipCtx, req.EntityType, req.ID); err != nil {
 		return nil, err
+	}
+	if req.EntityType == EntityTypeArticle {
+		a, err := loadArticleForRead(l.ctx, l.svcCtx.EntClient, req.ID, true)
+		if err != nil {
+			return nil, err
+		}
+		if err := ensureArticleReadable(l.ctx, a); err != nil {
+			return nil, err
+		}
 	}
 
 	slug, err := l.originalSlug(req.EntityType, req.ID)
@@ -190,6 +203,9 @@ func (l *TrashLogic) TrashPurge(req *types.TrashEntityReq) error {
 		a, err := l.svcCtx.EntClient.Article.Get(skipCtx, req.ID)
 		if err != nil {
 			return common.NewBizError(common.ErrTrashNotFound)
+		}
+		if err := ensureArticleReadable(l.ctx, a); err != nil {
+			return err
 		}
 		orphanURLs = l.collectOrphanURLs(skipCtx, a)
 	}

@@ -5,12 +5,12 @@ package enttest
 import (
 	"context"
 
-	"github.com/yuwen002/go-meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent"
 	// required by schema hooks.
-	_ "github.com/yuwen002/go-meteor-cms/ent/runtime"
+	_ "github.com/yuwen002/meteor-cms/ent/runtime"
 
 	"entgo.io/ent/dialect/sql/schema"
-	"github.com/yuwen002/go-meteor-cms/ent/migrate"
+	"github.com/yuwen002/meteor-cms/ent/migrate"
 )
 
 type (

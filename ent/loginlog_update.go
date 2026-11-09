@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/loginlog"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/loginlog"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
 )
 
 // LoginLogUpdate is the builder for updating LoginLog entities.
@@ -184,6 +184,26 @@ func (_u *LoginLogUpdate) SetNillableLoginAt(v *time.Time) *LoginLogUpdate {
 	return _u
 }
 
+// SetRequestID sets the "request_id" field.
+func (_u *LoginLogUpdate) SetRequestID(v string) *LoginLogUpdate {
+	_u.mutation.SetRequestID(v)
+	return _u
+}
+
+// SetNillableRequestID sets the "request_id" field if the given value is not nil.
+func (_u *LoginLogUpdate) SetNillableRequestID(v *string) *LoginLogUpdate {
+	if v != nil {
+		_u.SetRequestID(*v)
+	}
+	return _u
+}
+
+// ClearRequestID clears the value of the "request_id" field.
+func (_u *LoginLogUpdate) ClearRequestID() *LoginLogUpdate {
+	_u.mutation.ClearRequestID()
+	return _u
+}
+
 // Mutation returns the LoginLogMutation object of the builder.
 func (_u *LoginLogUpdate) Mutation() *LoginLogMutation {
 	return _u.mutation
@@ -247,6 +267,11 @@ func (_u *LoginLogUpdate) check() error {
 			return &ValidationError{Name: "fail_reason", err: fmt.Errorf(`ent: validator failed for field "LoginLog.fail_reason": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RequestID(); ok {
+		if err := loginlog.RequestIDValidator(v); err != nil {
+			return &ValidationError{Name: "request_id", err: fmt.Errorf(`ent: validator failed for field "LoginLog.request_id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -306,6 +331,12 @@ func (_u *LoginLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.LoginAt(); ok {
 		_spec.SetField(loginlog.FieldLoginAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.RequestID(); ok {
+		_spec.SetField(loginlog.FieldRequestID, field.TypeString, value)
+	}
+	if _u.mutation.RequestIDCleared() {
+		_spec.ClearField(loginlog.FieldRequestID, field.TypeString)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -483,6 +514,26 @@ func (_u *LoginLogUpdateOne) SetNillableLoginAt(v *time.Time) *LoginLogUpdateOne
 	return _u
 }
 
+// SetRequestID sets the "request_id" field.
+func (_u *LoginLogUpdateOne) SetRequestID(v string) *LoginLogUpdateOne {
+	_u.mutation.SetRequestID(v)
+	return _u
+}
+
+// SetNillableRequestID sets the "request_id" field if the given value is not nil.
+func (_u *LoginLogUpdateOne) SetNillableRequestID(v *string) *LoginLogUpdateOne {
+	if v != nil {
+		_u.SetRequestID(*v)
+	}
+	return _u
+}
+
+// ClearRequestID clears the value of the "request_id" field.
+func (_u *LoginLogUpdateOne) ClearRequestID() *LoginLogUpdateOne {
+	_u.mutation.ClearRequestID()
+	return _u
+}
+
 // Mutation returns the LoginLogMutation object of the builder.
 func (_u *LoginLogUpdateOne) Mutation() *LoginLogMutation {
 	return _u.mutation
@@ -557,6 +608,11 @@ func (_u *LoginLogUpdateOne) check() error {
 	if v, ok := _u.mutation.FailReason(); ok {
 		if err := loginlog.FailReasonValidator(v); err != nil {
 			return &ValidationError{Name: "fail_reason", err: fmt.Errorf(`ent: validator failed for field "LoginLog.fail_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RequestID(); ok {
+		if err := loginlog.RequestIDValidator(v); err != nil {
+			return &ValidationError{Name: "request_id", err: fmt.Errorf(`ent: validator failed for field "LoginLog.request_id": %w`, err)}
 		}
 	}
 	return nil
@@ -635,6 +691,12 @@ func (_u *LoginLogUpdateOne) sqlSave(ctx context.Context) (_node *LoginLog, err 
 	}
 	if value, ok := _u.mutation.LoginAt(); ok {
 		_spec.SetField(loginlog.FieldLoginAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.RequestID(); ok {
+		_spec.SetField(loginlog.FieldRequestID, field.TypeString, value)
+	}
+	if _u.mutation.RequestIDCleared() {
+		_spec.ClearField(loginlog.FieldRequestID, field.TypeString)
 	}
 	_node = &LoginLog{config: _u.config}
 	_spec.Assign = _node.assignValues

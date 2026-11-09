@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -78,5 +81,48 @@ func TestGenerateIncludesContentModule(t *testing.T) {
 	taxSchema := taxResp["content"].(map[string]interface{})["application/json"].(map[string]interface{})["schema"].(map[string]interface{})
 	if taxSchema["$ref"] != "#/components/schemas/PublicTaxonomyResp" {
 		t.Errorf("/api/taxonomy 响应模型错误：%v", taxSchema)
+	}
+}
+
+// TestGenerateIncludesAllRegisteredRoutes 以 Go 路由注册为基准做覆盖校验。
+// 自动扫描所有 *routes.go，避免新增路由注册文件时忘记把它加进手工清单。
+func TestGenerateIncludesAllRegisteredRoutes(t *testing.T) {
+	spec := generate(loadAPI("../../api/cms/v1/cms.api"))
+	paths, ok := spec["paths"].(map[string]interface{})
+	if !ok {
+		t.Fatal("spec.paths 类型错误")
+	}
+
+	re := regexp.MustCompile(`Method:\s*http\.Method(\w+),\s*Path:\s*"([^"]+)"`)
+	handlerDir := "../../api/cms/v1/internal/handler"
+	files, err := filepath.Glob(filepath.Join(handlerDir, "*routes.go"))
+	if err != nil {
+		t.Fatalf("扫描路由文件失败: %v", err)
+	}
+	if len(files) < 5 {
+		t.Fatalf("扫描到的路由文件过少（%d）: %v", len(files), files)
+	}
+	total := 0
+	for _, file := range files {
+		b, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatalf("读取路由文件失败 %s: %v", file, err)
+		}
+		for _, m := range re.FindAllStringSubmatch(string(b), -1) {
+			total++
+			method := strings.ToLower(m[1])
+			path := pathParamRe.ReplaceAllString(m[2], "{$1}")
+			ops, ok := paths[path].(map[string]interface{})
+			if !ok {
+				t.Errorf("文档缺少路由 %s %s（%s）", method, path, file)
+				continue
+			}
+			if _, ok := ops[method]; !ok {
+				t.Errorf("文档缺少操作 %s %s（%s）", method, path, file)
+			}
+		}
+	}
+	if total < 80 {
+		t.Errorf("解析到的 Go 路由数量异常: %d", total)
 	}
 }

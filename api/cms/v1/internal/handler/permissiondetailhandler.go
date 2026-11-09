@@ -7,10 +7,10 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/logic"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/logic"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/internal/common"
 	"github.com/zeromicro/go-zero/rest/httpx"
 )
 

@@ -9,7 +9,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
-	"github.com/yuwen002/go-meteor-cms/ent/department"
+	"github.com/yuwen002/meteor-cms/ent/department"
 )
 
 // 部门表

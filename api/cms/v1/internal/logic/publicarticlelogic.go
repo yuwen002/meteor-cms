@@ -10,15 +10,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/article"
-	"github.com/yuwen002/go-meteor-cms/ent/articletag"
-	"github.com/yuwen002/go-meteor-cms/ent/category"
-	"github.com/yuwen002/go-meteor-cms/ent/tag"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/article"
+	"github.com/yuwen002/meteor-cms/ent/articletag"
+	"github.com/yuwen002/meteor-cms/ent/category"
+	"github.com/yuwen002/meteor-cms/ent/tag"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -54,7 +54,10 @@ func (l *PublicArticleLogic) visibleQuery() *ent.ArticleQuery {
 	return l.svcCtx.EntClient.Article.Query().
 		Where(
 			article.StatusEQ(ArticleStatusPublished),
-			article.PublishedAtLTE(time.Now()),
+			// published_at 是 datetime(0)，MySQL 会把含纳秒的 time.Now() 四舍五入到下一秒；
+			// 严格用 now 判断会让刚发布的文章在 1 秒内对前台不可见，这里与
+			// IsPubliclyVisible 保持一致，容忍 1 秒存储精度误差。
+			article.PublishedAtLTE(time.Now().Add(publishTimeTolerance)),
 		)
 }
 
@@ -144,9 +147,12 @@ func (l *PublicArticleLogic) PublicArticleList(req *types.PublicArticleListReq) 
 
 	query := l.visibleQuery()
 	if kw := strings.TrimSpace(req.Keyword); kw != "" {
+		// 全文检索：标题、摘要、正文一起匹配。正文列为 TEXT，MySQL 的
+		// LIKE '%kw%' 无法走 B-Tree 索引；数据量上来后应改用 FULLTEXT 或外部搜索引擎。
 		query = query.Where(article.Or(
 			article.TitleContainsFold(kw),
 			article.SummaryContainsFold(kw),
+			article.ContentContainsFold(kw),
 		))
 	}
 	if slug := strings.TrimSpace(req.CategorySlug); slug != "" {
@@ -390,7 +396,10 @@ func (l *PublicArticleLogic) PublicTaxonomy() (*types.PublicTaxonomyResp, error)
 	if err := l.svcCtx.EntClient.ArticleTag.Query().
 		Where(articletag.HasArticleWith(
 			article.StatusEQ(ArticleStatusPublished),
-			article.PublishedAtLTE(time.Now()),
+			// published_at 是 datetime(0)，MySQL 会把含纳秒的 time.Now() 四舍五入到下一秒；
+			// 严格用 now 判断会让刚发布的文章在 1 秒内对前台不可见，这里与
+			// IsPubliclyVisible 保持一致，容忍 1 秒存储精度误差。
+			article.PublishedAtLTE(time.Now().Add(publishTimeTolerance)),
 			article.DeletedAtIsNil(),
 		)).
 		GroupBy(articletag.FieldTagID).

@@ -7,13 +7,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuserrole"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/pkg/tokenversion"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/tokenversion"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -87,6 +87,9 @@ func (l *AdminDeleteLogic) AdminDelete(req *types.DeleteAdminReq) (resp *types.C
 		return nil, common.NewBizError(common.ErrInternalServer)
 	}
 	committed = true
+
+	// 关联已清理，同时让该用户的权限快照失效
+	l.svcCtx.PermissionChecker.InvalidateUser(req.Id)
 
 	// 删除后吊销该用户所有会话（全局踢人）
 	if _, berr := tokenversion.Bump(l.ctx, l.svcCtx.Redis, req.Id); berr != nil {

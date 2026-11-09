@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
-	"github.com/yuwen002/go-meteor-cms/ent/sysconfig"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/ent/sysconfig"
 )
 
 // SysConfigUpdate is the builder for updating SysConfig entities.
@@ -130,6 +130,110 @@ func (_u *SysConfigUpdate) SetNillableIsSystem(v *bool) *SysConfigUpdate {
 	return _u
 }
 
+// SetConfigGroup sets the "config_group" field.
+func (_u *SysConfigUpdate) SetConfigGroup(v string) *SysConfigUpdate {
+	_u.mutation.SetConfigGroup(v)
+	return _u
+}
+
+// SetNillableConfigGroup sets the "config_group" field if the given value is not nil.
+func (_u *SysConfigUpdate) SetNillableConfigGroup(v *string) *SysConfigUpdate {
+	if v != nil {
+		_u.SetConfigGroup(*v)
+	}
+	return _u
+}
+
+// SetValueType sets the "value_type" field.
+func (_u *SysConfigUpdate) SetValueType(v string) *SysConfigUpdate {
+	_u.mutation.SetValueType(v)
+	return _u
+}
+
+// SetNillableValueType sets the "value_type" field if the given value is not nil.
+func (_u *SysConfigUpdate) SetNillableValueType(v *string) *SysConfigUpdate {
+	if v != nil {
+		_u.SetValueType(*v)
+	}
+	return _u
+}
+
+// SetValidation sets the "validation" field.
+func (_u *SysConfigUpdate) SetValidation(v string) *SysConfigUpdate {
+	_u.mutation.SetValidation(v)
+	return _u
+}
+
+// SetNillableValidation sets the "validation" field if the given value is not nil.
+func (_u *SysConfigUpdate) SetNillableValidation(v *string) *SysConfigUpdate {
+	if v != nil {
+		_u.SetValidation(*v)
+	}
+	return _u
+}
+
+// ClearValidation clears the value of the "validation" field.
+func (_u *SysConfigUpdate) ClearValidation() *SysConfigUpdate {
+	_u.mutation.ClearValidation()
+	return _u
+}
+
+// SetSort sets the "sort" field.
+func (_u *SysConfigUpdate) SetSort(v int) *SysConfigUpdate {
+	_u.mutation.ResetSort()
+	_u.mutation.SetSort(v)
+	return _u
+}
+
+// SetNillableSort sets the "sort" field if the given value is not nil.
+func (_u *SysConfigUpdate) SetNillableSort(v *int) *SysConfigUpdate {
+	if v != nil {
+		_u.SetSort(*v)
+	}
+	return _u
+}
+
+// AddSort adds value to the "sort" field.
+func (_u *SysConfigUpdate) AddSort(v int) *SysConfigUpdate {
+	_u.mutation.AddSort(v)
+	return _u
+}
+
+// SetStatus sets the "status" field.
+func (_u *SysConfigUpdate) SetStatus(v int) *SysConfigUpdate {
+	_u.mutation.ResetStatus()
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *SysConfigUpdate) SetNillableStatus(v *int) *SysConfigUpdate {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// AddStatus adds value to the "status" field.
+func (_u *SysConfigUpdate) AddStatus(v int) *SysConfigUpdate {
+	_u.mutation.AddStatus(v)
+	return _u
+}
+
+// SetIsSecret sets the "is_secret" field.
+func (_u *SysConfigUpdate) SetIsSecret(v bool) *SysConfigUpdate {
+	_u.mutation.SetIsSecret(v)
+	return _u
+}
+
+// SetNillableIsSecret sets the "is_secret" field if the given value is not nil.
+func (_u *SysConfigUpdate) SetNillableIsSecret(v *bool) *SysConfigUpdate {
+	if v != nil {
+		_u.SetIsSecret(*v)
+	}
+	return _u
+}
+
 // Mutation returns the SysConfigMutation object of the builder.
 func (_u *SysConfigUpdate) Mutation() *SysConfigMutation {
 	return _u.mutation
@@ -193,6 +297,21 @@ func (_u *SysConfigUpdate) check() error {
 			return &ValidationError{Name: "remark", err: fmt.Errorf(`ent: validator failed for field "SysConfig.remark": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ConfigGroup(); ok {
+		if err := sysconfig.ConfigGroupValidator(v); err != nil {
+			return &ValidationError{Name: "config_group", err: fmt.Errorf(`ent: validator failed for field "SysConfig.config_group": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ValueType(); ok {
+		if err := sysconfig.ValueTypeValidator(v); err != nil {
+			return &ValidationError{Name: "value_type", err: fmt.Errorf(`ent: validator failed for field "SysConfig.value_type": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Validation(); ok {
+		if err := sysconfig.ValidationValidator(v); err != nil {
+			return &ValidationError{Name: "validation", err: fmt.Errorf(`ent: validator failed for field "SysConfig.validation": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -234,6 +353,33 @@ func (_u *SysConfigUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.IsSystem(); ok {
 		_spec.SetField(sysconfig.FieldIsSystem, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ConfigGroup(); ok {
+		_spec.SetField(sysconfig.FieldConfigGroup, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ValueType(); ok {
+		_spec.SetField(sysconfig.FieldValueType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Validation(); ok {
+		_spec.SetField(sysconfig.FieldValidation, field.TypeString, value)
+	}
+	if _u.mutation.ValidationCleared() {
+		_spec.ClearField(sysconfig.FieldValidation, field.TypeString)
+	}
+	if value, ok := _u.mutation.Sort(); ok {
+		_spec.SetField(sysconfig.FieldSort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSort(); ok {
+		_spec.AddField(sysconfig.FieldSort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(sysconfig.FieldStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedStatus(); ok {
+		_spec.AddField(sysconfig.FieldStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.IsSecret(); ok {
+		_spec.SetField(sysconfig.FieldIsSecret, field.TypeBool, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -357,6 +503,110 @@ func (_u *SysConfigUpdateOne) SetNillableIsSystem(v *bool) *SysConfigUpdateOne {
 	return _u
 }
 
+// SetConfigGroup sets the "config_group" field.
+func (_u *SysConfigUpdateOne) SetConfigGroup(v string) *SysConfigUpdateOne {
+	_u.mutation.SetConfigGroup(v)
+	return _u
+}
+
+// SetNillableConfigGroup sets the "config_group" field if the given value is not nil.
+func (_u *SysConfigUpdateOne) SetNillableConfigGroup(v *string) *SysConfigUpdateOne {
+	if v != nil {
+		_u.SetConfigGroup(*v)
+	}
+	return _u
+}
+
+// SetValueType sets the "value_type" field.
+func (_u *SysConfigUpdateOne) SetValueType(v string) *SysConfigUpdateOne {
+	_u.mutation.SetValueType(v)
+	return _u
+}
+
+// SetNillableValueType sets the "value_type" field if the given value is not nil.
+func (_u *SysConfigUpdateOne) SetNillableValueType(v *string) *SysConfigUpdateOne {
+	if v != nil {
+		_u.SetValueType(*v)
+	}
+	return _u
+}
+
+// SetValidation sets the "validation" field.
+func (_u *SysConfigUpdateOne) SetValidation(v string) *SysConfigUpdateOne {
+	_u.mutation.SetValidation(v)
+	return _u
+}
+
+// SetNillableValidation sets the "validation" field if the given value is not nil.
+func (_u *SysConfigUpdateOne) SetNillableValidation(v *string) *SysConfigUpdateOne {
+	if v != nil {
+		_u.SetValidation(*v)
+	}
+	return _u
+}
+
+// ClearValidation clears the value of the "validation" field.
+func (_u *SysConfigUpdateOne) ClearValidation() *SysConfigUpdateOne {
+	_u.mutation.ClearValidation()
+	return _u
+}
+
+// SetSort sets the "sort" field.
+func (_u *SysConfigUpdateOne) SetSort(v int) *SysConfigUpdateOne {
+	_u.mutation.ResetSort()
+	_u.mutation.SetSort(v)
+	return _u
+}
+
+// SetNillableSort sets the "sort" field if the given value is not nil.
+func (_u *SysConfigUpdateOne) SetNillableSort(v *int) *SysConfigUpdateOne {
+	if v != nil {
+		_u.SetSort(*v)
+	}
+	return _u
+}
+
+// AddSort adds value to the "sort" field.
+func (_u *SysConfigUpdateOne) AddSort(v int) *SysConfigUpdateOne {
+	_u.mutation.AddSort(v)
+	return _u
+}
+
+// SetStatus sets the "status" field.
+func (_u *SysConfigUpdateOne) SetStatus(v int) *SysConfigUpdateOne {
+	_u.mutation.ResetStatus()
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *SysConfigUpdateOne) SetNillableStatus(v *int) *SysConfigUpdateOne {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// AddStatus adds value to the "status" field.
+func (_u *SysConfigUpdateOne) AddStatus(v int) *SysConfigUpdateOne {
+	_u.mutation.AddStatus(v)
+	return _u
+}
+
+// SetIsSecret sets the "is_secret" field.
+func (_u *SysConfigUpdateOne) SetIsSecret(v bool) *SysConfigUpdateOne {
+	_u.mutation.SetIsSecret(v)
+	return _u
+}
+
+// SetNillableIsSecret sets the "is_secret" field if the given value is not nil.
+func (_u *SysConfigUpdateOne) SetNillableIsSecret(v *bool) *SysConfigUpdateOne {
+	if v != nil {
+		_u.SetIsSecret(*v)
+	}
+	return _u
+}
+
 // Mutation returns the SysConfigMutation object of the builder.
 func (_u *SysConfigUpdateOne) Mutation() *SysConfigMutation {
 	return _u.mutation
@@ -433,6 +683,21 @@ func (_u *SysConfigUpdateOne) check() error {
 			return &ValidationError{Name: "remark", err: fmt.Errorf(`ent: validator failed for field "SysConfig.remark": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ConfigGroup(); ok {
+		if err := sysconfig.ConfigGroupValidator(v); err != nil {
+			return &ValidationError{Name: "config_group", err: fmt.Errorf(`ent: validator failed for field "SysConfig.config_group": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ValueType(); ok {
+		if err := sysconfig.ValueTypeValidator(v); err != nil {
+			return &ValidationError{Name: "value_type", err: fmt.Errorf(`ent: validator failed for field "SysConfig.value_type": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Validation(); ok {
+		if err := sysconfig.ValidationValidator(v); err != nil {
+			return &ValidationError{Name: "validation", err: fmt.Errorf(`ent: validator failed for field "SysConfig.validation": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -491,6 +756,33 @@ func (_u *SysConfigUpdateOne) sqlSave(ctx context.Context) (_node *SysConfig, er
 	}
 	if value, ok := _u.mutation.IsSystem(); ok {
 		_spec.SetField(sysconfig.FieldIsSystem, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ConfigGroup(); ok {
+		_spec.SetField(sysconfig.FieldConfigGroup, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ValueType(); ok {
+		_spec.SetField(sysconfig.FieldValueType, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Validation(); ok {
+		_spec.SetField(sysconfig.FieldValidation, field.TypeString, value)
+	}
+	if _u.mutation.ValidationCleared() {
+		_spec.ClearField(sysconfig.FieldValidation, field.TypeString)
+	}
+	if value, ok := _u.mutation.Sort(); ok {
+		_spec.SetField(sysconfig.FieldSort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSort(); ok {
+		_spec.AddField(sysconfig.FieldSort, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(sysconfig.FieldStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedStatus(); ok {
+		_spec.AddField(sysconfig.FieldStatus, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.IsSecret(); ok {
+		_spec.SetField(sysconfig.FieldIsSecret, field.TypeBool, value)
 	}
 	_node = &SysConfig{config: _u.config}
 	_spec.Assign = _node.assignValues

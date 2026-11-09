@@ -3,9 +3,9 @@ package handler
 import (
 	"net/http"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/logic"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/logic"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 )
 
 func categoryListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {

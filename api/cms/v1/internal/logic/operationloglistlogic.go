@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/types"
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/operationlog"
-	"github.com/yuwen002/go-meteor-cms/ent/predicate"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/operationlog"
+	"github.com/yuwen002/meteor-cms/ent/predicate"
+	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -40,17 +40,14 @@ func (l *OperationLogListLogic) OperationLogList(req *types.OperationLogListReq)
 	query := l.svcCtx.EntClient.OperationLog.Query()
 
 	conds := make([]predicate.OperationLog, 0, 8)
-	// 数据权限：非超管只能查看自己的操作日志（is_super 取 DB 真值），忽略外部传入的 user_id，防止越权检索
-	isSuper, err := currentUserIsSuper(l.ctx, l.svcCtx.EntClient)
+	// 数据权限：超管或持有 system:log:view_all 的审计员可看全量，其余人只能看自己；
+	// user_id 仅对全量可见者生效，避免越权检索他人日志。
+	uid, scoped, err := logScopeUserID(l.ctx, l.svcCtx.EntClient)
 	if err != nil {
-		l.Logger.Errorf("查询当前用户是否超管失败: %v", err)
-		return nil, common.NewBizError(common.ErrInternalServer)
+		l.Logger.Errorf("判定日志可见范围失败: %v", err)
+		return nil, err
 	}
-	if !isSuper {
-		uid, ok := utils.CurrentUserID(l.ctx)
-		if !ok || uid <= 0 {
-			return nil, common.NewBizError(common.ErrUnauthorized)
-		}
+	if scoped {
 		conds = append(conds, operationlog.UserIDEQ(uid))
 	} else if req.UserID > 0 {
 		conds = append(conds, operationlog.UserIDEQ(req.UserID))
@@ -64,13 +61,14 @@ func (l *OperationLogListLogic) OperationLogList(req *types.OperationLogListReq)
 	if req.Path != "" {
 		conds = append(conds, operationlog.PathContainsFold(req.Path))
 	}
-	if req.Status > 0 {
-		conds = append(conds, operationlog.StatusEQ(req.Status))
+	// Status 为指针：0（成功）与「未筛选」必须区分开
+	if req.Status != nil {
+		conds = append(conds, operationlog.StatusEQ(*req.Status))
 	}
 	if start, ok := parseLogTime(req.StartTime); ok {
 		conds = append(conds, operationlog.CreatedAtGTE(start))
 	}
-	if end, ok := parseLogTime(req.EndTime); ok {
+	if end, ok := parseLogEndTime(req.EndTime); ok {
 		conds = append(conds, operationlog.CreatedAtLTE(end))
 	}
 	if len(conds) > 0 {
@@ -95,22 +93,7 @@ func (l *OperationLogListLogic) OperationLogList(req *types.OperationLogListReq)
 
 	items := make([]types.OperationLogItem, 0, len(list))
 	for _, item := range list {
-		items = append(items, types.OperationLogItem{
-			ID:         item.ID,
-			UserID:     item.UserID,
-			Username:   item.Username,
-			Module:     item.Module,
-			Action:     item.Action,
-			Method:     item.Method,
-			Path:       item.Path,
-			IP:         item.IP,
-			UserAgent:  item.UserAgent,
-			Status:     item.Status,
-			ErrorMsg:   item.ErrorMsg,
-			DurationMs: item.DurationMs,
-			Params:     item.Params,
-			CreatedAt:  item.CreatedAt.Format(time.RFC3339),
-		})
+		items = append(items, operationLogItem(item))
 	}
 
 	return &types.OperationLogListResp{
@@ -139,4 +122,18 @@ func parseLogTime(input string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
+}
+
+// parseLogEndTime 解析结束时间。
+// 纯日期（YYYY-MM-DD）按当天 23:59:59.999999999 处理，否则 end_time=2026-11-08
+// 会被解析成当天零点，导致当天产生的日志全部查不到。
+func parseLogEndTime(input string) (time.Time, bool) {
+	trimmed := strings.TrimSpace(input)
+	if trimmed == "" {
+		return time.Time{}, false
+	}
+	if t, err := time.ParseInLocation("2006-01-02", trimmed, time.Local); err == nil {
+		return t.AddDate(0, 0, 1).Add(-time.Nanosecond), true
+	}
+	return parseLogTime(trimmed)
 }
