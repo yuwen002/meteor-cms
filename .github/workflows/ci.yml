@@ -18,14 +18,30 @@ jobs:
           cache: true
       - name: gofmt
         run: |
-          fmt_out=$(gofmt -l api internal cmd ent/schema 2>/dev/null)
+          fmt_out=$(gofmt -l api internal cmd ent/schema test 2>/dev/null)
           if [ -n "$fmt_out" ]; then echo "以下文件未格式化:"; echo "$fmt_out"; exit 1; fi
       - name: go vet
         run: go vet ./...
       - name: build
         run: go build ./...
       - name: test
-        run: go test ./...
+        run: go test ./... -count=1
+      # 缓存哨兵、权限 generation 与限流都是并发代码，普通测试发现不了数据竞争。
+      - name: race on concurrent caches & limiters
+        run: |
+          go test -race -count=1 \
+            ./internal/pkg/cacheversion ./internal/pkg/permcheck \
+            ./internal/pkg/settings ./internal/pkg/dicts \
+            ./api/cms/v1/internal/middleware
+      # 只跑 1 次迭代：门禁目的是保证基准能编译、能执行，而不是在共享 runner 上比数值。
+      - name: benchmark smoke
+        run: go test ./... -run=^$ -bench=. -benchtime=1x
+      # 文档由 .api 源生成，手工注册路由的覆盖校验也在 apidoc 测试里；
+      # 产物与仓库不一致说明新增接口没有同步文档源。
+      - name: openapi consistency
+        run: |
+          go run ./cmd/apidoc
+          git diff --exit-code -- openapi.json
 
   web:
     name: Frontend build
@@ -55,4 +71,92 @@ jobs:
         run: docker compose config > /dev/null
       # 冒烟构建镜像：覆盖 Dockerfile 的前端/后端多阶段构建，不推送
       - name: Build image
-        run: docker build -t go-meteor-cms:ci .
+        run: docker build -t meteor-cms:ci .
+
+  migration:
+    name: Migration idempotency & lock
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: 123456
+          MYSQL_DATABASE: go_meteor_cms_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -p123456"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    env:
+      MYSQL_DSN: root:123456@tcp(127.0.0.1:3306)/go_meteor_cms_test?parseTime=True&loc=Local
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+      # 空库连续两次完整迁移：验证种子幂等、唯一索引可重复建立。
+      - name: Migrate twice
+        run: |
+          go run ./cmd/migrate
+          go run ./cmd/migrate
+      # 并发迁移：GET_LOCK 必须让两个进程串行，否则会出现重复权限记录。
+      - name: Concurrent migrate
+        run: |
+          go run ./cmd/migrate & p1=$!
+          go run ./cmd/migrate & p2=$!
+          wait $p1
+          wait $p2
+      - name: Drift check is clean
+        run: go run ./cmd/migrate -check
+      - name: Dry-run is read-only
+        run: go run ./cmd/migrate -dry-run
+      - name: Split modes
+        run: |
+          go run ./cmd/migrate -skip-seed
+          go run ./cmd/migrate -only-seed
+      # 加唯一索引前的历史重复行清理：插入重复项后重跑迁移应自动收敛。
+      - name: Seed remains idempotent after drift
+        run: |
+          go run ./cmd/migrate -check
+          go run ./cmd/migrate
+      # 旧版 schema 升级路径：缺列漂移 → 补列 → 种子/显示名迁移 → 版本记录 → 启动校验。
+      # 用例使用独立库 meteor_cms_upgrade_test（由 MYSQL_DSN 解析出主机与账号后创建），
+      # 不污染上面几步的空库迁移结论。
+      - name: Upgrade from legacy schema
+        run: go test -tags=integration -count=1 -v ./test/migration/...
+
+  e2e:
+    name: Data permission E2E
+    runs-on: ubuntu-latest
+    env:
+      # 仅本 job 关闭验证码与限流：完整 E2E 套件会在一分钟内多次登录并大量访问 /api/。
+      # 生产 compose 默认值仍为 true，不受影响。
+      LOGIN_CAPTCHA_ENABLED: "false"
+      LOGIN_RATE_LIMIT_ENABLED: "false"
+      PUBLIC_RATE_LIMIT_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+      - name: Start stack
+        run: |
+          docker compose up -d --build
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8888/healthz > /dev/null; then
+              echo "API ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+      - name: Run E2E
+        run: go test -tags=e2e -count=1 -v ./test/e2e/...
+      - name: Teardown
+        if: always()
+        run: docker compose down -v

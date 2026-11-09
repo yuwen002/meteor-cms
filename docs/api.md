@@ -1,4 +1,4 @@
-# Go Meteor CMS 接口文档
+# Meteor CMS 接口文档
 
 服务默认监听 `http://localhost:8888`，本文按「模块 + 方法 + 路径」列出全部接口。
 
@@ -54,6 +54,7 @@ Authorization: Bearer <token>
 | POST | `/admin/reset-password` | 用令牌设置新密码，令牌一次性、1 小时有效 |
 | POST | `/admin/refresh` | 用 refresh_token 换取新的 access_token |
 | GET | `/healthz` | 存活探活：返回 `database` / `redis` 状态；数据库不可用返回 503，Redis 故障仅标 `degraded`（有内存降级） |
+| GET | `/readyz` | 就绪探针：额外校验 `schema_migrations` 版本，返回 `ready` / `version` / `schema`；版本不匹配返回 503。与 `/healthz` 一样不走统一响应信封，直接按 HTTP 状态码判断 |
 
 ### 登录
 
@@ -307,6 +308,10 @@ Authorization: Bearer <token>
 | --- | --- | --- | --- |
 | GET | `/admin/logs/operations` | `system:log:operation_list` | 操作日志列表 |
 | GET | `/admin/logs/logins` | `system:log:login_list` | 登录日志列表 |
+| GET | `/admin/logs/operations/:id` | `system:log:operation_list` | 操作日志详情 |
+| GET | `/admin/logs/logins/:id` | `system:log:login_list` | 登录日志详情 |
+| GET | `/admin/logs/export` | `system:log:export` | 导出 CSV |
+| GET | `/admin/logs/stats` | `system:log:stats` | 近 N 天统计 |
 
 ### GET `/admin/logs/operations`
 
@@ -322,9 +327,9 @@ Authorization: Bearer <token>
 | username | string | 操作人账号（模糊匹配） |
 | module | string | 业务模块，如「管理员管理」 |
 | path | string | 请求路径（模糊匹配） |
-| status | int | 0 成功 / 1 失败 |
+| status | int（可选） | 0 成功 / 1 失败；**不传表示不筛选**，传 `0` 才是「只看成功」 |
 | start_time | string | 起始时间，支持 `2006-01-02 15:04:05` / `2006-01-02` / RFC3339 |
-| end_time | string | 结束时间 |
+| end_time | string | 结束时间；纯日期 `YYYY-MM-DD` 自动扩展到当天 `23:59:59.999999999`，含当天全部记录 |
 
 **响应 data**：
 
@@ -332,19 +337,36 @@ Authorization: Bearer <token>
 | --- | --- |
 | total | 总条数 |
 | list[].module | 业务模块 |
-| list[].action | 操作描述（取自权限树，如「新增管理员」） |
+| list[].action | 操作描述，由请求路径关键词与 HTTP 方法推断（如「新增」「审核通过」「强制下线」） |
 | list[].status | 0 成功 / 1 失败 |
-| list[].params | 请求参数快照（密码等敏感字段已脱敏、超长截断） |
+| list[].params | JSON / 表单参数快照（敏感字段递归脱敏、超长截断） |
+| list[].query | URL query / 表单参数快照（敏感键脱敏、超长截断） |
+| list[].request_id | 请求链路标识，可与登录日志及运行日志串联（响应头 `X-Request-ID`） |
+| list[].biz_code | 业务响应码，0 表示成功 |
+| list[].http_status | HTTP 响应状态码 |
 | list[].duration_ms | 耗时（毫秒） |
 
-> 数据权限：非超管只能查询自己的操作日志，外部传入的 `user_id` 会被忽略。按 `created_at` 倒序返回。
-> 日志保留策略由 `Maintenance.AuditLogRetentionDays` 配置（默认 90 天，<=0 表示永久保留），由后台任务定期清理。
+> 数据权限：超管或持有 `system:log:view_all` 的审计员可查全量，其余用户只能查自己的日志；`user_id` 仅对全量可见者生效。按 `created_at` 倒序返回。
+> 只有两个列表查询接口与验证码获取跳过采集，详情 / 导出 / 统计接口本身会写操作日志。
+> 日志保留策略由 `Maintenance.AuditLogRetentionDays` 配置（默认 90 天，<=0 表示永久保留），后台任务分批删除并用 Redis 选主。
 
 ### GET `/admin/logs/logins`
 
-查询登录成功与失败记录，用于账号安全审计。参数与操作日志类似（`user_id`/`username`/`status`/`start_time`/`end_time`），按 `login_at` 倒序。
+查询登录成功与失败记录，用于账号安全审计。参数与操作日志类似（`user_id`/`username`/`status`/`start_time`/`end_time`），其中 `status` 不传表示不筛选、传 `0` 表示只看成功，纯日期型 `end_time` 含当天；按 `login_at` 倒序。
 
-**响应 data.list[]** 字段：`id, user_id, username, ip, user_agent, status, fail_reason, login_at`。
+**响应 data.list[]** 字段：`id, user_id, username, ip, user_agent, status, fail_reason, request_id, login_at`。
+
+### GET `/admin/logs/operations/:id` 与 `/admin/logs/logins/:id`
+
+按 ID 返回单条完整记录，数据范围与列表一致；记录不存在或越权统一返回 `2004`，避免探测他人日志是否存在。权限分别复用 `system:log:operation_list` 与 `system:log:login_list`。
+
+### GET `/admin/logs/export`
+
+按 `type=operation|login` 导出 CSV，筛选参数 `status` / `start_time` / `end_time` 与列表同语义。响应为 `text/csv`（带 UTF-8 BOM），单次最多 10000 条；以 `= + - @` 开头的单元格会加 `'` 前缀防止 CSV 注入。权限 `system:log:export`。
+
+### GET `/admin/logs/stats`
+
+近 `days` 天（1-30，默认 7）操作日志聚合，返回 `total` / `success` / `failed` 与 `by_day`、`by_module`、`by_biz_code` 三组分布。数据范围与列表一致。权限 `system:log:stats`。
 
 ---
 
@@ -664,14 +686,16 @@ Redis 不可用时降级为进程内 `sync.Map`，并每小时惰性清理过期
 | 事务后文件清理 | `trashlogic.go` | 彻底删除文章时，收集仅被该文章引用的 `/uploads/` 封面与正文图片，事务提交后再删文件；失败只记日志 |
 | 审核流 | `articlelogic.go` + `internal/seed/permissions.go` | `submit / approve / reject` 三个动作与权限码，待审核文章不能直接发布（`6032`） |
 | 审核留痕 | `article_reviews` + `GET /admin/articles/:id/reviews` | 三个审核动作与状态变更同事务写记录（含操作人快照、驳回备注），编辑页「文章轨迹」可查，彻底删除文章时一并清理 |
-| 数据权限 | `ensureOwner` | 超管放行，普通用户仅能操作本人文章 |
+| 数据权限 | `articleguard.go` / `ensureOwner` | 写操作由 `ensureOwner` 校验作者归属；读操作由 `articleReadScope` 统一判定：超管与持有 `cms:article:approve` / `cms:article:reject` 任一权限的审核角色可查看全部，其余用户按 `author_id` 过滤列表、详情、审核记录、修订历史与回收站（含恢复/彻底删除），越权读返回 `6037`；`cms:article:review` 仅能查看自己文章的审核记录，分类/标签为共享字典不过滤 |
 | 权限种子去重 | `internal/seed/permissions.go` | API 权限按 `(type, permission, method, api_path)` 幂等 upsert，允许同一权限码绑定多条接口；早期只按 `(type, permission)` 去重，批量下线/删除等后写入的 spec 会覆盖单条撤回/删除记录，使非超管被误判「权限不足」 |
 | 删除用户清理关联 | `admindeletelogic.go` | 软删管理员与清理 `admin_user_roles` 同事务；该关联表无软删除字段，残留行会让角色删除接口一直误判「角色正在被使用」 |
+| 统一权限缓存 | `internal/pkg/permcheck` / `permissionmiddleware.go` | 中间件与文章行级守卫共用同一份权限快照（注入 ctx），消除每请求重复三表查询与两套判定结论；缓存 key 带全局/单用户版本号，角色授权、用户角色绑定、角色更新/删除、用户删除后立即失效；全量 API 权限定义按全局缓存后在内存做路径匹配，不再为每个具体 URL 生成缓存 key |
+| 后台字典计数 | `taxonomycounts.go` | 分类/标签文章数由逐条 COUNT 改为一次 `GroupBy` 聚合，并复用 `articleReadScope` 叠加 `author_id`，计数口径与文章列表一致 |
 | 修订历史 | `article_revisions` | 编辑前存档；恢复版本前再次存档，保证可逆 |
 | 分类树筛选 | `publicarticlelogic.go` | `descendantCategoryIDs` 让父分类筛选自动包含所有子孙分类文章 |
 | 验证码开关 | `LOGIN_CAPTCHA_ENABLED` | 关闭时 `/api/captcha` 返回 `enabled=false`，登录不再校验 `captcha_id` / `captcha`，前端登录页隐藏验证码输入；仅限本地开发与 E2E，生产必须开启 |
 | 站点绝对地址 | `WEB_BASE_URL` | 用于 canonical、RSS、sitemap 的绝对链接；缺省时回退到请求 Host |
-| 组合索引 | `ent/schema/article.go` / `articletag.go` | `deleted_at` 作为最左列覆盖软删除条件，配合 `status/published_at/is_top/category_id` 及 `tag_id` 反查，避免列表全表扫描与 filesort |
+| 组合索引 | `ent/schema/article.go` / `articletag.go` | `deleted_at` 作为最左列覆盖软删除条件，配合 `status/published_at/is_top/category_id/author_id`（行级数据权限）及 `tag_id` 反查，避免列表全表扫描与 filesort |
 | 健康检查 | `/healthz` + `docker-compose.yml` | DB `EXISTS` 探活（2 秒超时），Redis 故障只标 `degraded` 不判死；compose 每 15 秒探活 |
 | 批量操作 | `/admin/articles/batch-offline` / `batch-delete` | 单次最多 100 篇，逐条数据权限校验 + 单事务提交 |
 | 前端按需加载 | `web/vite.config.ts` / `src/utils/element.ts` / `MenuItem.vue` | 组件样式按需解析、菜单图标按映射表精确引入（171KB → 29KB）、服务式 API 走组件深路径、后台 Layout 动态 import；Element Plus 组件 JS 仍是单个 790KB chunk，进一步压缩需要组件级懒加载或替换 UI 库 |
@@ -682,12 +706,47 @@ Redis 不可用时降级为进程内 `sync.Map`，并每小时惰性清理过期
 make gen-doc   # go run ./cmd/apidoc
 ```
 
-生成器读取 `api/cms/v1/cms.api`（含其 `import` 的 `.api` 文件）与
-`api/cms/v1/content.doc.api`（内容模块文档源），输出根目录 `openapi.json`。
+生成器读取 `api/cms/v1/cms.api` 与 `content.doc.api`、`system.doc.api`、`log.doc.api`、
+`site.doc.api`、`ops.doc.api` 五个手工路由文档源，输出根目录 `openapi.json`。
 它会把 `:id` / `:slug` / `:type` / `:rid` 转成 OpenAPI 占位符，把 `form` / `path` 标签
 转成 query / path parameters，把复合类型转成 `$ref`，并对 RSS / sitemap / robots
-标注纯文本响应。`go test ./cmd/apidoc` 校验内容模块路径、schema 与参数没有漏出文档。
+标注纯文本响应。`go test ./cmd/apidoc` 会遍历 `routes.go`、`contentroutes.go`、
+`logroutes.go`、`sysroutes.go`、`siteextroutes.go` 中注册的全部路由，逐条校验方法 + 路径
+都已出现在文档中。
 
-新增内容接口时，请同时更新 `contentroutes.go`、`article_types.go`、
-`content.doc.api`、权限种子与本文档，再执行 `make gen-doc`。
+新增手工接口时，请同时更新对应路由注册文件、类型定义、文档源、权限种子与本文档，再执行
+`make gen-doc`；漏改会直接被覆盖门禁拦下。
+
+## 配置 / 字典 / 站点扩展接口
+
+### 公开接口（无需认证）
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/site` | 字段白名单的站点信息，含 `comment_enabled`，不含任何密钥配置 |
+| GET | `/api/dicts/:code` | 只返回启用字典的启用项，按 `sort` 排序；字典停用或不存在返回空列表 |
+| GET | `/api/links` | 启用友链；`feature_link_enabled=false` 时返回空列表 |
+| GET | `/api/comments/:slug` | 已发布文章的已通过评论，不下发邮箱与 IP |
+| POST | `/api/comments` | 提交评论；受 `feature_comment_enabled` / `feature_comment_review` 控制，支持一级回复 |
+| POST | `/api/subscribe` | 幂等邮件订阅；受 `feature_subscription_enabled` 控制 |
+| GET | `/api/search` | 全文检索（标题/摘要/正文），返回 `keyword`、`took_ms`、`total`、`list` |
+
+### 后台接口（需登录 + 权限码）
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET / POST | `/admin/configs`、`/admin/configs/batch` | 配置列表（密文掩码）与事务批量保存 |
+| GET | `/admin/configs/key/:key`、`/admin/configs/:id` | 按 key / 详情查询 |
+| GET / POST | `/admin/config-versions/:id`、`/admin/config-versions/:id/rollback` | 变更历史与回滚 |
+| GET / POST | `/admin/content/export`、`/admin/content/import` | 内容包导出（文件下载）与单事务幂等导入；`overwrite` 走 query |
+| GET | `/admin/monitor` | 进程运行时指标与依赖状态 |
+| GET / POST / PUT / DELETE | `/admin/links`、`/admin/links/:id` | 友链管理 |
+| GET / PUT / DELETE | `/admin/comments`、`/admin/comments/:id/status`、`/admin/comments/:id` | 评论审核 |
+| GET / DELETE | `/admin/subscribers`、`/admin/subscribers/:id` | 订阅管理 |
+
+`GET /admin/files` 在原有字段上增加 `original_name`、`mime`、`width`、`height`、`ref_count`；
+被文章封面或正文引用的文件执行删除 / 重命名会返回参数错误，避免站内死链。
+
+`GET /admin/content/export` 直接输出 JSON 文件（不走 `{ code, msg, data }` 封装），
+前端需用 `fetch` + `blob` 下载；其余接口均为统一响应封装。
 

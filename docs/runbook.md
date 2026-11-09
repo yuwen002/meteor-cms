@@ -32,7 +32,7 @@ DSN 优先级：`MYSQL_DSN` 环境变量 > `api/cms/v1/etc/cms-api.yaml` 的 `Da
 
 ```bash
 go run cmd/migrate/main.go
-# 期望输出：📊 权限统计：菜单 11 / 按钮 52 / API 52
+# 期望输出：📊 权限统计（菜单 / 按钮 / API 三类数量，以实际种子为准）
 ```
 
 > 种子含默认超管 `admin / 123456`，生产环境务必修改密码。
@@ -95,7 +95,17 @@ compose 专用配置（`API_PORT` / `REDIS_PORT` / 镜像源构建参数等）�
 
 ### 3.4 后台维护
 
-服务启动后自动清理过期 token 黑名单，按 `Maintenance.TokenBlacklistCleanInterval`（默认 3600s）周期执行。
+服务启动后自动清理过期 token 黑名单，按 `Maintenance.TokenBlacklistCleanInterval`（默认 3600s）周期执行。审计日志按 `Maintenance.AuditLogRetentionDays`（默认 90 天）在启动时清理一次、之后每 24 小时清理一次；设为 `0` 可永久保留。清理按每批 1000 条分批 DELETE、两张表独立报错，多副本用 Redis 锁 `maintenance:audit_log_cleaner` 选主；Redis 不可用时退化为单实例执行。
+
+排查后台操作时进入「系统管理 → 操作日志 / 登录日志」：
+
+- 按「结果」筛选时，`status=0`（成功）与不筛选是两种语义，接口已用可选指针区分；
+- 结束日期填纯日期时包含当天全部记录，不必手动补 `23:59:59`；
+- 每条日志带 `request_id`（响应头 `X-Request-ID`），可用它把操作日志、登录日志与运行日志串起来；详情抽屉同时展示 JSON 参数与 query 快照（敏感键递归脱敏）；
+- 「操作」列由请求路径与方法推断，「统计」抽屉按天 / 模块 / 失败业务码定位异常，「导出 CSV」按当前筛选导出（上限 10000 条）；
+- 只有两个列表查询与验证码获取不产生操作日志，详情 / 导出 / 统计自身会被审计；
+- 数据权限三档：超管、持有 `system:log:view_all` 的审计员可看全量，其余用户只能看自己；`user_id` 仅对前两档生效；
+- 日志写入走有界队列，队列满会丢弃并在服务日志留 error；服务停止会等待在途记录落库，若出现「等待审计日志写入超时」需检查数据库。
 
 ### 3.5 Redis 与 CORS 配置（鉴权增强）
 
@@ -171,7 +181,7 @@ compose 专用配置（`API_PORT` / `REDIS_PORT` / 镜像源构建参数等）�
 7. **超管**：`admin_users.is_super=true` 跳过全部鉴权与数据过滤，便于调试但不应作为常规账户。
 8. **动态菜单**：侧边栏由 `GET /admin/profile/permissions` 返回的菜单树驱动（图标语义键 + `sort` 排序 + `parent_id` 层级），不写死在前端。
 9. **`is_super` 以数据库为准**：业务层判断超管一律查 DB 的 `admin_users.is_super`，**不信任 token claim**（claim 在权限变更后、旧 token 过期前仍携带旧值）。涉及 `adminupdatelogic` / `resetadminpasswordlogic` / `operationloglistlogic` / `loginloglistlogic`，统一经 `logic.currentUserIsSuper` 取数；权限中间件同理（见 `PermissionMiddleware`）。
-10. **密码复杂度**：新密码须 ≥8 位且至少含「大写/小写/数字/特殊字符」中三类（`utils.ValidatePasswordComplexity`）；创建/注册/改密/重置（含他人重置、找回密码）全入口统一校验。种子密码 `Admin123456` 满足该策略。
+10. **密码复杂度**：新密码须 ≥8 位且至少含「大写/小写/数字/特殊字符」中三类（`utils.ValidatePasswordComplexity`）；创建/注册/改密/重置（含他人重置、找回密码）全入口统一校验。**唯一例外是初始化种子**：`internal/seed/seed.go` 写入的是 `admin/123456`，它不满足该策略，因为种子直接构造 `AdminUser`、不经过业务入口校验。保留这个弱口令是为了本地开发与 E2E 开箱即用（E2E 也用该口令登录），启动日志会固定输出一条安全告警。生产环境首次登录后必须立即改密；`STRICT_SECURITY=true` 不会因这一项阻断启动，否则沿用默认种子的部署会全部起不来。
 11. **全局踢人 / 会话批量吊销**：token 携带 `tv`（版本号），Redis `auth:tv:<userID>` 自增即吊销该用户全部旧令牌；触发点：禁用/删除账号、改密（含他人重置、找回密码）。未配置 Redis 时降级为不校验（与限流一致）。
 12. **鉴权查库缓存**：权限中间件将「用户→角色→权限」集合与「API 路径→权限」解析按 60s TTL 内存缓存（`go-zero collection.Cache`）；`is_super`/`is_active` 仍每请求实时查库，保证权限变更即时生效。
 13. **Redis 依赖**：登录限流、token 版本（全局踢人）依赖 `cms-api.yaml` 的 `Redis`；`Host` 为空则相应能力降级（限流→内存、踢人→不校验），多实例部署务必配置以保证防护一致生效。
@@ -184,7 +194,8 @@ compose 专用配置（`API_PORT` / `REDIS_PORT` / 镜像源构建参数等）�
 
 ## 7. 回滚与定位
 
-- **版本回滚**：在 `.env` 把 `CMS_IMAGE` 改回上一个已发布版本，执行 `docker compose pull && docker compose up -d`（发布与回滚流程详见 `README.md`「版本发布与回滚」）。`migrate` 每次启动幂等执行且迁移只增不减，回滚前须确认旧版本与当前表结构兼容。
+- **版本回滚**：在 `.env` 把 `CMS_IMAGE` 改回上一个已发布版本，执行 `docker compose pull && docker compose up -d`（发布与回滚流程详见 `README.md`「版本发布与回滚」）。`migrate` 每次启动幂等执行且只新增表/列（`WithDropColumn(false)`，不会自动 DROP COLUMN），回滚前仍须确认旧版本与当前表结构兼容；确需删列必须走显式版本化迁移并先备份数据。
+- **schema 版本门禁**：新版 API 启动时会读 `schema_migrations` 并与程序内期望版本比对，不一致直接拒绝启动。回滚到旧镜像时若版本表里的版本比旧程序新，需要设 `SCHEMA_CHECK_STRICT=false` 临时放行，并人工确认旧代码不会访问新列；不要把该开关设为长期配置。`/readyz` 也会用同一份数据判定就绪，滚动发布时可据此阻断未迁移实例。
 - 提交历史：`e4998ad`（动态菜单多级层级 + 子菜单丢失修复）、`d8643a8`（统一响应信封修复）。
 - 接口一致性审计方法见 `docs/smoke-test.md` 第 6 节，建议改动 `routes.go` 或种子权限后复跑。
 
@@ -202,8 +213,103 @@ compose 专用配置（`API_PORT` / `REDIS_PORT` / 镜像源构建参数等）�
 2. 启动服务（yaml 中 `Redis.Host` 默认 `127.0.0.1:6379`）。
 3. 用任意合法的用户级 token（claim 含 `user_id` 与 `tv`）访问受保护接口（如 `/admin/profile/permissions`），应正常返回。
 4. 手动抬高该用户版本号（模拟「踢人」）：
-   `docker exec go-meteor-cms-redis redis-cli SET auth:tv:<userID> 5`
+   `docker exec meteor-cms-redis redis-cli SET auth:tv:<userID> 5`
 5. 用同一枚 `tv` 仍为旧值（如 0）的 token 再访问 → 应返回 `2012 登录状态已失效`。
 6. 用一枚 `tv=5`（与当前版本一致）的新 token 访问 → 应正常返回，证明「旧令牌失效、新令牌有效」。
 
 说明：生产中踢人由 disable/delete/change-password/reset 自动 `INCR auth:tv:<userID>` 触发，无需手动操作；上述步骤仅用于回归验证。
+
+---
+
+## 9. 配置 / 内容备份 / 监控 / 站点扩展
+
+### 9.1 系统配置与字典
+
+- 内置配置与字典由 `internal/seed` 幂等补齐：只新增缺失键、只补 `is_system` 标记，**不会覆盖运营已改的值**。
+- 配置值经 `internal/pkg/settings` 读取（30s TTL）；字典经 `internal/pkg/dicts` 读取。任何写接口成功后都会主动 `Invalidate()`，因此后台改完立即生效，无需重启。
+- 密文配置用 `Auth.AccessSecret` 派生密钥加密（`enc:v1:` 前缀）。**更换 AccessSecret 会导致已有密文无法解密**，变更前先用 `GET /admin/configs/key/:key` 备份明文并重新写入。
+- 配置改错可用 `GET /admin/config-versions/:id` 查历史，再 `POST /admin/config-versions/:id/rollback` 回滚；回滚本身也会写一条历史。
+- 流程状态机（发布/审核/下线）不接字典，避免配置误改破坏状态约束；只有业务可配枚举走字典。
+
+### 9.2 内容备份与恢复
+
+```bash
+make backup                         # 生成 backup/cms-content-<时间戳>.json
+make backup FILE=/data/cms.json     # 指定输出路径
+make restore FILE=/data/cms.json   # 幂等恢复（只补缺失）
+make restore FILE=/data/cms.json OVERWRITE=true  # 覆盖同 slug 文章
+```
+
+这是**逻辑备份**，覆盖分类、标签、文章、明文配置与字典，不包含管理员密码哈希、令牌黑名单、审计日志、上传文件本体与密文配置；站点完整迁移还需单独备份数据库与 `uploads/` 目录。恢复在单事务内完成，失败自动回滚。内容包格式版本为 `1.0`，格式不兼容时导入会被拒绝。
+
+后台「文章管理 → 导出内容 / 导入内容」使用同一份内容包，可用于跨实例迁移。
+
+### 9.3 运行监控
+
+`GET /admin/monitor`（`system:monitor:view`）返回 `status`（ok / degraded / unhealthy）、DB/Redis 状态、运行时长、goroutine、堆内存、GC、请求总数 / 5xx / 在途 / 平均 QPS、审计队列积压与累计丢弃。
+
+排查建议：
+
+- `audit_queue_depth` 持续接近 1024 或 `audit_queue_dropped` 增长 → 审计库写入变慢，检查 MySQL 负载与 `operation_logs` 索引；
+- `status=degraded` → Redis 不可用，token 版本强踢与限流会降级，按第 6 节排查；
+- `heap_alloc_mb` 持续上涨且 `num_gc` 不增 → 用 pprof 抓堆快照。
+
+`/healthz` 仍只做探活，用于容器 healthcheck；监控指标不要接到探活上，避免指标抖动导致容器重启。
+
+### 9.4 站点扩展模块功能开关
+
+| 配置键 | 默认 | 作用 |
+| --- | --- | --- |
+| `feature_comment_enabled` | `false` | 关闭时 `POST /api/comments` 直接拒绝，前台不展示评论表单 |
+| `feature_comment_review` | `true` | 新评论为待审；关闭后新评论直接可见 |
+| `feature_link_enabled` | `true` | 关闭时 `GET /api/links` 返回空列表 |
+| `feature_subscription_enabled` | `true` | 关闭时订阅接口拒绝写入 |
+
+公开评论接口没有登录态，上线前务必确认限流策略与审核开关；`GET /api/comments/:slug` 只返回已通过评论且不暴露邮箱/IP。后台「系统管理 → 站点扩展」负责友链维护、评论审核与订阅管理。
+
+---
+
+## 10. 初始化与迁移排障
+
+> **更名后的数据卷**：项目已更名为 `meteor-cms`（镜像、容器、module、站点显示名），
+> 但数据库名 `go_meteor_cms` 与数据卷 `go-meteor-cms_mysql_data` 刻意保留——
+> `docker-compose.yml` 已显式声明卷名，重命名仓库目录不会另建空库。
+> 排障时若发现「部署成功但没有历史数据」，先执行
+> `docker volume ls | grep meteor` 确认用的是哪一个卷，不要直接 `docker compose down -v`。
+
+### 10.1 启动失败速查
+
+| 现象 | 原因 | 处理 |
+| --- | --- | --- |
+| `配置校验失败: Database.Source 为空` | 容器既没设 `MYSQL_DSN` 也找不到配置文件 | 补 `MYSQL_DSN` 或 `CMS_CONFIG` |
+| `数据库连通性检查失败` | DB 未就绪 / DSN 密码或主机名错 | 先看 `docker compose ps` 与 mysql healthcheck |
+| `读取 schema_migrations 失败（请先执行 make migrate）` | 漏跑迁移，或版本表被删 | `make migrate`；紧急回滚可临时设 `SCHEMA_CHECK_STRICT=false` |
+| `数据库 schema 版本 X 与程序期望 Y 不一致` | 换了镜像但没跑新迁移 | `make migrate` 后重启 API |
+| `STRICT_SECURITY=true，存在 N 项安全配置问题` | 仍用示例密钥 / 关闭了限流 | 注入 `AUTH_*`、恢复限流开关 |
+| `/healthz` 200 但 `/readyz` 503 | schema 版本不匹配或版本表读不到 | 按上面两条处理，滚动发布时该实例不应接流量 |
+
+启动日志里有一行 `生效配置 ...` 是脱敏后的实际参数，排障时先比对它，不要直接看 yaml。
+
+### 10.2 迁移并发与半初始化
+
+`cmd/migrate` 用 MySQL `GET_LOCK` 串行化，等待 30 秒拿不到锁会明确报「另一个迁移任务正在执行」。若看到这条日志，先确认是否有滞留的 migrate 容器或另一个发布流程在跑，不要直接 `docker compose down -v`。
+
+种子在单事务里提交，日志里的「初始化数据失败（事务已回滚，表结构已同步）」表示**表结构已经成功同步**，只是种子失败——此时可以用 `make migrate-seed` 单独重试，不需要重建库。旧版本在这里会让整个 API 起不来，现已修复。
+
+### 10.3 升级到带唯一索引的版本
+
+`admin_permissions` 新增了 `(type, permission, method, api_path)` 唯一索引。CLI 在 `Schema.Create` 之前会执行 `DedupePermissions`：保留每组最小 id、把角色绑定迁移过去、清理重复行。若旧库重复数据很多，这一步可能耗时较长，建议在维护窗口执行并先跑：
+
+```bash
+make backup
+make migrate-check          # 只列出差异，退出码 2 表示需要迁移
+go run ./cmd/migrate -dry-run
+go run ./cmd/migrate -require-backup   # 需 CMS_BACKUP_FILE 指向 24 小时内的备份
+make migrate
+```
+
+### 10.4 回填与回退
+
+- 历史上传文件：`make migrate-backfill`，按 url 判重可重复执行；`UPLOAD_DIR=/data/uploads make migrate-backfill` 可换目录。
+- 配置 / 字典新增列：每次 `make migrate` 的种子都会补齐仍为零值的 `config_group` / `value_type` / `validation` / `sort` / `is_secret` / `dict_group`，不会覆盖运营改过的分组、启停或配置值。
+- 迁移工具只读预览不会写任何记录，`-check` 有差异时退出码为 2，可直接用于 CI 门禁。

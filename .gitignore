@@ -61,3 +61,5 @@ web/dist
 *.tsbuildinfo
 web/vite.config.js
 web/vite.config.d.ts
+# Vite 加载配置时生成的带时间戳临时文件，异常中断时会留在源码目录
+web/vite.config.js.timestamp-*.mjs

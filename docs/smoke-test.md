@@ -18,9 +18,10 @@
 ## 2. 前置准备
 
 ```bash
-# 1) 数据库迁移（幂等，输出权限统计）
+# 1) 数据库迁移（幂等，输出权限统计与 schema 版本）
 go run cmd/migrate/main.go
-#   期望输出：📊 权限统计：菜单 11 / 按钮 52 / API 52
+#   期望输出：✅ schema 版本已记录 ... 与 📊 权限统计：菜单 / 按钮 / API 三项（数量以实际种子为准）
+#   只看「有没有报错」和 schema 版本行，不要用硬编码数量做断言
 
 # 2) 启动后端
 go run ./api/cms/v1 -f api/cms/v1/etc/cms-api.yaml
@@ -125,7 +126,7 @@ DELETE /admin/configs/<id>   -> code=0
 
 - 仪表盘页无法解析数据（空白）。
 - `/admin/refresh` 同样缺少信封，导致 **access token 过期时无法无感刷新**（刷新逻辑 `doRefresh` 依赖信封内的 `access_token`/`refresh_token`）。
-- `cmshandler.go` 虽未注册路由（死代码），也一并改为 `common.Ok` 保持一致。
+- `cmshandler.go` 虽未注册路由（死代码），当时也一并改为 `common.Ok` 保持一致；该 goctl 占位 handler 与其 `cmslogic.go`（返回 `"your-jwt-token-here"` 等假令牌）已在后续清理中删除，避免被误当成可用的登录入口。
 
 修复：三处统一改为 `common.Ok(w, resp)`。修复后复测 `dashboard/stats` 返回 `code=0` + `data`，刷新逻辑恢复正常。
 
@@ -168,8 +169,12 @@ DOM 结构确认：
 
 自动比对两份清单（含 `:id` 路径参数归一化与 method 匹配）：
 
-- **受保护路由**：`api/cms/v1/internal/handler/routes.go` 中注册的全部路由（共 **52** 个）。
-- **种子 API 权限**：`internal/seed/permissions.go` 中所有 `Type: PermissionTypeAPI`（即 `Type=3`）记录，取 `Method + APIPath`（共 **52** 条）。
+- **受保护路由**：`api/cms/v1/internal/handler/` 下所有 `*routes.go` 中注册的全部路由。
+- **种子 API 权限**：`internal/seed/permissions.go` 中所有 `Type: PermissionTypeAPI`（即 `Type=3`）记录，取 `Method + APIPath`。
+
+> 两侧条数都会随功能扩展变化（本次迁移输出为菜单 17 / 按钮 86 / API 104），
+> 审计时以**当次** `go run ./cmd/migrate` 输出的权限统计和路由注册文件为准，
+> 不要沿用本文件里写过的历史数字。
 
 比对口径：
 

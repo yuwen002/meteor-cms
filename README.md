@@ -1,6 +1,6 @@
-# Go Meteor CMS
+# Meteor CMS
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/yuwen002/go-meteor-cms)](https://goreportcard.com/report/github.com/yuwen002/go-meteor-cms)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yuwen002/meteor-cms)](https://goreportcard.com/report/github.com/yuwen002/meteor-cms)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 基于 Go 和 Go-Zero 开发的内容管理系统后端 API 服务。
@@ -39,7 +39,7 @@
 - 🔒 安全与体验：服务端 SEO 注入、浏览量 IP 去重、公开接口限流、登录验证码开关、安全 Markdown 渲染
 - 📡 内容分发：相关文章 / 上下篇、作者展示、RSS 2.0、sitemap.xml、robots.txt
 - 🌐 公开阅读站点：`/articles` 前台列表与详情，无需登录，正文安全渲染
-- ⚡ 性能与运维：组合索引、列表排序与批量操作、公开导航聚合计数、`/healthz` 探活、前端依赖分包、写事务独立超时、权限种子按接口幂等去重
+- ⚡ 性能与运维：组合索引、列表排序与批量操作、公开与后台字典聚合计数、`/healthz` 探活、前端依赖分包、写事务独立超时、权限种子按接口幂等去重、统一权限缓存与主动失效
 - 🖥️ 配套 Vue3 + Element Plus 前端管理后台（见「前端 Web 管理后台」一节）
 
 ## 技术栈
@@ -73,8 +73,8 @@
 1. 克隆仓库
 
 ```bash
-git clone https://github.com/yuwen002/go-meteor-cms.git
-cd go-meteor-cms
+git clone https://github.com/yuwen002/meteor-cms.git
+cd meteor-cms
 ```
 
 2. 安装依赖
@@ -108,7 +108,7 @@ Mail:
   Port: 587                       # 587(STARTTLS) / 465(SSL) / 25
   Username: "noreply@example.com"
   Password: ""                    # 密码或授权码
-  From: "Go Meteor CMS <noreply@example.com>"
+  From: "Meteor CMS <noreply@example.com>"
 ```
 
 4. 数据库迁移
@@ -118,7 +118,7 @@ Mail:
 go run cmd/migrate/main.go
 ```
 
-迁移完成后会输出权限统计，形如 `📊 权限统计：菜单 11 / 按钮 52 / API 52`（合计 115 条），其中 API 权限直接决定非超级管理员能否访问各接口。
+迁移完成后会输出权限统计（菜单 / 按钮 / API 三类数量，以实际种子为准；不要用硬编码数字做判断），其中 API 权限直接决定非超级管理员能否访问各接口。
 
 5. 启动服务
 
@@ -207,7 +207,7 @@ npm run preview      # 本地预览构建产物
 - `code > 0`：业务错误，`msg` 为提示信息，完整错误码见 [`internal/common/error_code.go`](internal/common/error_code.go)
 
 > 分页参数通用约定：`page` 小于 1 时按 1 处理，`page_size` 小于 1 时取接口默认值，大于 100 一律截断为 100，响应中的 `page_size` 为实际生效值。
-> 完整的接口清单（含角色、权限、部门模块）见 [`docs/api.md`](docs/api.md) 与 `docs/api-docs/go-meteor-cms.apifox.json`。
+> 完整的接口清单（含角色、权限、部门模块）见 [`docs/api.md`](docs/api.md) 与 `docs/api-docs/meteor-cms.apifox.json`。
 
 ### 公共接口
 
@@ -471,9 +471,14 @@ Authorization: Bearer <token>
 `GET /api/rss`、`GET /sitemap.xml`、`GET /robots.txt`，
 对应前台阅读页 `/articles` 与 `/articles/:slug`。字段定义与状态机说明见 `docs/api.md`「文章发布」章节。
 
-OpenAPI 文档由 `make gen-doc` 生成：合并 `api/cms/v1/cms.api` 与
-`api/cms/v1/content.doc.api`（内容模块文档源，不参与 goctl），输出根目录 `openapi.json`，
+OpenAPI 文档由 `make gen-doc` 生成：以 `api/cms/v1/cms.api` 为主体，合并
+`content.doc.api`（内容模块）、`system.doc.api`（配置 / 字典 / 文件）、
+`log.doc.api`（日志详情 / 导出 / 统计）、`site.doc.api`（公开站点 / 配置增强）、
+`ops.doc.api`（内容包 / 监控 / 全文检索 / 站点扩展）共五份文档源。
+`*.doc.api` 只供文档生成，不参与 goctl；产物为根目录 `openapi.json`，
 镜像内同时发布到 `/openapi.json` 供 `/docs.html` 使用。
+`cmd/apidoc` 的测试自动扫描 `internal/handler/*routes.go` 中注册的全部路由
+做覆盖校验，CI 用 `git diff --exit-code -- openapi.json` 阻止新增接口漏同步文档。
 
 ## 默认管理员账户
 
@@ -482,7 +487,10 @@ OpenAPI 文档由 `make gen-doc` 生成：合并 `api/cms/v1/cms.api` 与
 - 用户名: `admin`
 - 密码: `123456`
 
-请在生产环境中及时修改默认密码。
+> `123456` 不满足后台密码复杂度策略（≥8 位且含三类字符），它是初始化种子的**唯一例外**：
+> 种子直接构造用户记录，不经过业务入口校验。保留该默认值是为了本地开发与 E2E 开箱即用，
+> 启动日志会固定输出一条安全告警。**生产环境首次登录后必须立即修改**，并配合
+> `STRICT_SECURITY=true` 与自定义 `AUTH_ACCESS_SECRET` / `AUTH_REFRESH_SECRET` 使用。
 
 ## 权限模型
 
@@ -516,7 +524,8 @@ OpenAPI 文档由 `make gen-doc` 生成：合并 `api/cms/v1/cms.api` 与
 
 - 多个角色时取各角色可见范围的并集；任一角色为「全部数据」时不过滤
 - **安全原则（fail-closed）**：范围解析失败、用户未分配任何启用角色、或要求按部门过滤但未分配部门时，一律按最严格处理（不返回数据），绝不退回全量
-- 当前仅在管理员列表接口落地，其他列表接口暂不过滤
+- 文章模块已落地行级过滤：超管与持有 `cms:article:approve` / `cms:article:reject` 任一权限的审核角色可查看全部文章，其余用户仅能看到自己创建的文章（列表、详情、审核记录、修订历史、回收站，含恢复与彻底删除）；`cms:article:review` 只表示可查看审核记录，普通作者持有它仍只能看自己文章；分类、标签属于共享字典，不做作者过滤
+- 管理员列表/详情按 `dept_id` 走 `datascope` 范围解析；文章模块按 `author_id` 判定，两套模型分别适用于不同实体
 
 ## 开发指南
 
@@ -550,7 +559,7 @@ go test ./internal/... ./api/cms/v1/internal/middleware/...
 # 运行测试并生成覆盖率报告
 go test -coverprofile=coverage.out ./... && go tool cover -html=coverage.out
 
-# 重新生成全量 OpenAPI 文档并校验内容模块覆盖
+# 重新生成全量 OpenAPI 文档并校验所有注册路由覆盖
 make gen-doc && go test ./cmd/apidoc
 ```
 
@@ -566,6 +575,22 @@ make gen-doc && go test ./cmd/apidoc
 - `internal/seed`：权限种子的 `(method, api_path)` 唯一性、文章模块 API / 按钮 / 菜单齐备、菜单父级声明顺序、contentroutes 全路由登记覆盖、同权限码多接口不被覆盖
 - `cmd/apidoc`：OpenAPI 输出覆盖内容模块路径、schema、query / path 参数与 RSS / sitemap 纯文本响应
 - JWT 中间件测试用进程内 Redis + 空结果集 ent driver 替代数据库，无需 MySQL / Docker
+
+### 端到端测试（需 Docker）
+
+跨账号的数据权限必须打真实 HTTP 才能验证，用例放在 `test/e2e`，用 `e2e` build tag 隔离，
+因此普通 `go test ./...` 不会连接任何外部服务。
+
+```bash
+LOGIN_CAPTCHA_ENABLED=false LOGIN_RATE_LIMIT_ENABLED=false PUBLIC_RATE_LIMIT_ENABLED=false docker compose up -d --build
+go test -tags=e2e -count=1 -v ./test/e2e/...
+docker compose down -v
+```
+
+可用 `CMS_E2E_BASE_URL` / `CMS_E2E_ADMIN_PASSWORD` 覆盖接口地址与超管密码。
+CI 的 `Data permission E2E` job 会起 compose、等待 `/healthz` 就绪后执行同一组用例，
+用例自行创建并清理测试用的用户、角色与文章。用户/角色通过业务接口删除（软删），
+本地重复运行会保留这些软删记录；CI 每次使用全新数据卷，不受影响。
 
 只跑文章相关的回归用例：
 
@@ -634,18 +659,18 @@ make migrate && make run                  # 或 go run ./api/cms/v1 -f api/cms/v
 或单独构建运行：
 
 ```bash
-docker build -t go-meteor-cms .
+docker build -t meteor-cms:local .
 docker run -d -p 8888:8888 \
   -e MYSQL_DSN="root:123456@tcp(host.docker.internal:3306)/go_meteor_cms?parseTime=True&loc=Local" \
   -e REDIS_HOST="host.docker.internal:6379" \
   -e WEB_DIST="/app/web/dist" \
-  go-meteor-cms
+  meteor-cms:local
 ```
 
 容器内的迁移工具位于 `/app/migrate`，可在部署流程中单独执行：
 
 ```bash
-docker run --rm -e MYSQL_DSN="..." --entrypoint /app/migrate go-meteor-cms
+docker run --rm -e MYSQL_DSN="..." --entrypoint /app/migrate meteor-cms:local
 ```
 
 ### 编译部署
@@ -666,14 +691,19 @@ go build -o bin/migrate ./cmd/migrate
 | 变量 | 说明 |
 | --- | --- |
 | `MYSQL_DSN` | 数据库连接串，设置后覆盖配置文件中的 `Database.Source`（容器化部署推荐；未设置时默认 `127.0.0.1:3306`） |
-| `REDIS_HOST` | Redis 地址，容器内置为 `redis:6379`；未设置时按配置文件默认 `127.0.0.1:6379` |
+| `REDIS_HOST` / `REDIS_PASS` | Redis 地址与密码，容器内置为 `redis:6379` |
 | `WEB_DIST` | 前端构建产物目录；容器内置为 `/app/web/dist`，本地开发留空则仅暴露 API |
+| `AUTH_ACCESS_SECRET` / `AUTH_REFRESH_SECRET` | JWT 签名密钥，生产必须替换仓库示例值 |
+| `STRICT_SECURITY` / `SQL_DEBUG` / `SCHEMA_CHECK_STRICT` | 安全严格模式 / SQL 日志开关 / schema 版本校验开关 |
+| `CMS_CONFIG` | `cmd/migrate`、`cmd/backup` 读取的配置文件路径；也可用各自的 `-f` 指定 |
+
+其余（连接池、令牌有效期、邮件、维护策略、限流）见「程序初始化与数据迁移」章节与 `.env.example`。
 
 compose 专用配置（写在 `.env`，由 `${VAR:-默认值}` 插值；不提供 `.env` 时用默认值）：
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `CMS_IMAGE` | `go-meteor-cms:local` | migrate / api 使用的镜像；生产固定为已发布版本，改回旧版本即可回滚 |
+| `CMS_IMAGE` | `meteor-cms:local` | migrate / api 使用的镜像；生产固定为已发布版本，改回旧版本即可回滚 |
 | `MYSQL_ROOT_PASSWORD` | `123456` | MySQL root 口令，需与 `MYSQL_DSN` 保持一致 |
 | `MYSQL_DATABASE` | `go_meteor_cms` | 库名，需与 `MYSQL_DSN` 保持一致 |
 | `API_PORT` | `8888` | API / 前端对外端口 |
@@ -691,30 +721,158 @@ compose 专用配置（写在 `.env`，由 `${VAR:-默认值}` 插值；不提�
 # 在已验证的 commit 上打标签触发发版
 git tag -a v1.2.3 -m "release v1.2.3"
 git push origin v1.2.3
-# 产出：ghcr.io/yuwen002/go-meteor-cms:1.2.3 / :1.2 / :latest
+# 产出：ghcr.io/yuwen002/meteor-cms:1.2.3 / :1.2 / :latest
 ```
 
 生产部署在 `.env` 中固定版本（不要用 `latest`）：
 
 ```bash
-CMS_IMAGE=ghcr.io/yuwen002/go-meteor-cms:1.2.3
+CMS_IMAGE=ghcr.io/yuwen002/meteor-cms:1.2.3
 docker compose pull && docker compose up -d
 ```
 
-> compose 同时保留了 `build:`，因此**必须先 `pull` 且不要加 `--build`**，否则会在本机重新构建并覆盖已发布镜像。
+> `api` 服务仍保留 `build:`（`migrate` 复用同一镜像、不重复构建，否则两个服务会并发构建同一 tag 而报 `image already exists`），因此**必须先 `pull` 且不要加 `--build`**，否则会在本机重新构建并覆盖已发布镜像。
 
 回滚只需把 `CMS_IMAGE` 改回上一个版本号并重复上述命令：
 
 ```bash
-CMS_IMAGE=ghcr.io/yuwen002/go-meteor-cms:1.2.2
+CMS_IMAGE=ghcr.io/yuwen002/meteor-cms:1.2.2
 docker compose pull && docker compose up -d
 ```
 
-> `migrate` 服务在每次 `up -d` 时幂等执行迁移（只增不减）。回滚镜像前请确认旧版本与当前表结构兼容；若发版包含破坏性 schema 变更，需另行评估数据回滚方案。
+> `migrate` 容器只在镜像或配置变化需要重建时执行，由 MySQL `GET_LOCK` 串行化；执行结果写入 `schema_migrations`，API 启动时会校验版本（详见「程序初始化与数据迁移」）。表结构同步坚持只增不减（`WithDropColumn(false)`），回滚镜像前请确认旧版本与当前表结构兼容，必要时临时设 `SCHEMA_CHECK_STRICT=false`；确需删列的破坏性变更须走显式版本化迁移并先备份数据。
 
 ### 后台维护任务
 
 服务启动时会自动清理已过期的 token 黑名单记录，之后按 `Maintenance.TokenBlacklistCleanInterval`（默认 3600 秒）周期性执行，避免 `token_blacklists` 表随每次登出无限增长。
+
+审计日志同样在启动时清理一次，之后每 24 小时按 `Maintenance.AuditLogRetentionDays`（默认 90 天，`<=0` 表示永久保留）删除过期的 `operation_logs` / `login_logs`。清理按每批 1000 条分批 DELETE，两张表独立记录错误；多副本部署时用 Redis 锁 `maintenance:audit_log_cleaner` 选主，避免重复清理，Redis 不可用时退化为单实例执行。
+
+### 后台审计日志
+
+后台「操作日志」「登录日志」由 `OperationLogMiddleware` 采集受保护接口与认证类接口调用；被登录限流拦截的请求另有补记链路写入 `login_logs`，登录成功/失败也独立留痕。两类日志均不支持修改或软删除。
+
+每条操作日志包含：操作人、模块、动作、路径、`request_id` 链路标识、递归脱敏后的 JSON / 表单 / query 参数快照、业务码 `biz_code`、HTTP 状态码、结果与耗时。客户端可用 `X-Request-ID` 传入上游链路标识，服务端原样回写响应头。
+
+日志写入统一走 `internal/pkg/audit` 的有界队列（4 worker / 1024 队列 / 单条 3s 超时）：队列满时丢弃并记 error 日志而不是拖垮业务请求，单条 panic 不会带崩 worker，服务停止时 `audit.Shutdown` 会等待在途记录落库。
+
+排查要点：
+
+- `status` 为可选参数，**不传**表示不筛选，传 `status=0` 才表示只看成功；
+- `end_time=YYYY-MM-DD` 会包含当天 23:59:59.999999999，不会漏掉当天日志；
+- 只有两个列表查询接口与验证码获取不写操作日志，详情 / 导出 / 统计接口本身都会被审计；
+- 详情抽屉通过 `GET /admin/logs/operations/:id` 拉取全量字段（含 `params`、`query`、`request_id`、`user_agent`、`error_msg`），复用列表权限；
+- 「统计」抽屉展示近 7 天按天 / 模块 / 失败业务码的聚合；「导出 CSV」按当前筛选条件导出，单次上限 10000 条，受 `system:log:export` 控制；
+- 数据权限三档：超管可看全量，持有 `system:log:view_all` 的审计员也可看全量，其余用户只能看自己；`user_id` 仅对前两档生效。
+
+## 配置存储、数据字典与站点扩展
+
+**系统配置**（`sys_configs`）：分组、值类型（string/text/int/bool/json/url/image）、正则校验、排序、启停、内置保护、密文标记与变更版本。`mail_smtp_password` 等密文项由 `internal/pkg/secretbox` 以 AES-GCM 加密（密文带 `enc:v1:` 前缀，密钥从 `Auth.AccessSecret` 派生），列表统一返回 `******`，审计参数快照会过滤 `config_value`。历史明文值可平滑读取，不强制迁移。
+
+配置统一从 `internal/pkg/settings` 读取（TTL 30s 进程内缓存 + 写后失效），前端配置页支持分组标签、批量保存、按 key 取值、详情、变更历史与一键回滚；配置值可用指针字段显式清空。
+
+**数据字典**（`sys_dicts` / `sys_dict_items`）：分组、内置保护、层级 `parent_id`、默认项、启停、备注；删除字典在单事务内级联删除字典项并校验父项引用。`internal/pkg/dicts` 提供只读缓存，公开白名单接口 `GET /api/dicts/:code` 只返回启用字典的启用项。业务可配枚举（配置分组、值类型、文章来源、链接类型等）走字典驱动；发布状态、审核状态等流程状态机继续硬编码，避免配置误改破坏状态约束。
+
+**公开站点信息**：`GET /api/site` 按字段白名单输出站名、Logo、描述、关键词、ICP、页脚、语言、标题模板、主题与主题色，绝不回传全量配置。SPA 首屏 meta、RSS、sitemap、robots、前台页眉/页脚/主题色都由该配置驱动；`site_url` 可覆盖 `WEB_BASE_URL`，`seo_robots_disallow` / `seo_robots_sitemap` 控制 robots 输出。`site_footer` 支持 `{year}`（当年）、`{site_name}` / `{site}`（站名）占位符：后台保存原始模板便于编辑，`GET /api/site` 返回展开后的文本；写死年份的自定义页脚原样展示，因此跨年后不会再出现过期版权年份。
+
+**周边能力**：
+
+| 能力 | 入口 | 说明 |
+| --- | --- | --- |
+| 内容导入导出 | `GET /admin/content/export`、`POST /admin/content/import` | 可移植 JSON 快照（分类/标签/文章/明文配置/字典），slug 为稳定标识，单事务幂等导入；`overwrite=true` 覆盖同 slug 文章。密文配置不导出 |
+| 逻辑备份 / 恢复 | `make backup [FILE=...]`、`make restore FILE=... [OVERWRITE=true]` | `cmd/backup` 复用内容包，不含管理员密码哈希、令牌黑名单与审计日志；物理备份仍需数据库 dump |
+| 媒体元数据 | `media_files` 表 + 文件管理页 | 上传时探测真实 MIME / 原文件名 / 图片宽高，展示文章引用篇数；被引用文件禁止删除与重命名 |
+| 全文检索 | `GET /api/articles?keyword=`、`GET /api/search?keyword=` | 标题 + 摘要 + 正文 LIKE 匹配，仅返回已发布文章；数据量大时应改 FULLTEXT 或外部搜索引擎 |
+| 运行监控 | `GET /admin/monitor` + 控制台面板 | 运行时长、goroutine、堆内存、GC、请求总数 / 5xx / 在途 / 平均 QPS、审计队列积压与丢弃、DB/Redis 状态 |
+| 站点扩展 | 后台「系统管理 → 站点扩展」 | 友链、评论（层级 + 审核）、邮件订阅；开关由 `feature_*` 配置控制，公开接口不挂 JWT |
+
+全部手工注册路由都有 OpenAPI 文档源（`ops.doc.api`），`go test ./cmd/apidoc` 会以 Go 路由注册为基准做覆盖校验。
+
+## 程序初始化与数据迁移
+
+**启动链路**：`docker compose up -d` 按 `mysql 健康 → migrate 容器完成 → api 启动` 串行执行。API 进程启动时会依次完成：配置加载 → 环境变量覆盖 → `Validate()` 校验 → 数据库连接池创建与 `Ping` → schema 版本校验 → 缓存预热 → 路由与中间件注册 → 后台维护任务 → `server.Start()`。任一步失败都会明确退出，不会留下「启动成功但一请求就报 SQL 错」的实例。
+
+**配置覆盖**：所有敏感项都可通过环境变量注入，未设置时沿用 `api/cms/v1/etc/cms-api.yaml`。配置不会自动映射环境变量，新增开关必须在 `cms.go` 里显式读取。
+
+| 环境变量 | 用途 |
+| --- | --- |
+| `MYSQL_DSN` / `REDIS_HOST` / `REDIS_PASS` | 数据库与 Redis 连接 |
+| `AUTH_ACCESS_SECRET` / `AUTH_REFRESH_SECRET` | JWT 签名密钥；**生产必须替换**。更换 `AccessSecret` 会导致已有密文配置无法解密 |
+| `AUTH_ACCESS_EXPIRE` / `AUTH_REFRESH_EXPIRE` / `AUTH_REFRESH_GRACE_SECONDS` | 令牌有效期与轮换宽限期 |
+| `DB_MAX_OPEN_CONNS` / `DB_MAX_IDLE_CONNS` / `DB_CONN_MAX_LIFETIME` | 连接池参数（默认 20 / 10 / 3600s） |
+| `SQL_DEBUG` | 默认关闭；打开会把每条 SQL 及参数写入日志 |
+| `STRICT_SECURITY` | `true` 时把「示例密钥 / 关闭限流」等告警升级为启动失败 |
+| `SCHEMA_CHECK_STRICT` | 默认 `true`，启动时校验 `schema_migrations`；紧急回滚可临时设 `false` |
+| `MAIL_*` / `WEB_BASE_URL` / `MAINTENANCE_*` | 邮件、站点地址与维护策略 |
+| `LOGIN_*` / `PUBLIC_RATE_LIMIT_*` | 登录与公开接口防护（完整列表见 `.env.example`） |
+
+启动日志会打印构建版本、脱敏后的生效配置摘要与安全告警；`go run ./cmd/migrate -version` 可查看版本与期望的 schema 版本。
+
+**迁移工具**：
+
+```bash
+make migrate              # 完整迁移：结构同步 + 单事务种子 + 版本记录（幂等）
+make migrate-check        # 只读对比 information_schema 与 Ent 表定义，有差异退出码 2
+make migrate-dry-run      # 输出待新增表/列与期望索引清单，不执行 DDL
+make migrate-schema       # 只同步表结构（-skip-seed）
+make migrate-seed         # 只重跑种子（-only-seed）
+make migrate-backfill     # 回填历史上传文件的媒体元数据
+go run ./cmd/migrate -require-backup              # 校验 CMS_BACKUP_FILE 备份新鲜度后才继续
+go run ./cmd/migrate -timeout 600 -f /path/to.yaml
+```
+
+- `schema_migrations` 表记录 `version` / `checksum` / `duration_ms` / `applied_at`。API 启动时比对版本，`readyz` 也读取它；漏跑迁移的实例不会被接流量。
+- 迁移用 MySQL `GET_LOCK('meteor_cms_schema_migrate')` 串行化，多副本或重复 `compose up` 不会并发写种子；种子整体在**单个事务**里提交，失败即回滚，不会留下半初始化状态。
+- `admin_permissions` 上有 `(type, permission, method, api_path)` 唯一索引。升级前 CLI 会先清理历史重复行（同时迁移角色绑定），否则建索引会失败。`go test ./internal/seed` 会在静态层面拦截清单自身的重复键。
+- `Schema.Create` 仍坚持「只增不减」（`WithDropColumn(false)`）。`make migrate-backfill` 为媒体库上线前已上传的文件补齐 `media_files` 记录；`InitConfigs` / `InitDicts` 同时补齐历史行的 `config_group` / `value_type` / `dict_group` 等新增列，且**不覆盖运营已改的值**。
+- `cmd/migrate` 与 `cmd/backup` 共用 `internal/config.ResolveDSN`，优先级 `MYSQL_DSN > -f > CMS_CONFIG > 容器内 /app/etc > 仓库相对路径`；配置加载失败会明确报错，不再静默回退到硬编码弱口令 DSN。
+- 旧库升级路径由 `make test-integration`（即 `go test -tags=integration ./test/migration/...`，需 `MYSQL_DSN`）覆盖：构造缺列的上一版 `sys_configs` 与历史显示名，依次验证漂移检查能发现缺列 → Ent 补列 → 种子把站名 / 页脚迁移到 `Meteor CMS` / `© {year} Meteor CMS` 且不覆盖运营自定义值 → 重跑幂等 → `schema_migrations` 记录后启动校验放行。用例在独立库 `meteor_cms_upgrade_test` 中运行并自动清理，CI 的 `migration` job 每轮都会执行。
+
+**探针与关闭**：`/healthz` 是存活探活（DB + Redis 连通性），`/readyz` 额外校验 schema 版本并返回构建信息。服务停止时按「后台维护任务（WaitGroup，最多等 10s）→ 审计写入队列（5s）→ 数据库连接」的顺序收尾，每步都有超时兜底。
+
+**生产检查清单**：自定义 `AUTH_*` 密钥 → `STRICT_SECURITY=true` → 迁移前 `make backup` 并用 `-require-backup` 校验 → `make migrate-check` 确认漂移 → 执行 `make migrate` → 确认 `/readyz` 返回 200 → 首次登录立即修改 `admin/123456`。
+
+### 关于项目命名与兼容性
+
+项目已从 `go-meteor-cms` 更名为 `meteor-cms`：Go module（`github.com/yuwen002/meteor-cms`）、Docker 镜像 / 容器名、npm 包名、OpenAPI 标题、站点显示名 `Meteor CMS`、文档与代码生成模板都已统一。以下几项**刻意保留旧名**，改动会直接破坏已有数据，请勿「顺手清理」：
+
+| 保留项 | 原因 |
+| --- | --- |
+| 数据库名 `go_meteor_cms` | 现有数据卷里的库名；改 DSN 会连到一个空库，看起来像数据丢失。如需改名，先 `make backup` 导出内容包，改 `MYSQL_DATABASE` + `MYSQL_DSN` 后新建库并恢复 |
+| 数据卷 `go-meteor-cms_mysql_data` | `docker-compose.yml` 已显式声明卷名，因此重命名仓库目录 / compose 项目名后仍复用同一份数据。改卷名等于换一个空库 |
+| compose 项目名 `go-meteor-cms` | 默认取自仓库目录名。本地工作区目录仍是 `go-meteor-cms`（IDE 依赖该路径）；如需重命名目录，建议先 `docker compose down` 并确认卷名仍指向上面那一个 |
+
+已有数据库里的站点显示名会随 `make migrate`（或 compose 的 migrate 容器）自动更新：种子只在 `site_name` / `site_footer` 仍精确等于历史默认值（`Go Meteor CMS` / `© 2026 Go Meteor CMS`，以及更名后、年份模板化前写入的 `© 2026 Meteor CMS`）时改成 `Meteor CMS` / `© {year} Meteor CMS`；运营自定义过的站名与页脚不会被覆盖。更新后 `settings` 服务的进程内缓存会在 API 启动时预热，前台标题、RSS、页脚随即生效。
+
+**采用方案 A：GitHub 仓库随之改名**。源码里的 module path、badge、`git clone` 地址与 GHCR 路径都已经指向新名，因此仓库外部状态必须同步，否则会停留在「代码指向 `meteor-cms`、远端仍是 `go-meteor-cms`」的半改名状态。以下四步无法由代码自动完成，请按顺序执行：
+
+1. 在 GitHub 把仓库 `yuwen002/go-meteor-cms` 改名为 `yuwen002/meteor-cms`（GitHub 会对旧地址保留一段时间的重定向）。
+2. 本地更新远端地址并确认：
+
+   ```bash
+   git remote set-url origin git@github.com:yuwen002/meteor-cms.git
+   git remote -v
+   ```
+
+3. 在已验证的 commit 上推新标签 `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z` 触发发版。`.github/workflows/release.yml` 在发版前会校验 `github.repository == yuwen002/meteor-cms` 且 `go.mod` 的 module path 与仓库路径一致；仓库未改名会直接失败，避免把镜像推到旧路径 `ghcr.io/yuwen002/go-meteor-cms`。
+4. 生产 `.env` 把 `CMS_IMAGE` 指向新发布的 `ghcr.io/yuwen002/meteor-cms:<版本>`，执行 `docker compose pull && docker compose up -d`。仍在使用旧 tag 的环境保留一段时间，或在新仓库重新发布一份等价 tag 作为过渡。
+
+> 在步骤 1 完成前，README 顶部的 Go Report Card badge、`git clone` 地址与 ghcr 示例都会 404，`git push` 也会失败——这是预期的过渡状态，不要因此把源码里的新名回退。若最终决定不改仓库名，则必须改走方案 B：把 module path、badge、clone、ghcr 路径全部改回 `go-meteor-cms`，只保留显示名 `Meteor CMS`。
+
+`.idea/`（IDE 本地配置，含绝对路径与旧 module 名）不随源码提交，IDE 重新读取 `go.mod` 即可；`release.yml` 的 `IMAGE_NAME` 取自 `github.repository`，无需在代码里改镜像名。
+
+## 性能基准
+
+`make bench` 以 `-run=^$ -bench=. -benchmem -benchtime=200x` 跑全部基准（跳过单测），默认只迭代 200 次，便于在 CI 里快速冒烟；需要稳定数值时用 `make bench BENCHTIME=2s`，并固定机器负载再对比。CI 会用 `-benchtime=1x` 编译并执行一遍所有基准，防止基准代码随重构腐坏。
+
+| 基准 | 位置 | 覆盖路径 |
+| --- | --- | --- |
+| `BenchmarkExpandSiteText` | `internal/common` | 公开 `GET /api/site` 每次请求展开页脚模板 |
+| `BenchmarkNormalizeSlug` / `BenchmarkGenerateSlug` | `api/cms/v1/internal/logic` | 文章发布与导入时的 slug 规范化 |
+| `BenchmarkValidatePasswordComplexity` | `internal/utils` | 创建 / 注册 / 改密入口的逐字符校验 |
+| `BenchmarkCommentRateLimitMemoryFallback` | `api/cms/v1/internal/middleware` | Redis 故障时公开评论写入的内存限流兜底 |
+
+bcrypt 哈希与 Redis 网络路径刻意不纳入基准：前者是刻意慢哈希，后者测的是外部服务，数值不可复现。数据库与缓存的读写压测请用真实栈跑 `go test -tags=e2e ./test/e2e/...` 或外部压测工具，不要写成依赖本机端口的单测。
 
 ## 贡献指南
 
