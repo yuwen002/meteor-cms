@@ -37,6 +37,20 @@ jobs:
         with:
           go-version: "1.26"
           cache: true
+      # 项目已更名为 meteor-cms，而 IMAGE_NAME 取自 github.repository。
+      # 如果 GitHub 仓库还没改名，发版会把镜像推到旧路径 ghcr.io/yuwen002/go-meteor-cms，
+      # 与 README / .env.example 里声明的拉取地址对不上，生产会拉不到镜像。
+      - name: Verify repository name matches module path
+        run: |
+          if [ "${{ github.repository }}" != "yuwen002/meteor-cms" ]; then
+            echo "::error::仓库仍为 ${{ github.repository }}，请先在 GitHub 把仓库改名为 meteor-cms 再发版" >&2
+            exit 1
+          fi
+          MODULE=$(awk '/^module /{print $2}' go.mod)
+          if [ "$MODULE" != "github.com/${{ github.repository }}" ]; then
+            echo "::error::go.mod 的 module path ($MODULE) 与仓库路径不一致" >&2
+            exit 1
+          fi
       - name: go test
         run: go test ./...
 

@@ -1,4 +1,4 @@
-module github.com/yuwen002/go-meteor-cms
+module github.com/yuwen002/meteor-cms
 
 go 1.26.0
 

@@ -7,9 +7,9 @@ import (
 	"errors"
 	"net/http"
 
-	{{if .HasRequest}}{{.ImportPackages}}	"github.com/yuwen002/go-meteor-cms/internal/common"
+	{{if .HasRequest}}{{.ImportPackages}}	"github.com/yuwen002/meteor-cms/internal/common"
 	"github.com/zeromicro/go-zero/rest/httpx"{{else}}{{.ImportPackages}}
-	"github.com/yuwen002/go-meteor-cms/internal/common"{{end}}
+	"github.com/yuwen002/meteor-cms/internal/common"{{end}}
 )
 
 {{if .HasDoc}}{{.Doc}}{{end}}

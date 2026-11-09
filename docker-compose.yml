@@ -17,7 +17,7 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: go-meteor-cms-mysql
+    container_name: meteor-cms-mysql
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -37,7 +37,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: go-meteor-cms-redis
+    container_name: meteor-cms-redis
     command: ["redis-server", "--appendonly", "no"]
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -48,16 +48,12 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # 迁移：基于同一镜像，仅替换启动命令为 /app/migrate；依赖 mysql 健康后执行（幂等）
+  # 迁移：复用 api 服务构建出的同一镜像，仅替换启动命令为 /app/migrate。
+  # 这里刻意不重复声明 build：两个服务同时构建同一个 tag 时，
+  # `up -d --build` 会并发 naming 同一镜像并报 "image ... already exists"。
   migrate:
-    image: ${CMS_IMAGE:-go-meteor-cms:local}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org/}
-        GOPROXY: ${GOPROXY:-https://proxy.golang.org,direct}
-    container_name: go-meteor-cms-migrate
+    image: ${CMS_IMAGE:-meteor-cms:local}
+    container_name: meteor-cms-migrate
     command: ["/app/migrate"]
     environment:
       MYSQL_DSN: ${MYSQL_DSN:-root:123456@tcp(mysql:3306)/go_meteor_cms?parseTime=True&loc=Local}
@@ -68,14 +64,14 @@ services:
 
   # API：同一镜像默认 CMD 为 /app/cms -f etc/cms-api.yaml；前端由 WEB_DIST 托管
   api:
-    image: ${CMS_IMAGE:-go-meteor-cms:local}
+    image: ${CMS_IMAGE:-meteor-cms:local}
     build:
       context: .
       dockerfile: Dockerfile
       args:
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org/}
         GOPROXY: ${GOPROXY:-https://proxy.golang.org,direct}
-    container_name: go-meteor-cms-api
+    container_name: meteor-cms-api
     ports:
       - "${API_PORT:-8888}:8888"
     environment:
@@ -84,11 +80,35 @@ services:
       WEB_DIST: ${WEB_DIST:-/app/web/dist}
       # 登录验证码：生产环境保持 true；仅本地开发 / 自动化 E2E 设为 false
       LOGIN_CAPTCHA_ENABLED: ${LOGIN_CAPTCHA_ENABLED:-true}
+      # 登录防爆破限流：生产保持 true；完整 E2E 套件可用 LOGIN_RATE_LIMIT_ENABLED=false 关闭
+      LOGIN_RATE_LIMIT_ENABLED: ${LOGIN_RATE_LIMIT_ENABLED:-true}
       # 免鉴权 /api/ 接口限流（防刷）
       PUBLIC_RATE_LIMIT_ENABLED: ${PUBLIC_RATE_LIMIT_ENABLED:-true}
       PUBLIC_RATE_LIMIT_MAX: ${PUBLIC_RATE_LIMIT_MAX:-60}
       PUBLIC_RATE_LIMIT_WINDOW: ${PUBLIC_RATE_LIMIT_WINDOW:-60}
       PUBLIC_RATE_LIMIT_BLOCK: ${PUBLIC_RATE_LIMIT_BLOCK:-60}
+      # 公开评论提交的独立配额（feature_comment_enabled=true 时生效）
+      PUBLIC_COMMENT_RATE_MAX: ${PUBLIC_COMMENT_RATE_MAX:-5}
+      PUBLIC_COMMENT_RATE_WINDOW: ${PUBLIC_COMMENT_RATE_WINDOW:-60}
+      # JWT 密钥：生产必须通过 .env 注入；留空时沿用镜像内 etc/cms-api.yaml 的示例值，
+      # 启动会输出安全告警，设 STRICT_SECURITY=true 则直接拒绝启动。
+      AUTH_ACCESS_SECRET: ${AUTH_ACCESS_SECRET:-}
+      AUTH_REFRESH_SECRET: ${AUTH_REFRESH_SECRET:-}
+      STRICT_SECURITY: ${STRICT_SECURITY:-false}
+      # 其它可覆盖项（留空 = 沿用配置文件默认值）
+      WEB_BASE_URL: ${WEB_BASE_URL:-}
+      SQL_DEBUG: ${SQL_DEBUG:-}
+      SCHEMA_CHECK_STRICT: ${SCHEMA_CHECK_STRICT:-}
+      DB_MAX_OPEN_CONNS: ${DB_MAX_OPEN_CONNS:-}
+      DB_MAX_IDLE_CONNS: ${DB_MAX_IDLE_CONNS:-}
+      DB_CONN_MAX_LIFETIME: ${DB_CONN_MAX_LIFETIME:-}
+      MAINTENANCE_AUDIT_RETENTION_DAYS: ${MAINTENANCE_AUDIT_RETENTION_DAYS:-}
+      MAIL_ENABLED: ${MAIL_ENABLED:-}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     depends_on:
       mysql:
         condition: service_healthy
@@ -106,3 +126,7 @@ services:
 
 volumes:
   mysql_data:
+    # 显式固定卷名：compose 项目名默认取自仓库目录名，日后把目录改成 meteor-cms
+    # 或迁移到新机器时仍会复用同一份数据，避免「部署成功但库是空的」。
+    # 这是唯一保留旧名 go_meteor_cms 前缀的内部标识符，改名等同于丢数据。
+    name: go-meteor-cms_mysql_data

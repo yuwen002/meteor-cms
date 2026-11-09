@@ -19,6 +19,12 @@ FROM golang:1.26-alpine AS builder
 ARG GOPROXY=https://proxy.golang.org,direct
 ENV GOPROXY=$GOPROXY
 
+# 构建版本信息：由发布流水线注入，本地 docker build 使用 dev 默认值。
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_TIME=unknown
+ARG LDFLAGS_PKG=github.com/yuwen002/meteor-cms/internal/version
+
 WORKDIR /src
 
 # 先复制依赖清单，利用镜像层缓存加速后续构建
@@ -28,8 +34,10 @@ RUN go mod download
 COPY . .
 
 # Go 直接从目录托管前端静态文件，无需 embed；dist 由运行阶段挂载
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -o /out/cms ./api/cms/v1 \
- && CGO_ENABLED=0 GOOS=linux go build -trimpath -o /out/migrate ./cmd/migrate
+RUN LDFLAGS="-s -w -X ${LDFLAGS_PKG}.Version=${VERSION} -X ${LDFLAGS_PKG}.Commit=${COMMIT} -X ${LDFLAGS_PKG}.BuildTime=${BUILD_TIME}" \
+ && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags "$LDFLAGS" -o /out/cms ./api/cms/v1 \
+ && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags "$LDFLAGS" -o /out/migrate ./cmd/migrate \
+ && CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags "$LDFLAGS" -o /out/backup ./cmd/backup
 
 # ---------- 运行阶段 ----------
 FROM alpine:3.20
@@ -41,6 +49,7 @@ WORKDIR /app
 
 COPY --from=builder /out/cms /app/cms
 COPY --from=builder /out/migrate /app/migrate
+COPY --from=builder /out/backup /app/backup
 COPY --from=web /web/dist /app/web/dist
 # 将 OpenAPI 文档一并发布到静态目录，供 /docs.html（Swagger UI）读取
 COPY openapi.json /app/web/dist/openapi.json
