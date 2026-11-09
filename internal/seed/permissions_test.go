@@ -1,6 +1,7 @@
 package seed
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -131,5 +132,21 @@ func TestSameCodeAPIPermissionsUseDistinctRoutes(t *testing.T) {
 		if len(byCode[code]) < 2 {
 			t.Errorf("权限 %s 应绑定多条接口，实际 %d 条", code, len(byCode[code]))
 		}
+	}
+}
+
+// admin_permissions 上有 (type, permission, method, api_path) 唯一索引。
+// 种子清单本身若出现重复键，迁移时会在建索引或写入时失败，这里提前拦下。
+func TestPermissionSpecsSatisfyUniqueIndex(t *testing.T) {
+	seen := make(map[string]string)
+	for _, p := range DefaultPermissions {
+		key := strings.ToUpper(strings.TrimSpace(p.Method)) + " " + p.APIPath
+		full := strings.Join([]string{
+			strconv.Itoa(p.Type), p.Permission, key,
+		}, "|")
+		if prev, ok := seen[full]; ok {
+			t.Errorf("权限清单违反唯一索引：%s（%s 与 %s）", full, prev, p.Name)
+		}
+		seen[full] = p.Name
 	}
 }

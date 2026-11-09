@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/yuwen002/go-meteor-cms/api/cms/v1/internal/svc"
+	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
 	"github.com/zeromicro/go-zero/rest"
 )
 
@@ -64,6 +64,13 @@ func RegisterContentRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 		{Method: http.MethodGet, Path: "/admin/trash", Handler: trashListHandler(serverCtx)},
 		{Method: http.MethodPost, Path: "/admin/trash/:type/:id/restore", Handler: trashRestoreHandler(serverCtx)},
 		{Method: http.MethodDelete, Path: "/admin/trash/:type/:id/purge", Handler: trashPurgeHandler(serverCtx)},
+
+		// ---------- 内容导入导出（JSON 快照，单事务幂等导入） ----------
+		{Method: http.MethodGet, Path: "/admin/content/export", Handler: contentExportHandler(serverCtx)},
+		{Method: http.MethodPost, Path: "/admin/content/import", Handler: contentImportHandler(serverCtx)},
+
+		// ---------- 运行监控（管理员可见，不对外暴露） ----------
+		{Method: http.MethodGet, Path: "/admin/monitor", Handler: monitorHandler(serverCtx)},
 	}...))
 
 	// ---------- 公开阅读：无需登录 ----------
@@ -73,11 +80,14 @@ func RegisterContentRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 		[]rest.Middleware{serverCtx.ClientInfoMiddleware},
 		[]rest.Route{
 			{Method: http.MethodGet, Path: "/api/articles", Handler: publicArticleListHandler(serverCtx)},
+			{Method: http.MethodGet, Path: "/api/search", Handler: publicSearchHandler(serverCtx)},
 			{Method: http.MethodGet, Path: "/api/articles/:slug", Handler: publicArticleDetailHandler(serverCtx)},
 			{Method: http.MethodGet, Path: "/api/taxonomy", Handler: publicTaxonomyHandler(serverCtx)},
 			{Method: http.MethodGet, Path: "/api/rss", Handler: rssHandler(serverCtx)},
 			// 探活接口不属于 /api/ 前缀，避免被公开接口限流误伤。
 			{Method: http.MethodGet, Path: "/healthz", Handler: healthHandler(serverCtx)},
+			// 就绪探针额外校验 schema 版本，供滚动发布时阻断未迁移实例。
+			{Method: http.MethodGet, Path: "/readyz", Handler: readyHandler(serverCtx)},
 			// sitemap/robots 是站点级约定路径，注册为真实路由以优先于 SPA 回退。
 			{Method: http.MethodGet, Path: "/sitemap.xml", Handler: sitemapHandler(serverCtx)},
 			{Method: http.MethodGet, Path: "/robots.txt", Handler: robotsHandler(serverCtx)},

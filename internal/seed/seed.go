@@ -4,35 +4,45 @@ import (
 	"context"
 	"time"
 
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrole"
-	"github.com/yuwen002/go-meteor-cms/ent/adminrolepermission"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuser"
-	"github.com/yuwen002/go-meteor-cms/ent/adminuserrole"
-	"github.com/yuwen002/go-meteor-cms/internal/utils"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminrolepermission"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/internal/utils"
 )
 
-func InitSeed(ctx context.Context, client *ent.Client) error {
+// InitSeed 必须在单个事务里完成：中途失败时整体回滚，避免留下「有管理员没角色」
+// 或「权限写了一半」这类半初始化状态。调用方负责提交或回滚。
+func InitSeed(ctx context.Context, tx *ent.Tx) error {
 	// 1️⃣ 初始化超级管理员用户
-	user, err := initAdminUser(ctx, client)
+	user, err := initAdminUser(ctx, tx)
 	if err != nil {
 		return err
 	}
 
 	// 2️⃣ 初始化超级管理员角色
-	role, err := initSuperAdminRole(ctx, client)
+	role, err := initSuperAdminRole(ctx, tx)
 	if err != nil {
 		return err
 	}
 
 	// 3️⃣ 初始化默认权限
-	perms, err := initDefaultPermissions(ctx, client)
+	perms, err := initDefaultPermissions(ctx, tx)
 	if err != nil {
 		return err
 	}
 
-	// 4️⃣ 用户角色关联（已存在则跳过，保证重复执行不报错）
-	userRoleExists, err := client.AdminUserRole.
+	// 4️⃣ 内置系统配置与数据字典（幂等，不覆盖运营已改的值）
+	if err := InitConfigs(ctx, tx); err != nil {
+		return err
+	}
+	if err := InitDicts(ctx, tx); err != nil {
+		return err
+	}
+
+	// 5️⃣ 用户角色关联（已存在则跳过，保证重复执行不报错）
+	userRoleExists, err := tx.AdminUserRole.
 		Query().
 		Where(
 			adminuserrole.UserID(user.ID),
@@ -43,7 +53,7 @@ func InitSeed(ctx context.Context, client *ent.Client) error {
 		return err
 	}
 	if !userRoleExists {
-		if _, err = client.AdminUserRole.Create().
+		if _, err = tx.AdminUserRole.Create().
 			SetUserID(user.ID).
 			SetRoleID(role.ID).
 			Save(ctx); err != nil {
@@ -57,7 +67,7 @@ func InitSeed(ctx context.Context, client *ent.Client) error {
 			continue
 		}
 
-		rolePermExists, err := client.AdminRolePermission.
+		rolePermExists, err := tx.AdminRolePermission.
 			Query().
 			Where(
 				adminrolepermission.RoleID(role.ID),
@@ -71,7 +81,7 @@ func InitSeed(ctx context.Context, client *ent.Client) error {
 			continue
 		}
 
-		if _, err = client.AdminRolePermission.Create().
+		if _, err = tx.AdminRolePermission.Create().
 			SetRoleID(role.ID).
 			SetPermissionID(perm.ID).
 			Save(ctx); err != nil {
@@ -87,22 +97,22 @@ func InitSeed(ctx context.Context, client *ent.Client) error {
 // 如果用户名 "admin" 已存在，则返回已存在的用户
 // 如果不存在，则创建新的超级管理员用户，默认密码为 "123456"
 // 返回创建或获取的管理员用户信息和可能的错误
-func initAdminUser(ctx context.Context, client *ent.Client) (*ent.AdminUser, error) {
-	exist, err := client.AdminUser.Query().
+func initAdminUser(ctx context.Context, tx *ent.Tx) (*ent.AdminUser, error) {
+	exist, err := tx.AdminUser.Query().
 		Where(adminuser.UsernameEQ("admin")).
 		Exist(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if exist {
-		return client.AdminUser.Query().Where(adminuser.UsernameEQ("admin")).Only(ctx)
+		return tx.AdminUser.Query().Where(adminuser.UsernameEQ("admin")).Only(ctx)
 	}
 	password, err := utils.HashPassword("123456")
 	if err != nil {
 		return nil, err
 	}
 
-	return client.AdminUser.Create().
+	return tx.AdminUser.Create().
 		SetUsername("admin").
 		SetPasswordHash(password).
 		SetIsSuper(true).
@@ -115,21 +125,21 @@ func initAdminUser(ctx context.Context, client *ent.Client) (*ent.AdminUser, err
 // 如果存在，直接返回该角色
 // 如果不存在，则创建新的超级管理员角色并返回
 // 返回创建或获取的角色信息和可能的错误
-func initSuperAdminRole(ctx context.Context, client *ent.Client) (*ent.AdminRole, error) {
+func initSuperAdminRole(ctx context.Context, tx *ent.Tx) (*ent.AdminRole, error) {
 	// 1️⃣ 检查超级管理员角色是否存在
-	exist, err := client.AdminRole.Query().
+	exist, err := tx.AdminRole.Query().
 		Where(adminrole.CodeEQ("SUPER_ADMIN")).
 		Exist(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if exist {
-		return client.AdminRole.Query().
+		return tx.AdminRole.Query().
 			Where(adminrole.CodeEQ("SUPER_ADMIN")).
 			First(ctx)
 	}
 	// 2️⃣ 创建超级管理员角色
-	role, err := client.AdminRole.Create().
+	role, err := tx.AdminRole.Create().
 		SetName("超级管理员").
 		SetCode("SUPER_ADMIN").
 		SetDataScope(1).
@@ -146,11 +156,11 @@ func initSuperAdminRole(ctx context.Context, client *ent.Client) (*ent.AdminRole
 // initDefaultPermissions 幂等写入系统内置权限清单
 // 清单定义在 permissions.go 的 DefaultPermissions 中：
 // Type=1 菜单、Type=2 按钮、Type=3 后端 API（权限中间件据此鉴权）
-func initDefaultPermissions(ctx context.Context, client *ent.Client) ([]*ent.AdminPermission, error) {
+func initDefaultPermissions(ctx context.Context, tx *ent.Tx) ([]*ent.AdminPermission, error) {
 	// 先清理历史遗留的废弃权限，避免脏数据混入权限列表
-	if err := CleanupLegacyPermissions(ctx, client); err != nil {
+	if err := CleanupLegacyPermissions(ctx, tx); err != nil {
 		return nil, err
 	}
 
-	return UpsertPermissions(ctx, client, DefaultPermissions)
+	return UpsertPermissions(ctx, tx, DefaultPermissions)
 }

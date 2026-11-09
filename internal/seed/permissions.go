@@ -4,9 +4,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/yuwen002/go-meteor-cms/ent"
-	"github.com/yuwen002/go-meteor-cms/ent/adminpermission"
-	"github.com/yuwen002/go-meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/ent"
+	"github.com/yuwen002/meteor-cms/ent/adminpermission"
+	"github.com/yuwen002/meteor-cms/internal/common"
 )
 
 // 权限类型，定义收敛在 common 包，避免各层各自定义
@@ -156,6 +156,14 @@ var DefaultPermissions = []PermissionSpec{
 	{Name: "查看操作日志", Permission: "system:log:operation_list", Type: PermissionTypeAPI, ParentName: "操作日志", Method: "GET", APIPath: "/admin/logs/operations", Sort: 51},
 	{Name: "查看登录日志", Permission: "system:log:login_list", Type: PermissionTypeButton, ParentName: "登录日志", Sort: 52},
 	{Name: "查看登录日志", Permission: "system:log:login_list", Type: PermissionTypeAPI, ParentName: "登录日志", Method: "GET", APIPath: "/admin/logs/logins", Sort: 52},
+	{Name: "查看操作日志详情", Permission: "system:log:operation_list", Type: PermissionTypeAPI, ParentName: "操作日志", Method: "GET", APIPath: "/admin/logs/operations/:id", Sort: 53},
+	{Name: "查看登录日志详情", Permission: "system:log:login_list", Type: PermissionTypeAPI, ParentName: "登录日志", Method: "GET", APIPath: "/admin/logs/logins/:id", Sort: 54},
+	{Name: "导出审计日志", Permission: "system:log:export", Type: PermissionTypeButton, ParentName: "操作日志", Sort: 55},
+	{Name: "导出审计日志", Permission: "system:log:export", Type: PermissionTypeAPI, ParentName: "操作日志", Method: "GET", APIPath: "/admin/logs/export", Sort: 55},
+	{Name: "日志统计", Permission: "system:log:stats", Type: PermissionTypeButton, ParentName: "操作日志", Sort: 56},
+	{Name: "日志统计", Permission: "system:log:stats", Type: PermissionTypeAPI, ParentName: "操作日志", Method: "GET", APIPath: "/admin/logs/stats", Sort: 56},
+	{Name: "查看全量日志", Permission: "system:log:view_all", Type: PermissionTypeButton, ParentName: "操作日志", Sort: 57},
+
 	{Name: "上传文件", Permission: "system:upload:file", Type: PermissionTypeButton, ParentName: "管理员管理", Sort: 25},
 	{Name: "上传文件", Permission: "system:upload:file", Type: PermissionTypeAPI, ParentName: "管理员管理", Method: "POST", APIPath: "/admin/upload", Sort: 25},
 
@@ -204,6 +212,12 @@ var DefaultPermissions = []PermissionSpec{
 	{Name: "编辑配置", Permission: "system:config:edit", Type: PermissionTypeAPI, ParentName: "系统配置", Method: "PUT", APIPath: "/admin/configs/:id", Sort: 83},
 	{Name: "删除配置", Permission: "system:config:delete", Type: PermissionTypeButton, ParentName: "系统配置", Sort: 84},
 	{Name: "删除配置", Permission: "system:config:delete", Type: PermissionTypeAPI, ParentName: "系统配置", Method: "DELETE", APIPath: "/admin/configs/:id", Sort: 84},
+	// 配置增强接口：复用已有列表/编辑权限，避免为站点设置页新增授权负担
+	{Name: "按 key 读取配置", Permission: "system:config:list", Type: PermissionTypeAPI, ParentName: "系统配置", Method: "GET", APIPath: "/admin/configs/key/:key", Sort: 85},
+	{Name: "配置详情", Permission: "system:config:list", Type: PermissionTypeAPI, ParentName: "系统配置", Method: "GET", APIPath: "/admin/configs/:id", Sort: 86},
+	{Name: "批量保存配置", Permission: "system:config:edit", Type: PermissionTypeAPI, ParentName: "系统配置", Method: "POST", APIPath: "/admin/configs/batch", Sort: 87},
+	{Name: "配置变更历史", Permission: "system:config:list", Type: PermissionTypeAPI, ParentName: "系统配置", Method: "GET", APIPath: "/admin/config-versions/:id", Sort: 88},
+	{Name: "配置回滚", Permission: "system:config:edit", Type: PermissionTypeAPI, ParentName: "系统配置", Method: "POST", APIPath: "/admin/config-versions/:id/rollback", Sort: 89},
 
 	// ---------- 内容管理（分组与菜单，父级必须写在子级之前） ----------
 	{Name: "内容管理", Permission: "cms:group:content", Type: PermissionTypeMenu,
@@ -235,6 +249,25 @@ var DefaultPermissions = []PermissionSpec{
 	// 批量操作复用单条撤回 / 删除权限码，但 API 路径必须单独登记，否则非超管会被权限中间件拒绝
 	{Name: "批量下线", Permission: "cms:article:withdraw", Type: PermissionTypeAPI, ParentName: "文章管理", Method: "POST", APIPath: "/admin/articles/batch-offline", Sort: 118},
 	{Name: "批量删除", Permission: "cms:article:delete", Type: PermissionTypeAPI, ParentName: "文章管理", Method: "POST", APIPath: "/admin/articles/batch-delete", Sort: 118},
+	{Name: "导出内容包", Permission: "cms:content:export", Type: PermissionTypeAPI, ParentName: "文章管理", Method: "GET", APIPath: "/admin/content/export", Sort: 150},
+	{Name: "导入内容包", Permission: "cms:content:import", Type: PermissionTypeAPI, ParentName: "文章管理", Method: "POST", APIPath: "/admin/content/import", Sort: 151},
+	{Name: "运行监控", Permission: "system:monitor:view", Type: PermissionTypeAPI, ParentName: "控制台", Method: "GET", APIPath: "/admin/monitor", Sort: 152},
+
+	// ---------- 站点扩展（友链 / 评论 / 订阅） ----------
+	{Name: "站点扩展", Permission: "system:siteext:list", Type: PermissionTypeMenu,
+		Path: "/system/siteext", Component: "views/system/siteext/index.vue", Icon: "link", Sort: 90, ParentName: "系统管理"},
+	{Name: "管理友链", Permission: "system:siteext:link", Type: PermissionTypeButton, ParentName: "站点扩展", Sort: 91},
+	{Name: "友链列表", Permission: "system:siteext:link", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "GET", APIPath: "/admin/links", Sort: 91},
+	{Name: "新增友链", Permission: "system:siteext:link", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "POST", APIPath: "/admin/links", Sort: 92},
+	{Name: "编辑友链", Permission: "system:siteext:link", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "PUT", APIPath: "/admin/links/:id", Sort: 93},
+	{Name: "删除友链", Permission: "system:siteext:link", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "DELETE", APIPath: "/admin/links/:id", Sort: 94},
+	{Name: "管理评论", Permission: "system:siteext:comment", Type: PermissionTypeButton, ParentName: "站点扩展", Sort: 95},
+	{Name: "评论列表", Permission: "system:siteext:comment", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "GET", APIPath: "/admin/comments", Sort: 95},
+	{Name: "审核评论", Permission: "system:siteext:comment", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "PUT", APIPath: "/admin/comments/:id/status", Sort: 96},
+	{Name: "删除评论", Permission: "system:siteext:comment", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "DELETE", APIPath: "/admin/comments/:id", Sort: 97},
+	{Name: "管理订阅", Permission: "system:siteext:subscriber", Type: PermissionTypeButton, ParentName: "站点扩展", Sort: 98},
+	{Name: "订阅列表", Permission: "system:siteext:subscriber", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "GET", APIPath: "/admin/subscribers", Sort: 98},
+	{Name: "删除订阅", Permission: "system:siteext:subscriber", Type: PermissionTypeAPI, ParentName: "站点扩展", Method: "DELETE", APIPath: "/admin/subscribers/:id", Sort: 99},
 
 	// ---------- 分类管理（按钮 / API） ----------
 	{Name: "查看分类", Permission: "cms:category:list", Type: PermissionTypeButton, ParentName: "分类管理", Sort: 120},
@@ -292,9 +325,9 @@ var legacyPermissions = []struct {
 }
 
 // CleanupLegacyPermissions 清理已被废弃的历史权限记录（幂等）
-func CleanupLegacyPermissions(ctx context.Context, client *ent.Client) error {
+func CleanupLegacyPermissions(ctx context.Context, tx *ent.Tx) error {
 	for _, legacy := range legacyPermissions {
-		deleted, err := client.AdminPermission.
+		deleted, err := tx.AdminPermission.
 			Delete().
 			Where(
 				adminpermission.TypeEQ(legacy.Type),
@@ -317,14 +350,15 @@ func CleanupLegacyPermissions(ctx context.Context, client *ent.Client) error {
 // 允许同一个权限码绑定多条接口（例如 cms:article:delete 同时覆盖单条删除与批量删除）。
 // 早期版本对 API 也只按 (type, permission) 去重，后写入的 spec 会把前面的接口记录
 // 覆盖掉，导致非超管访问这些接口被权限中间件以「未登记权限」拒绝。
-// 表本身没有唯一约束，因此该过程可随每次迁移重复执行。
-func UpsertPermissions(ctx context.Context, client *ent.Client, specs []PermissionSpec) ([]*ent.AdminPermission, error) {
+// 现在表上有 (type, permission, method, api_path) 唯一索引，且整个种子过程在单事务 +
+// 迁移锁内执行，并发的 migrate 进程不会插入重复记录。
+func UpsertPermissions(ctx context.Context, tx *ent.Tx, specs []PermissionSpec) ([]*ent.AdminPermission, error) {
 	result := make([]*ent.AdminPermission, 0, len(specs))
 	// 菜单名称 -> 实体 ID，用于解析 ParentName
 	parentIndex := make(map[string]int64, len(specs))
 
 	writePermission := func(spec PermissionSpec, parentID int64) (*ent.AdminPermission, error) {
-		query := client.AdminPermission.
+		query := tx.AdminPermission.
 			Query().
 			Where(
 				adminpermission.TypeEQ(spec.Type),
@@ -360,7 +394,7 @@ func UpsertPermissions(ctx context.Context, client *ent.Client, specs []Permissi
 			return nil, err
 		}
 
-		create := client.AdminPermission.
+		create := tx.AdminPermission.
 			Create().
 			SetName(spec.Name).
 			SetPermission(spec.Permission).

@@ -40,6 +40,13 @@ type (
 		Redis    string `json:"redis"`
 	}
 
+	ReadyResp {
+		Ready    bool   `json:"ready"`
+		Database string `json:"database"`
+		Version  string `json:"version"`
+		Schema   string `json:"schema"`
+	}
+
 	ArticleIDReq {
 		ID int64 `path:"id"`
 	}
@@ -486,4 +493,7 @@ service cms-content-api {
 
 	@handler health
 	get /healthz returns (HealthResp)
+
+	@handler ready
+	get /readyz returns (ReadyResp)
 }
