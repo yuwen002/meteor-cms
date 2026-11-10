@@ -76,6 +76,28 @@ func TestSecurityWarningsCoverExampleSecrets(t *testing.T) {
 	}
 }
 
+// scripts/preflight.sh 的检查项与严格模式启动校验逐项对齐：合规的生产配置
+// 在 STRICT_SECURITY=true 下必须零告警，否则 API 会直接拒绝启动。
+func TestProductionConfigHasNoSecurityWarnings(t *testing.T) {
+	c := loadFixture(t)
+	c.Auth.AccessSecret = "prod-access-secret-2026-abcdefgh"
+	c.Auth.RefreshSecret = "prod-refresh-secret-2026-ijklmnop"
+	c.Database.Source = "cms:Str0ngPass@tcp(mysql:3306)/go_meteor_cms?parseTime=True&loc=Local"
+	c.Redis.Host = "redis:6379"
+	c.StrictSecurity = true
+	c.SQLDebug = false
+	c.Login.CaptchaEnabled = true
+	c.Login.RateLimit.Enabled = true
+	c.Public.RateLimit.Enabled = true
+	c.Public.CommentRate.Max = 5
+	if err := c.Validate(); err != nil {
+		t.Fatalf("生产配置应能通过启动校验: %v", err)
+	}
+	if warnings := c.SecurityWarnings(); len(warnings) != 0 {
+		t.Fatalf("生产配置不应有安全告警（严格模式会据此拒绝启动）: %v", warnings)
+	}
+}
+
 func TestSummaryMasksDSNPassword(t *testing.T) {
 	c := loadFixture(t)
 	s := c.Summary()

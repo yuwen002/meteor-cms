@@ -1,6 +1,8 @@
 package migration
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -39,6 +41,21 @@ func TestCheckBackupRejectsMissingAndStale(t *testing.T) {
 	}
 	if _, err := CheckBackup("definitely-not-exists.json", 0); err == nil {
 		t.Fatal("过期门禁应生效")
+	}
+}
+
+// 生产迁移用 make migrate-safe（-require-backup）时，新导出的备份必须能通过门禁。
+func TestCheckBackupAcceptsFreshFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "backup.json")
+	if err := os.WriteFile(path, []byte(`{"articles":[]}`), 0o600); err != nil {
+		t.Fatalf("写入临时备份失败: %v", err)
+	}
+	got, err := CheckBackup(path, 24*time.Hour)
+	if err != nil {
+		t.Fatalf("新鲜备份应通过 -require-backup 校验: %v", err)
+	}
+	if !strings.Contains(got, path) {
+		t.Fatalf("校验结果未包含备份路径: %s", got)
 	}
 }
 

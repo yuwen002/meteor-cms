@@ -715,7 +715,14 @@ compose 专用配置（写在 `.env`，由 `${VAR:-默认值}` 插值；不提�
 ### 版本发布与回滚
 
 发布由 `.github/workflows/release.yml` 完成：推送 `vX.Y.Z` 标签即自动验证、构建并推送镜像到 GHCR，同时创建 GitHub Release。
-使用仓库内置 `GITHUB_TOKEN`（`packages: write`），**无需配置额外密钥**；首次使用需在 GitHub 把该 Package 设为 Public，或在目标机器先执行 `docker login ghcr.io`。
+使用仓库内置 `GITHUB_TOKEN`（`packages: write`），**推送镜像无需配置额外密钥**；但**拉取方**仍需凭证，二选一提前准备：
+
+- **设为 Public**：GitHub → 仓库 `Packages` → `meteor-cms` → `Package settings` → `Change visibility` → `Public`。
+- **保持 Private**：创建仅勾选 `read:packages` 的 classic PAT，在部署机执行
+  `echo <PAT> | docker login ghcr.io -u <GitHub 用户名> --password-stdin`，
+  并用 `docker manifest inspect ghcr.io/yuwen002/meteor-cms:<版本>` 确认能取到清单。
+
+`make preflight` 默认会做这项镜像可达性检查；离线或镜像尚未发布时可设 `SKIP_IMAGE_CHECK=1` 跳过。
 
 ```bash
 # 在已验证的 commit 上打标签触发发版
@@ -830,7 +837,20 @@ go run ./cmd/migrate -timeout 600 -f /path/to.yaml
 
 **探针与关闭**：`/healthz` 是存活探活（DB + Redis 连通性），`/readyz` 额外校验 schema 版本并返回构建信息。服务停止时按「后台维护任务（WaitGroup，最多等 10s）→ 审计写入队列（5s）→ 数据库连接」的顺序收尾，每步都有超时兜底。
 
-**生产检查清单**：自定义 `AUTH_*` 密钥 → `STRICT_SECURITY=true` → 迁移前 `make backup` 并用 `-require-backup` 校验 → `make migrate-check` 确认漂移 → 执行 `make migrate` → 确认 `/readyz` 返回 200 → 首次登录立即修改 `admin/123456`。
+**生产检查清单**：复制 `.env.production.example` 为 `.env` 并逐项填写（`CHANGE_ME` / `REPLACE_WITH` 未替换会被判定为失败），再按顺序执行：
+
+1. `make backup` —— 对当前生产库导出内容快照，把生成路径填入 `.env` 的 `CMS_BACKUP_FILE`；
+2. `make preflight` —— 自动校验两个 JWT 密钥、`STRICT_SECURITY`、安全开关、DSN/口令、`CMS_IMAGE` 版本、备份新鲜度（24 小时）与 GHCR 拉取凭证，任一 FAIL 则退出码 1；
+3. `make migrate-check` 确认表结构无漂移 → `make migrate-safe`（带 `-require-backup`）执行迁移；
+4. `docker compose pull && docker compose up -d`（**不要加 `--build`**）→ 确认 `/readyz` 返回 200，也可用 `READY_URL=http://127.0.0.1:8888/readyz make preflight` 复查；
+5. 首次登录立即修改 `admin/123456`。
+
+`preflight` 可用 `ENV_FILE=` 指定其它 `.env` 路径，`SKIP_IMAGE_CHECK=1` 跳过镜像可达性检查。它的检查项与 `STRICT_SECURITY=true` 时 API 的启动校验逐项对齐，避免「检查通过但服务拒绝启动」。`make` 入口面向 Linux 生产机；Windows 本地未装 WSL 时可用 Git Bash 直接执行 `bash scripts/preflight.sh`。
+
+> **首次部署**（仓库还没有 tag、GHCR 上还没有镜像、数据库也尚未建立）：备份与镜像两项检查此时都没有对象，可先执行
+> `SKIP_IMAGE_CHECK=1 SKIP_BACKUP_CHECK=1 make preflight` 只校验配置；随后按「版本发布与回滚」打 `vX.Y.Z` 触发首次发版，
+> 等镜像可拉取、`migrate` 建好库表并 `make backup` 导出首份快照后，再执行完整 `make preflight` 和上面的部署流程。
+> 两个跳过开关**仅供首次部署**，常规升级不得跳过。
 
 ### 关于项目命名与兼容性
 

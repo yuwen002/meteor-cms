@@ -1,4 +1,4 @@
-.PHONY: help build run test test-integration bench cover fmt vet lint tidy migrate migrate-check migrate-dry-run migrate-schema migrate-seed migrate-backfill version gen-api gen-ent gen-doc backup restore docker-build docker-up docker-down clean
+.PHONY: help build run test test-integration bench cover fmt vet lint tidy migrate migrate-check migrate-safe preflight migrate-dry-run migrate-schema migrate-seed migrate-backfill version gen-api gen-ent gen-doc backup restore docker-build docker-up docker-down clean
 
 BINARY_DIR := bin
 API_PKG    := ./api/cms/v1
@@ -18,6 +18,8 @@ help: ## 显示可用命令
 	@echo "  tidy          整理依赖"
 	@echo "  migrate       执行完整迁移（结构 + 种子 + 版本记录，幂等）"
 	@echo "  migrate-check 只读检查表结构漂移，有差异时退出码 2"
+	@echo "  migrate-safe  生产迁移：先校验 CMS_BACKUP_FILE 备份新鲜度再执行"
+	@echo "  preflight     生产部署前检查（密钥 / 严格模式 / 镜像 / 备份 / GHCR）"
 	@echo "  migrate-dry-run  输出待新增表/列与期望索引清单，不写库"
 	@echo "  migrate-schema   只同步表结构，跳过种子"
 	@echo "  migrate-seed     只重跑种子（表结构已就绪）"
@@ -71,6 +73,12 @@ migrate: ## 执行完整迁移（结构 + 种子 + 版本记录，幂等）
 
 migrate-check: ## 只读检查表结构漂移（有差异时退出码 2）
 	go run ./cmd/migrate -check
+
+migrate-safe: ## 生产迁移：校验 CMS_BACKUP_FILE 备份新鲜度后执行完整迁移
+	go run ./cmd/migrate -require-backup
+
+preflight: ## 生产部署前检查（ENV_FILE / SKIP_IMAGE_CHECK / READY_URL 可覆盖）
+	bash scripts/preflight.sh
 
 migrate-dry-run: ## 输出待新增表/列与期望索引清单，不执行 DDL
 	go run ./cmd/migrate -dry-run
