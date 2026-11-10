@@ -1,0 +1,58 @@
+api/cms/v1/internal/handler/metricsroutes.go
+  s_bbf609960902b0::t_7120a68b53efed 1-47
+api/cms/v1/ops.doc.api
+  s_bbf609960902b0::t_193abcd933aa6f 273,276-277
+  s_bbf609960902b0::t_50a7f4e3106458 274-275
+api/cms/v1/cms.go
+  s_bbf609960902b0::t_9daa5c3e66ceb6 259
+  s_bbf609960902b0::t_b4952b59f419d0 136-137
+docker-compose.yml
+  s_bbf609960902b0::t_caf0a982f91201 102-104
+cmd/apidoc/main.go
+  s_bbf609960902b0::t_1a00e1ecd3aefe 31
+api/cms/v1/internal/config/validate.go
+  s_bbf609960902b0::t_7b9e4669fb40e2 64-66
+  s_bbf609960902b0::t_50d141c71885dc 100-102,110,116
+.env.production.example
+  s_bbf609960902b0::t_cff1f122b8b12f 40-44
+api/cms/v1/internal/config/config.go
+  s_bbf609960902b0::t_e15c484f265bcb 100-106
+.env.example
+  s_bbf609960902b0::t_9ad4b2a22ada68 39-40
+README.md
+  s_bbf609960902b0::t_4b96a437733549 804,807-819,821
+  s_bbf609960902b0::t_a48ce766cd092c 698
+  s_bbf609960902b0::t_e1801b8649494e 839
+  s_bbf609960902b0::t_44cd90625d74fc 820
+internal/pkg/metrics/exporter.go
+  s_bbf609960902b0::t_20fd6995b9b857 1-73
+api/cms/v1/internal/handler/metricsroutes_test.go
+  s_bbf609960902b0::t_2a55c5b2972051 1-64
+api/cms/v1/internal/config/validate_test.go
+  s_bbf609960902b0::t_5d9a7c39c5b8cb 101-126
+internal/pkg/metrics/exporter_test.go
+  s_bbf609960902b0::t_b440fbaabb1009 1-55
+api/cms/v1/etc/cms-api.yaml
+  s_bbf609960902b0::t_53f698e6e2ffdd 33-36
+scripts/preflight.sh
+  s_bbf609960902b0::t_e3b298b6c46c39 102-115
+openapi.json
+  s_bbf609960902b0::t_3fd14da59ed41b 8498-8518
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "26.9.9",
+  "base_commit_sha": "d47c5c7e1d352b47f8855c50b19508eee2081024",
+  "prompts": {},
+  "sessions": {
+    "s_bbf609960902b0": {
+      "agent_id": {
+        "tool": "codebuddy",
+        "id": "e1b6045518d048e4bd07e87813a33b92",
+        "model": "hy4free"
+      },
+      "human_author": "liuxingyu <yuwen002@163.com>",
+      "generated_lines": 359
+    }
+  }
+}
