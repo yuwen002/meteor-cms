@@ -1,0 +1,21 @@
+.github/workflows/release.yml
+  s_bbf609960902b0::t_bdfb9a2535beba 97,104-107
+  s_bbf609960902b0::t_9762833141e10a 78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "26.9.9",
+  "base_commit_sha": "4b01d83b0c2c146b0618f87f9e2785dda60905db",
+  "prompts": {},
+  "sessions": {
+    "s_bbf609960902b0": {
+      "agent_id": {
+        "tool": "codebuddy",
+        "id": "e1b6045518d048e4bd07e87813a33b92",
+        "model": "hy4free"
+      },
+      "human_author": "liuxingyu <yuwen002@163.com>",
+      "generated_lines": 6
+    }
+  }
+}
