@@ -1,0 +1,42 @@
+api/cms/v1/internal/config/validate_test.go
+  s_bbf609960902b0::t_a15d87b04b8072 79-100
+README.md
+  s_bbf609960902b0::t_2b9c58fc049090 848
+  s_bbf609960902b0::t_4d668b519301c8 840-847
+  s_bbf609960902b0::t_4a5f07769891cc 850-853
+  s_bbf609960902b0::t_c6214b12e96290 718-725,849
+internal/migration/migration_test.go
+  s_bbf609960902b0::t_e69e23acd37359 4-5
+  s_bbf609960902b0::t_ab4d29faed89ef 47-61
+scripts/preflight.sh
+  s_bbf609960902b0::t_04440316c49c43 8
+  s_bbf609960902b0::t_57c950aba866d2 1-3,11-148,152-192
+  s_bbf609960902b0::t_c021457ab4ae4b 149-151
+  s_bbf609960902b0::t_98032e91e8fc4a 4-7,9-10
+.env.production.example
+  s_bbf609960902b0::t_ef92a7305b214c 1-51
+Makefile
+  s_bbf609960902b0::t_ca86b240775f0f 77-82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "26.9.9",
+  "base_commit_sha": "de60e510b68f3b4566c9faf0709c78d4fb7615d4",
+  "prompts": {},
+  "humans": {
+    "h_a3f313f3d96276": {
+      "author": "liuxingyu <yuwen002@163.com>"
+    }
+  },
+  "sessions": {
+    "s_bbf609960902b0": {
+      "agent_id": {
+        "tool": "codebuddy",
+        "id": "e1b6045518d048e4bd07e87813a33b92",
+        "model": "hy4free"
+      },
+      "human_author": "liuxingyu <yuwen002@163.com>",
+      "generated_lines": 317
+    }
+  }
+}
