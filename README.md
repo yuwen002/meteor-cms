@@ -715,12 +715,14 @@ compose 专用配置（写在 `.env`，由 `${VAR:-默认值}` 插值；不提�
 ### 版本发布与回滚
 
 发布由 `.github/workflows/release.yml` 完成：推送 `vX.Y.Z` 标签即自动验证、构建并推送镜像到 GHCR，同时创建 GitHub Release。
-使用仓库内置 `GITHUB_TOKEN`（`packages: write`），**推送镜像无需配置额外密钥**；但**拉取方**仍需凭证，二选一提前准备：
+使用仓库内置 `GITHUB_TOKEN`（`packages: write`），**推送镜像无需配置额外密钥**；但**拉取方**仍需凭证，二选一准备：
 
 - **设为 Public**：GitHub → 仓库 `Packages` → `meteor-cms` → `Package settings` → `Change visibility` → `Public`。
-- **保持 Private**：创建仅勾选 `read:packages` 的 classic PAT，在部署机执行
-  `echo <PAT> | docker login ghcr.io -u <GitHub 用户名> --password-stdin`，
+  Package 在**首次发版后才存在**，此项需发版完成后才能设置。
+- **保持 Private**：在 `https://github.com/settings/tokens/new` 生成 classic PAT，**只勾 `read:packages`**（不要给写权限），
+  在生产机执行 `echo <PAT> | docker login ghcr.io -u <GitHub 用户名> --password-stdin`，
   并用 `docker manifest inspect ghcr.io/yuwen002/meteor-cms:<版本>` 确认能取到清单。
+  PAT 是账号级凭证，可在发版前提前创建；`docker login` 的凭证保存在生产机 `~/.docker/config.json`，不要写进 `.env` 或提交到仓库。
 
 `make preflight` 默认会做这项镜像可达性检查；离线或镜像尚未发布时可设 `SKIP_IMAGE_CHECK=1` 跳过。
 
@@ -837,7 +839,16 @@ go run ./cmd/migrate -timeout 600 -f /path/to.yaml
 
 **探针与关闭**：`/healthz` 是存活探活（DB + Redis 连通性），`/readyz` 额外校验 schema 版本并返回构建信息。服务停止时按「后台维护任务（WaitGroup，最多等 10s）→ 审计写入队列（5s）→ 数据库连接」的顺序收尾，每步都有超时兜底。
 
-**生产检查清单**：复制 `.env.production.example` 为 `.env` 并逐项填写（`CHANGE_ME` / `REPLACE_WITH` 未替换会被判定为失败），再按顺序执行：
+**生产检查清单**：复制 `.env.production.example` 为 `.env` 并逐项填写（`CHANGE_ME` / `REPLACE_WITH` 未替换会被判定为失败）：
+
+```bash
+cp .env.production.example .env
+openssl rand -base64 48   # 生成 AccessSecret
+openssl rand -base64 48   # 再生成一次作为 RefreshSecret，两者必须不同
+# 编辑 .env：填入两个密钥、数据库强口令（同步修改 MYSQL_DSN）、CMS_IMAGE 的版本号
+```
+
+然后按顺序执行：
 
 1. `make backup` —— 对当前生产库导出内容快照，把生成路径填入 `.env` 的 `CMS_BACKUP_FILE`；
 2. `make preflight` —— 自动校验两个 JWT 密钥、`STRICT_SECURITY`、安全开关、DSN/口令、`CMS_IMAGE` 版本、备份新鲜度（24 小时）与 GHCR 拉取凭证，任一 FAIL 则退出码 1；
