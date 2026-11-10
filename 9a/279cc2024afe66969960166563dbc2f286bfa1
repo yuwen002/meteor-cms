@@ -1,0 +1,21 @@
+README.md
+  s_bbf609960902b0::t_20182fb38d45bf 718,721-723,725
+  s_bbf609960902b0::t_d39bae97b405a1 842-851
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "26.9.9",
+  "base_commit_sha": "9a279cc2024afe66969960166563dbc2f286bfa1",
+  "prompts": {},
+  "sessions": {
+    "s_bbf609960902b0": {
+      "agent_id": {
+        "tool": "codebuddy",
+        "id": "e1b6045518d048e4bd07e87813a33b92",
+        "model": "hy4free"
+      },
+      "human_author": "liuxingyu <yuwen002@163.com>",
+      "generated_lines": 15
+    }
+  }
+}
