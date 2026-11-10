@@ -98,6 +98,32 @@ func TestProductionConfigHasNoSecurityWarnings(t *testing.T) {
 	}
 }
 
+func TestMetricsConfigWarningsAndValidation(t *testing.T) {
+	c := loadFixture(t)
+	c.StrictSecurity = true
+
+	c.Metrics.Enabled = false
+	if strings.Contains(strings.Join(c.SecurityWarnings(), "\n"), "METRICS_TOKEN") {
+		t.Fatal("端点关闭时不应产生 metrics 告警")
+	}
+	c.Metrics.Enabled = true
+	if !strings.Contains(strings.Join(c.SecurityWarnings(), "\n"), "METRICS_TOKEN") {
+		t.Fatal("端点开启但未设 token 时应告警（严格模式会拒绝启动）")
+	}
+
+	c.Metrics.Token = "short"
+	if err := c.Validate(); err == nil {
+		t.Fatal("过短的 METRICS_TOKEN 应被拒绝")
+	}
+	c.Metrics.Token = "metrics-token-2026-abcdef"
+	if err := c.Validate(); err != nil {
+		t.Fatalf("合规的 METRICS_TOKEN 应通过校验: %v", err)
+	}
+	if strings.Contains(strings.Join(c.SecurityWarnings(), "\n"), "METRICS_TOKEN") {
+		t.Fatal("已设置 token 后不应再告警")
+	}
+}
+
 func TestSummaryMasksDSNPassword(t *testing.T) {
 	c := loadFixture(t)
 	s := c.Summary()

@@ -695,6 +695,7 @@ go build -o bin/migrate ./cmd/migrate
 | `WEB_DIST` | 前端构建产物目录；容器内置为 `/app/web/dist`，本地开发留空则仅暴露 API |
 | `AUTH_ACCESS_SECRET` / `AUTH_REFRESH_SECRET` | JWT 签名密钥，生产必须替换仓库示例值 |
 | `STRICT_SECURITY` / `SQL_DEBUG` / `SCHEMA_CHECK_STRICT` | 安全严格模式 / SQL 日志开关 / schema 版本校验开关 |
+| `METRICS_ENABLED` / `METRICS_TOKEN` | Prometheus `/metrics` 抓取开关（默认关闭）与 Bearer token |
 | `CMS_CONFIG` | `cmd/migrate`、`cmd/backup` 读取的配置文件路径；也可用各自的 `-f` 指定 |
 
 其余（连接池、令牌有效期、邮件、维护策略、限流）见「程序初始化与数据迁移」章节与 `.env.example`。
@@ -800,7 +801,23 @@ docker compose pull && docker compose up -d
 | 媒体元数据 | `media_files` 表 + 文件管理页 | 上传时探测真实 MIME / 原文件名 / 图片宽高，展示文章引用篇数；被引用文件禁止删除与重命名 |
 | 全文检索 | `GET /api/articles?keyword=`、`GET /api/search?keyword=` | 标题 + 摘要 + 正文 LIKE 匹配，仅返回已发布文章；数据量大时应改 FULLTEXT 或外部搜索引擎 |
 | 运行监控 | `GET /admin/monitor` + 控制台面板 | 运行时长、goroutine、堆内存、GC、请求总数 / 5xx / 在途 / 平均 QPS、审计队列积压与丢弃、DB/Redis 状态 |
+| Prometheus 抓取 | `GET /metrics` | 默认关闭；`METRICS_ENABLED=true` 开启，可配 `METRICS_TOKEN` 要求 Bearer 鉴权；输出 Prometheus 文本格式，无第三方依赖 |
 | 站点扩展 | 后台「系统管理 → 站点扩展」 | 友链、评论（层级 + 审核）、邮件订阅；开关由 `feature_*` 配置控制，公开接口不挂 JWT |
+
+**Prometheus 抓取**：`GET /metrics` 默认关闭（关闭时返回 404），开启后输出 `meteor_cms_requests_total`、`_requests_server_errors_total`、`_requests_in_flight`、`_uptime_seconds`、`_go_goroutines` / `_go_heap_alloc_bytes` / `_go_sys_bytes` / `_go_gc_total`、`_audit_queue_depth` / `_audit_queue_dropped_total`，以及带 `version` / `commit` / `build_time` / `schema_version` / `go_version` 标签的 `_build_info`。全部是瞬时快照，不引入客户端依赖；`make preflight` 会检查开启时的 token 配置。Prometheus 侧示例：
+
+```yaml
+scrape_configs:
+  - job_name: meteor-cms
+    metrics_path: /metrics
+    authorization:
+      type: Bearer
+      credentials: <METRICS_TOKEN>
+    static_configs:
+      - targets: ["api:8888"]
+```
+
+不设 `METRICS_TOKEN` 时端点免鉴权，仅适合抓取端与 API 同内网、由网络层隔离的场景；但 `STRICT_SECURITY=true` 会把「开启却未设 token」升级为启动失败，因此生产严格模式下应始终配置 token。
 
 全部手工注册路由都有 OpenAPI 文档源（`ops.doc.api`），`go test ./cmd/apidoc` 会以 Go 路由注册为基准做覆盖校验。
 
@@ -819,6 +836,7 @@ docker compose pull && docker compose up -d
 | `SQL_DEBUG` | 默认关闭；打开会把每条 SQL 及参数写入日志 |
 | `STRICT_SECURITY` | `true` 时把「示例密钥 / 关闭限流」等告警升级为启动失败 |
 | `SCHEMA_CHECK_STRICT` | 默认 `true`，启动时校验 `schema_migrations`；紧急回滚可临时设 `false` |
+| `METRICS_ENABLED` / `METRICS_TOKEN` | Prometheus `/metrics` 默认关闭；开启后建议设置长度 ≥16 位的 token，否则严格模式拒绝启动 |
 | `MAIL_*` / `WEB_BASE_URL` / `MAINTENANCE_*` | 邮件、站点地址与维护策略 |
 | `LOGIN_*` / `PUBLIC_RATE_LIMIT_*` | 登录与公开接口防护（完整列表见 `.env.example`） |
 

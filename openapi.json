@@ -8495,6 +8495,27 @@
         ]
       }
     },
+    "/metrics": {
+      "get": {
+        "operationId": "publicMetrics",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "publicMetrics",
+        "tags": [
+          "系统管理"
+        ]
+      }
+    },
     "/readyz": {
       "get": {
         "operationId": "ready",

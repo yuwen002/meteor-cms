@@ -270,6 +270,11 @@ service cms-ops-api {
 	@handler monitor
 	get /admin/monitor returns (MonitorResp)
 
+	@handler publicMetrics
+	// Prometheus 文本指标；METRICS_ENABLED=false 时返回 404，
+	// 配置 METRICS_TOKEN 后需携带 Authorization: Bearer <token>。
+	get /metrics
+
 	@handler publicSearch
 	get /api/search (SearchReq) returns (SearchResp)
 

@@ -28,6 +28,7 @@ var textResponseTypes = map[string]string{
 	"publicRss":     "application/rss+xml",
 	"publicSitemap": "application/xml",
 	"publicRobots":  "text/plain",
+	"publicMetrics": "text/plain",
 	"logExport":     "text/csv",
 }
 

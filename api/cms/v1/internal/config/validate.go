@@ -61,6 +61,9 @@ func (c Config) Validate() error {
 	if c.Mail.Enabled && (strings.TrimSpace(c.Mail.Host) == "" || strings.TrimSpace(c.Mail.From) == "") {
 		return errors.New("Mail.Enabled=true 时必须配置 Mail.Host 与 Mail.From")
 	}
+	if c.Metrics.Enabled && c.Metrics.Token != "" && len(c.Metrics.Token) < 16 {
+		return errors.New("METRICS_TOKEN 长度不足 16 位")
+	}
 	return nil
 }
 
@@ -94,6 +97,9 @@ func (c Config) SecurityWarnings() []string {
 	if c.Database.Source == "root:123456@tcp(127.0.0.1:3306)/go_meteor_cms?parseTime=True&loc=Local" {
 		out = append(out, "Database.Source 仍是仓库默认 DSN（含弱口令），请设置 MYSQL_DSN")
 	}
+	if c.Metrics.Enabled && strings.TrimSpace(c.Metrics.Token) == "" {
+		out = append(out, "/metrics 已开启但未设置 METRICS_TOKEN，运行时指标可被任意访问")
+	}
 	return out
 }
 
@@ -101,12 +107,12 @@ func (c Config) SecurityWarnings() []string {
 func (c Config) Summary() string {
 	dsn := dsnPasswordRe.ReplaceAllString(c.Database.Source, "$1:***@")
 	return fmt.Sprintf(
-		"port=%d timeout=%dms max_bytes=%d db_pool=%d/%d/%ds redis=%q static_dir=%q captcha=%v login_limit=%v public_limit=%v comment_rl=%d/%ds schema_strict=%v sql_debug=%v",
+		"port=%d timeout=%dms max_bytes=%d db_pool=%d/%d/%ds redis=%q static_dir=%q captcha=%v login_limit=%v public_limit=%v comment_rl=%d/%ds schema_strict=%v sql_debug=%v metrics=%v",
 		c.Port, c.Timeout, c.MaxBytes,
 		c.Database.MaxOpenConns, c.Database.MaxIdleConns, c.Database.ConnMaxLifetime,
 		c.Redis.Host, c.StaticDir,
 		c.Login.CaptchaEnabled, c.Login.RateLimit.Enabled, c.Public.RateLimit.Enabled,
 		c.Public.CommentRate.Max, c.Public.CommentRate.Window,
-		c.SchemaStrict, c.SQLDebug,
+		c.SchemaStrict, c.SQLDebug, c.Metrics.Enabled,
 	) + " dsn=" + dsn
 }

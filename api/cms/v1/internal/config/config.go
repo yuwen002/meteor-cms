@@ -97,6 +97,13 @@ type Config struct {
 	StrictSecurity bool
 	// SchemaStrict=true 时启动即校验 schema_migrations 的当前版本。
 	SchemaStrict bool
+	// Metrics 控制 Prometheus 抓取端点 /metrics。默认关闭，避免运行时信息对外暴露。
+	Metrics struct {
+		// Enabled 是否暴露 /metrics；关闭时端点返回 404，无需重新构建即可开关。
+		Enabled bool
+		// Token 非空时要求 Authorization: Bearer <Token>；为空表示仅靠网络层保护。
+		Token string `json:",optional"`
+	}
 }
 
 // 与 cms-api.yaml 中随仓库分发的示例值一致。生产必须通过环境变量覆盖，

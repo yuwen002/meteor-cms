@@ -133,6 +133,8 @@ func main() {
 	c.SQLDebug = envBool("SQL_DEBUG", c.SQLDebug)
 	c.StrictSecurity = envBool("STRICT_SECURITY", c.StrictSecurity)
 	c.SchemaStrict = envBool("SCHEMA_CHECK_STRICT", c.SchemaStrict)
+	c.Metrics.Enabled = envBool("METRICS_ENABLED", c.Metrics.Enabled)
+	c.Metrics.Token = envStr("METRICS_TOKEN", c.Metrics.Token)
 
 	if err := c.Validate(); err != nil {
 		logx.Errorf("配置校验失败: %v", err)
@@ -254,6 +256,7 @@ func main() {
 	handler.RegisterSystemExtraRoutes(server, ctx)
 	handler.RegisterPublicSiteRoutes(server, ctx)
 	handler.RegisterSiteExtRoutes(server, ctx)
+	handler.RegisterMetricsRoutes(server, c.Metrics.Enabled, c.Metrics.Token)
 
 	// 启动后台维护任务，随服务停止而退出；WaitGroup 保证退出时在途清理不会被截断。
 	taskCtx, cancelTasks := context.WithCancel(context.Background())

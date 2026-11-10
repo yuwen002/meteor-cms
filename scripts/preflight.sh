@@ -99,6 +99,20 @@ case "${comment_max:-5}" in
   *) pass "公开评论限流已开启（${comment_max:-5} 次/窗口）" ;;
 esac
 
+# 与 SecurityWarnings() 对齐：开启 /metrics 但未设 token 时严格模式会拒绝启动。
+if [ "$(get METRICS_ENABLED)" != "true" ]; then
+  pass "Prometheus /metrics 保持关闭（默认）"
+else
+  metrics_token="$(get METRICS_TOKEN)"
+  if is_placeholder "$metrics_token" || [ -z "$metrics_token" ]; then
+    fail "METRICS_ENABLED=true 时必须设置 METRICS_TOKEN（严格模式会拒绝启动）"
+  elif [ "${#metrics_token}" -lt 16 ]; then
+    fail "METRICS_TOKEN 长度不足 16 位"
+  else
+    pass "Prometheus /metrics 已开启且 token 合规"
+  fi
+fi
+
 case "$(get SQL_DEBUG)" in
   true|TRUE|True|1) fail "SQL_DEBUG=true 会记录 SQL 参数，严格模式下会拒绝启动" ;;
   *) pass "SQL_DEBUG 未开启" ;;
