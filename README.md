@@ -719,10 +719,17 @@ compose 专用配置（写在 `.env`，由 `${VAR:-默认值}` 插值；不提�
 
 - **设为 Public**：GitHub → 仓库 `Packages` → `meteor-cms` → `Package settings` → `Change visibility` → `Public`。
   Package 在**首次发版后才存在**，此项需发版完成后才能设置。
-- **保持 Private**：在 `https://github.com/settings/tokens/new` 生成 classic PAT，**只勾 `read:packages`**（不要给写权限），
-  在生产机执行 `echo <PAT> | docker login ghcr.io -u <GitHub 用户名> --password-stdin`，
-  并用 `docker manifest inspect ghcr.io/yuwen002/meteor-cms:<版本>` 确认能取到清单。
-  PAT 是账号级凭证，可在发版前提前创建；`docker login` 的凭证保存在生产机 `~/.docker/config.json`，不要写进 `.env` 或提交到仓库。
+- **保持 Private**：在 `https://github.com/settings/tokens/new` 生成 classic PAT，**只勾 `read:packages`**（不要给写权限），建议设置过期时间。
+  在生产机登录（`read -s` 避免 PAT 进入 shell history）：
+
+  ```bash
+  read -rsp 'GitHub PAT: ' PAT && echo
+  printf '%s' "$PAT" | docker login ghcr.io -u <GitHub 用户名> --password-stdin
+  unset PAT
+  docker manifest inspect ghcr.io/yuwen002/meteor-cms:<版本>
+  ```
+
+  PAT 是账号级凭证，可在发版前提前创建；登录凭证由 Docker 自行保管（Linux 通常在 `~/.docker/config.json`，Docker Desktop 走凭据管理器），不要写进 `.env` 或提交到仓库。PAT 过期或轮转后需在生产机重新登录。
 
 `make preflight` 默认会做这项镜像可达性检查；离线或镜像尚未发布时可设 `SKIP_IMAGE_CHECK=1` 跳过。
 

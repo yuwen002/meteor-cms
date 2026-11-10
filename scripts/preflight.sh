@@ -167,7 +167,7 @@ elif ! printf '%s' "$image" | grep -q '^ghcr.io/yuwen002/meteor-cms:'; then
 elif docker manifest inspect "$image" >/dev/null 2>&1; then
   pass "GHCR 镜像可访问：$image"
 else
-  fail "无法访问 $image。请 docker login ghcr.io（read:packages PAT）或把 Package 设为 Public；离线可设 SKIP_IMAGE_CHECK=1"
+  fail "无法访问 $image。常见原因：(1) 生产机未登录 GHCR，或 PAT 缺少 read:packages / 已过期（见 README 的 docker login 命令）；(2) 镜像尚未发布或 tag 不存在；(3) Docker 守护进程未运行。用 docker manifest inspect $image 复查；发版前 / 离线可设 SKIP_IMAGE_CHECK=1"
 fi
 
 if [ -n "${READY_URL:-}" ]; then
