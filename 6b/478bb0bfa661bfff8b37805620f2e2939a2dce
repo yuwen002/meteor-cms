@@ -1,0 +1,118 @@
+internal/pkg/permcheck/checker.go
+  s_bbf609960902b0::t_b6532a7d210e8c 60-74
+api/cms/v1/internal/logic/departmenttreelogic.go
+  s_bbf609960902b0::t_5cdcb459a31026 72-73
+  s_bbf609960902b0::t_46aa3df5c52fbb 45-47,49-52,54,56,62,65,67,69,74,78-91
+  s_bbf609960902b0::t_51215d49791975 42-44,48,70-71,92
+internal/seed/permissions.go
+  s_bbf609960902b0::t_86198000c5813d 97-100
+api/cms/v1/internal/logic/rolecreatelogic.go
+  s_bbf609960902b0::t_e87d3f204124c2 14
+  h_a3f313f3d96276 34-37
+api/cms/v1/internal/logic/rolepermissionassignlogic.go
+  h_a3f313f3d96276 38
+  s_bbf609960902b0::t_f8da7f110c0981 74-76
+api/cms/v1/internal/logic/admincreatelogic.go
+  s_bbf609960902b0::t_06d961dcfa738a 35-42
+api/cms/v1/internal/logic/adminroleremovelogic.go
+  s_bbf609960902b0::t_1270a720047b7a 73-75
+api/cms/v1/internal/middleware/jwtmiddleware_test.go
+  s_bbf609960902b0::t_4f1c1bf4c85723 188-248
+  s_bbf609960902b0::t_3660abbeb0619a 12,20
+api/cms/v1/internal/logic/roleupdatelogic.go
+  h_a3f313f3d96276 15-16,18,82-104,106,110,130,135-147
+api/cms/v1/system.doc.api
+  s_bbf609960902b0::t_7d8f64c916c5d4 9-26
+  s_bbf609960902b0::t_6168746dae7000 221-226
+api/cms/v1/internal/logic/departmenttreelogic_test.go
+  h_a3f313f3d96276 1-63
+internal/pkg/authsession/store.go
+  s_bbf609960902b0::t_c83d2ce687b1eb 24-25
+  s_bbf609960902b0::t_f2513efcfd2815 171-187
+  s_bbf609960902b0::t_ea5d24b053b557 1-23,26-170,188-245
+api/cms/v1/internal/logic/roledeletelogic.go
+  s_bbf609960902b0::t_2b236b543c1c8e 76,79,81,84,87,100-101,103-105,108-114,117-118,120,128-129
+  h_a3f313f3d96276 13,16,73,77-78,86,88,90-97,125-127
+api/cms/v1/internal/middleware/jwtmiddleware.go
+  s_bbf609960902b0::t_a33ed639b00467 12
+  s_bbf609960902b0::t_87c67acc052f4e 103-116
+web/src/views/admin/role/index.vue
+  s_bbf609960902b0::t_3f60a13abc3665 215-218
+  s_bbf609960902b0::t_7f885a9d37bc36 113,116-118
+api/cms/v1/internal/handler/sessionroutes.go
+  s_bbf609960902b0::t_1a98a41c50db50 1-105
+openapi.json
+  s_bbf609960902b0::t_cefa7cf402355e 3766-3818,7790-7841
+api/cms/v1/internal/logic/authz_test.go
+  s_bbf609960902b0::t_0bb23a4200fbf8 1-43
+api/cms/v1/internal/types/session_types.go
+  s_bbf609960902b0::t_db2fdbcecec871 1-20
+internal/pkg/datascope/scope_test.go
+  s_bbf609960902b0::t_99f948abd9acc6 3-7,45-74
+api/cms/v1/internal/handler/sessionroutes_test.go
+  s_bbf609960902b0::t_20babd41453c68 1-239
+api/cms/v1/cms.go
+  s_bbf609960902b0::t_7a6b5b3ca94c75 260
+api/cms/v1/internal/logic/authz.go
+  s_bbf609960902b0::t_cd42edb913c12e 1-118
+api/cms/v1/internal/logic/departmentupdatelogic_test.go
+  s_bbf609960902b0::t_1f75171903cc62 1-36
+api/cms/v1/internal/logic/adminlogoutlogic.go
+  s_bbf609960902b0::t_7c7623aa5f5cce 15
+  s_bbf609960902b0::t_b01ddc323f8378 8
+  s_bbf609960902b0::t_dda2eee945d208 48-59
+api/cms/v1/internal/logic/departmentupdatelogic.go
+  s_bbf609960902b0::t_13c0365ed29b6c 97-98,102-112,114
+  s_bbf609960902b0::t_e55993d05fabad 123-147
+  s_bbf609960902b0::t_661143b354f85e 50-62,64-66,69-74
+api/cms/v1/internal/logic/loginlogic.go
+  s_bbf609960902b0::t_bc167f0af5dd95 105-107,119,131,137-144
+  s_bbf609960902b0::t_7f6d362936430d 14
+api/cms/v1/internal/logic/refreshtokenlogic.go
+  s_bbf609960902b0::t_5bb96a9b2cd546 91-97,104,115,128,134-145
+  s_bbf609960902b0::t_d622fffbd9ca12 98-103
+  s_bbf609960902b0::t_4b89584d4ad7d3 13
+internal/pkg/permcheck/checker_test.go
+  s_bbf609960902b0::t_50f18ea89e8b6f 36-58
+docs/api.md
+  s_bbf609960902b0::t_c091a89535798a 225
+internal/pkg/authsession/store_test.go
+  s_bbf609960902b0::t_2ec4bf1dd41e85 116
+  s_bbf609960902b0::t_9cbd52447c175c 1-113
+  s_bbf609960902b0::t_5f50be713b950b 114-115,117-143,146-148
+  s_bbf609960902b0::t_2be393705d5374 144-145
+README.md
+  s_bbf609960902b0::t_4cf39b01a05de9 43,538
+  s_bbf609960902b0::t_5dba3a348dc413 465
+  s_bbf609960902b0::t_ac639bd330c2c7 514-516
+  s_bbf609960902b0::t_fa43d0dff06a97 534-537
+  s_bbf609960902b0::t_c53d834f65be78 545
+  s_bbf609960902b0::t_e5c25e0eb1a9f4 539-544,546-557
+internal/pkg/datascope/scope.go
+  s_bbf609960902b0::t_106738bde2265b 112,116-117
+  s_bbf609960902b0::t_7b969aaf3e33c0 38-49
+  s_bbf609960902b0::t_17ad2950353337 101-111,113-115,118-122,135-140,150-152,161-163,167-169,173,179
+  h_a3f313f3d96276 33-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "26.9.9",
+  "base_commit_sha": "6b478bb0bfa661bfff8b37805620f2e2939a2dce",
+  "prompts": {},
+  "humans": {
+    "h_a3f313f3d96276": {
+      "author": "liuxingyu <yuwen002@163.com>"
+    }
+  },
+  "sessions": {
+    "s_bbf609960902b0": {
+      "agent_id": {
+        "tool": "codebuddy",
+        "id": "e1b6045518d048e4bd07e87813a33b92",
+        "model": "hy4free"
+      },
+      "human_author": "liuxingyu <yuwen002@163.com>",
+      "generated_lines": 1548
+    }
+  }
+}
