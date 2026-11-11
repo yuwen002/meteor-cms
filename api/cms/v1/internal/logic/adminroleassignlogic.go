@@ -9,7 +9,6 @@ import (
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 	"github.com/yuwen002/meteor-cms/ent"
-	"github.com/yuwen002/meteor-cms/ent/adminrole"
 	"github.com/yuwen002/meteor-cms/ent/adminuser"
 	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
 	"github.com/yuwen002/meteor-cms/internal/common"
@@ -66,18 +65,9 @@ func (l *AdminRoleAssignLogic) AdminRoleAssign(req *types.AdminRoleAssignReq) (r
 		return nil, common.NewBizError(common.ErrInternalServer)
 	}
 
-	// 3. 校验角色是否全部存在（软删除的角色视为不存在）
-	roleCount, err := l.svcCtx.EntClient.AdminRole.
-		Query().
-		Where(adminrole.IDIn(roleIDs...)).
-		Count(l.ctx)
-	if err != nil {
-		l.Logger.Errorf("查询角色失败，错误: %v", err)
-		return nil, common.NewBizError(common.ErrInternalServer)
-	}
-	if roleCount != len(roleIDs) {
-		l.Logger.Errorf("部分角色不存在，请求角色数量: %d, 实际存在: %d", len(roleIDs), roleCount)
-		return nil, common.NewBizErrorWithMsg(common.ErrRoleNotFound, "部分角色不存在或已被删除")
+	// 3. 校验角色存在、可分配，且不超出调用者自身的权限集合（防越权提升）
+	if err := ensureRoleGrantAllowed(l.ctx, l.svcCtx.EntClient, roleIDs); err != nil {
+		return nil, err
 	}
 
 	// 4. 开启事务

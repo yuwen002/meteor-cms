@@ -110,11 +110,12 @@ import type { PermissionTreeItem } from '@/api/permission'
 // el-table 作用域插槽的 row 为 DefaultRow，这里显式收敛为 RoleItem
 const asRow = (row: unknown) => row as RoleItem
 
+// 必须与 internal/pkg/datascope/scope.go 的 ScopeAll..ScopeCustom 保持一致
 const dataScopeOptions = [
   { value: 1, label: '全部数据' },
-  { value: 2, label: '仅本人数据' },
-  { value: 3, label: '本部门数据' },
-  { value: 4, label: '本部门及子部门' },
+  { value: 2, label: '本部门数据' },
+  { value: 3, label: '本部门及子部门' },
+  { value: 4, label: '仅本人数据' },
   { value: 5, label: '自定义部门' },
 ]
 function dataScopeLabel(v: number) {
@@ -211,7 +212,10 @@ async function openPerm(row: RoleItem) {
   permTreeRef.value?.setCheckedKeys(checkedKeys.value)
 }
 async function submitPerm() {
-  const keys = (permTreeRef.value?.getCheckedKeys() || []) as number[]
+  const checked = (permTreeRef.value?.getCheckedKeys() || []) as number[]
+  const halfChecked = (permTreeRef.value?.getHalfCheckedKeys() || []) as number[]
+  // 三级权限树的半选父节点也必须提交，否则动态菜单缺少父级节点
+  const keys = Array.from(new Set([...checked, ...halfChecked]))
   permSubmitting.value = true
   try {
     await assignRolePermissions(permRoleId.value, keys)

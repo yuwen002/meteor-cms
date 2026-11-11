@@ -40,6 +40,7 @@
 - 📡 内容分发：相关文章 / 上下篇、作者展示、RSS 2.0、sitemap.xml、robots.txt
 - 🌐 公开阅读站点：`/articles` 前台列表与详情，无需登录，正文安全渲染
 - ⚡ 性能与运维：组合索引、列表排序与批量操作、公开与后台字典聚合计数、`/healthz` 探活、前端依赖分包、写事务独立超时、权限种子按接口幂等去重、统一权限缓存与主动失效
+- 👥 活跃会话管理：查看登录设备、按会话单独吊销（Redis 存储，不改 schema）
 - 🖥️ 配套 Vue3 + Element Plus 前端管理后台（见「前端 Web 管理后台」一节）
 
 ## 技术栈
@@ -461,6 +462,7 @@ Authorization: Bearer <token>
 | 文件 | `GET /admin/files`、`PUT /admin/files/rename`、`POST /admin/files/delete`、`POST /admin/upload` | 上传 / 列表 / 重命名 / 删除 |
 | 日志 | `GET /admin/logs/operations`、`GET /admin/logs/logins` | 操作 / 登录审计 |
 | 个人中心 | `GET/PUT /admin/profile`、`PUT /admin/admin-users/me/change-password`、`GET /admin/profile/permissions` | 自身资料与菜单权限 |
+| 登录会话 | `GET /admin/sessions`、`DELETE /admin/sessions/:sid` | 活跃设备列表与单会话吊销，详见「活跃会话管理」 |
 | 文章 | `GET/POST /admin/articles`、`GET/PUT/DELETE /admin/articles/:id`、`POST /admin/articles/:id/publish`、`/withdraw`、`/toggle-top` | 草稿 / 发布 / 下线状态机、定时发布、置顶、Markdown 正文、封面与 SEO |
 | 分类 | `GET/POST /admin/categories`、`PUT/DELETE /admin/categories/:id` | 父子层级、slug、删除前置校验 |
 | 标签 | `GET/POST /admin/tags`、`PUT/DELETE /admin/tags/:id` | 名称 / slug 唯一、文章数统计 |
@@ -509,6 +511,9 @@ OpenAPI 文档由 `make gen-doc` 生成：以 `api/cms/v1/cms.api` 为主体，�
 - 路由匹配按「静态段命中数最多者优先」，`/admin/departments/tree` 不会被 `/admin/departments/:id` 抢占
 - 以下路由不参与 API 鉴权：`/admin/logout`、`/admin/test-token`、`/admin/admin-users/me/change-password`、`/admin/profile/permissions`
 - 超级管理员（`admin_users.is_super`）跳过全部鉴权与数据范围过滤
+- **授权边界（防提权）**：非超管在「分配角色权限」与「给用户分配角色」时，只能授予自己权限快照内已有的权限；内置 `is_system` 角色（含 `SUPER_ADMIN`）与停用角色只允许超管下发；创建管理员时 `is_super=true` 仅超管可设置。判定取 DB 中的 `is_super` 真值而非 token claim，避免旧令牌携带过期身份
+- 角色权限分配允许提交空 `permission_ids`（清空全部权限）；前端权限树同时提交半选的父级节点，保证动态菜单父节点不丢失。移除用户角色后立即失效该用户的权限快照，不留缓存空窗
+- 删除角色会单事务清理 `admin_role_permissions` / `admin_user_roles` / `admin_role_depts` 并物理删除角色，避免软删行占用 `name` / `code` 唯一索引导致同名无法重建；角色被占用返回专用错误码 5209
 
 ## 数据权限
 
@@ -526,6 +531,30 @@ OpenAPI 文档由 `make gen-doc` 生成：以 `api/cms/v1/cms.api` 为主体，�
 - **安全原则（fail-closed）**：范围解析失败、用户未分配任何启用角色、或要求按部门过滤但未分配部门时，一律按最严格处理（不返回数据），绝不退回全量
 - 文章模块已落地行级过滤：超管与持有 `cms:article:approve` / `cms:article:reject` 任一权限的审核角色可查看全部文章，其余用户仅能看到自己创建的文章（列表、详情、审核记录、修订历史、回收站，含恢复与彻底删除）；`cms:article:review` 只表示可查看审核记录，普通作者持有它仍只能看自己文章；分类、标签属于共享字典，不做作者过滤
 - 管理员列表/详情按 `dept_id` 走 `datascope` 范围解析；文章模块按 `author_id` 判定，两套模型分别适用于不同实体
+- `data_scope` 写入时校验 1-5；非法值只会让该条角色被跳过，不再让整个 `Resolve` 失败、连带其它角色一起退化。全部角色都无效时按空集 fail-closed
+- **部门生命周期收权**：只读「仍存在且启用」的部门参与范围计算。部门被软删除或停用后，`admin_users.dept_id` 与 `admin_role_depts` 中的旧引用不再放权；「本部门及子部门」也只沿启用部门展开
+- 角色从 `data_scope=5` 改为其它取值时，同事务清空 `admin_role_depts`，避免日后改回 5 时继承历史部门范围
+- 部门树按指针挂载后再物化，任意层级都能完整返回；更新父级时会沿 `parent_id` 回溯拒绝挂到自己的后代下，根级统一用 `NULL`（不再写 `parent_id=0` 撞自引用外键）
+
+## 活跃会话管理
+
+查看登录设备并单独吊销某个会话。会话是易失的运行时状态，和全局踢人的 `auth:tv:<uid>` 一样放在 Redis：
+不新增表、不改变 schema 摘要，也不需要额外迁移。
+
+- 登录时给 access / refresh 令牌写入 `sid` 声明，并登记 `auth:session:<uid>:<sid>`（IP、UA、创建 / 最后活跃 / 过期时间、当前 access token 哈希），用户索引为 `auth:sessions:<uid>`。TTL 取 `Auth.RefreshExpire`（默认 7 天）。
+- 刷新令牌时沿用原 `sid` 并更新当前 token 哈希；已吊销会话的刷新请求直接返回 2012，避免持续轮换让吊销标记先过期而「复活」。登出时吊销当前会话。升级前签发、不带 `sid` 的旧令牌仍可正常使用，只受 token 版本与黑名单控制。
+- 吊销写入 `auth:session:revoked:<sid>`，JWT 中间件按 `sid` 拦截（返回 2012）；同时把该会话当前 access token 写进既有 `token_blacklists` 表作双重保险。只影响目标设备，同用户其它会话与新登录不受影响。
+
+| 接口 | 权限标识 | 说明 |
+| --- | --- | --- |
+| `GET /admin/sessions` | `system:session:list` | 列出当前管理员的活跃会话，`is_current` 标记本次请求所用会话；响应不含 token 哈希 |
+| `DELETE /admin/sessions/:sid` | `system:session:revoke` | 吊销指定会话；只能吊销自己的会话，不存在 / 已过期 / 他人会话返回参数错误 |
+
+两个接口都挂 `ClientInfo → JWT → Permission → OperationLog` 受保护链；权限种子已包含对应的按钮与 API 记录（挂在「管理员管理」下），迁移时幂等写入。
+
+与既有强制下线的区别：强制下线自增 `auth:tv:<uid>`，使该用户**全部**令牌立即失效；会话吊销只针对单个 `sid`，适合「让某台设备退出登录」。
+
+降级约定与项目其它 Redis 能力一致：未配置 Redis 时登录 / 刷新 / 登出照常工作，中间件不校验会话状态，但列表与吊销接口返回明确错误；Redis 访问异常时中间件降级放行避免误杀。需要强隔离时请用强制下线 / 修改密码，不要依赖单会话吊销。
 
 ## 开发指南
 

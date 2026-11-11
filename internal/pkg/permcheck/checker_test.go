@@ -33,6 +33,29 @@ func TestPermissionsContext(t *testing.T) {
 	}
 }
 
+func TestContainsAll(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		own       []string
+		requested []string
+		want      bool
+	}{
+		{"子集", []string{"a", "b"}, []string{"a"}, true},
+		{"全等", []string{"a", "b"}, []string{"a", "b"}, true},
+		{"包含未授权项", []string{"a", "b"}, []string{"a", "c"}, false},
+		{"空请求（清空权限）", []string{"a"}, nil, true},
+		{"自身为空但有请求", nil, []string{"a"}, false},
+		{"双方为空", nil, nil, true},
+		{"重复请求项", []string{"a"}, []string{"a", "a"}, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := ContainsAll(tc.own, tc.requested); got != tc.want {
+				t.Fatalf("ContainsAll(%v, %v) = %v, want %v", tc.own, tc.requested, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestInvalidateChangesCacheKeyVersions(t *testing.T) {
 	c := &Checker{userVersions: make(map[int64]int64)}
 	g0, u0 := c.generation.Load(), c.userVersion(7)

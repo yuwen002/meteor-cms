@@ -9,6 +9,7 @@ import (
 	"github.com/yuwen002/meteor-cms/ent"
 	"github.com/yuwen002/meteor-cms/ent/tokenblacklist"
 	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/authsession"
 	"github.com/yuwen002/meteor-cms/internal/pkg/tokenversion"
 	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -93,6 +94,20 @@ func (m *JwtMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 					// Redis 异常降级放行，避免误杀（与限流降级一致）
 					logx.Errorf("token version check failed: user_id=%d err=%v", userID, gerr)
 				} else if tvClaim != cur {
+					common.Fail(w, common.ErrTokenRevoked, common.GetErrorMessage(common.ErrTokenRevoked))
+					return
+				}
+			}
+		}
+
+		// 单会话吊销：按 sid 查 revoked 标记。Redis 异常降级放行，避免误杀；
+		// 未携带 sid 的旧令牌（升级前签发）不受会话级吊销影响，仍由 tv / 黑名单控制。
+		if m.rdb != nil {
+			if sid, ok := claims["sid"].(string); ok && sid != "" {
+				revoked, e := authsession.IsRevoked(m.rdb, sid)
+				if e != nil {
+					logx.Errorf("session revocation check failed: sid=%s err=%v", sid, e)
+				} else if revoked {
 					common.Fail(w, common.ErrTokenRevoked, common.GetErrorMessage(common.ErrTokenRevoked))
 					return
 				}

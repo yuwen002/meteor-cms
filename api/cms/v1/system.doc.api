@@ -6,6 +6,24 @@
 // cmd/apidoc/main_test.go 会用 routes.go 的路由集合做覆盖校验。
 
 type (
+	SessionItem {
+		SID        string `json:"sid"`
+		IP         string `json:"ip"`
+		UserAgent  string `json:"user_agent"`
+		CreatedAt  int64  `json:"created_at"`
+		LastSeenAt int64  `json:"last_seen_at"`
+		ExpiresAt  int64  `json:"expires_at"`
+		IsCurrent  bool   `json:"is_current"`
+	}
+
+	SessionListResp {
+		List []SessionItem `json:"list"`
+	}
+
+	SessionSIDReq {
+		SID string `path:"sid"`
+	}
+
 	SystemIDReq {
 		ID int64 `path:"id"`
 	}
@@ -200,4 +218,10 @@ service cms-system-api {
 
 	@handler forceAdminLogoutAll
 	post /admin/admin-users/force-logout-all returns (CommonResp)
+
+	@handler sessionList
+	get /admin/sessions returns (SessionListResp)
+
+	@handler sessionRevoke
+	delete /admin/sessions/:sid (SessionSIDReq) returns (CommonResp)
 }

@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"entgo.io/ent/dialect"
 	dialectsql "entgo.io/ent/dialect/sql"
@@ -16,6 +17,7 @@ import (
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/config"
 	"github.com/yuwen002/meteor-cms/ent"
 	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/authsession"
 	"github.com/yuwen002/meteor-cms/internal/pkg/tokenversion"
 	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/stores/redis"
@@ -182,4 +184,65 @@ func TestJwtMiddleware_RedisErrorDegrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertPassed(t, env.do(signTestToken(t, 1, 0, true)))
+}
+
+func signTestTokenWithSID(t *testing.T, userID, tv int64, sid string) string {
+	t.Helper()
+	tok, err := utils.GenerateToken(jwtTestSecret, 3600, map[string]interface{}{
+		"user_id":  userID,
+		"username": "admin",
+		"tv":       tv,
+		"sid":      sid,
+	})
+	if err != nil {
+		t.Fatalf("GenerateToken: %v", err)
+	}
+	return tok
+}
+
+// TestJwtMiddleware_SessionRevoked 固化「单会话吊销」：登记 → 放行 → 吊销 → 同一令牌返回 2012。
+func TestJwtMiddleware_SessionRevoked(t *testing.T) {
+	env := newJwtTestEnvWithRedis(t)
+	store := authsession.New(env.rdb, time.Hour)
+	sid := authsession.NewSID()
+	if err := store.Create(context.Background(), 1, sid, "10.0.0.1", "agent", "hash"); err != nil {
+		t.Fatalf("登记会话失败: %v", err)
+	}
+	tok := signTestTokenWithSID(t, 1, 0, sid)
+
+	assertPassed(t, env.do(tok))
+
+	if _, err := store.Revoke(context.Background(), 1, sid); err != nil {
+		t.Fatalf("吊销会话失败: %v", err)
+	}
+	if got, _ := env.mini.Get("auth:session:revoked:" + sid); got != "1" {
+		t.Fatalf("Redis 吊销标记 = %q, want \"1\"", got)
+	}
+	assertRevoked(t, env.do(tok))
+}
+
+// TestJwtMiddleware_OtherSessionUnaffected 吊销某设备不误伤同用户其它会话，
+// 也不影响升级前签发的、不带 sid 的旧令牌。
+func TestJwtMiddleware_OtherSessionUnaffected(t *testing.T) {
+	env := newJwtTestEnvWithRedis(t)
+	store := authsession.New(env.rdb, time.Hour)
+	sidA, sidB := authsession.NewSID(), authsession.NewSID()
+	for _, sid := range []string{sidA, sidB} {
+		if err := store.Create(context.Background(), 1, sid, "10.0.0.1", "agent", "hash"); err != nil {
+			t.Fatalf("登记会话失败: %v", err)
+		}
+	}
+	if _, err := store.Revoke(context.Background(), 1, sidA); err != nil {
+		t.Fatalf("吊销会话失败: %v", err)
+	}
+
+	assertRevoked(t, env.do(signTestTokenWithSID(t, 1, 0, sidA)))
+	assertPassed(t, env.do(signTestTokenWithSID(t, 1, 0, sidB)))
+	assertPassed(t, env.do(signTestToken(t, 1, 0, true)))
+}
+
+// TestJwtMiddleware_SessionCheckNoRedis 未配置 Redis 时带 sid 的令牌仍放行（会话校验降级）。
+func TestJwtMiddleware_SessionCheckNoRedis(t *testing.T) {
+	env := newJwtTestEnv(t, nil, nil)
+	assertPassed(t, env.do(signTestTokenWithSID(t, 1, 0, authsession.NewSID())))
 }

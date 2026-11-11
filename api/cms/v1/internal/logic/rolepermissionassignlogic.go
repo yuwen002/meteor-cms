@@ -9,7 +9,6 @@ import (
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 	"github.com/yuwen002/meteor-cms/ent"
-	"github.com/yuwen002/meteor-cms/ent/adminpermission"
 	"github.com/yuwen002/meteor-cms/ent/adminrole"
 	"github.com/yuwen002/meteor-cms/ent/adminrolepermission"
 	"github.com/yuwen002/meteor-cms/internal/common"
@@ -36,9 +35,7 @@ func (l *RolePermissionAssignLogic) RolePermissionAssign(req *types.RolePermissi
 	if req.RoleID <= 0 {
 		return nil, common.NewBizError(common.ErrUserIDFormat)
 	}
-	if len(req.PermissionIDs) == 0 {
-		return nil, common.NewBizError(common.ErrInvalidParams)
-	}
+	// 空数组表示清空该角色的全部权限，是合法的收权操作。
 
 	// 权限ID去重且必须为正数
 	permissionIDs := make([]int64, 0, len(req.PermissionIDs))
@@ -74,18 +71,9 @@ func (l *RolePermissionAssignLogic) RolePermissionAssign(req *types.RolePermissi
 		return nil, common.NewBizError(common.ErrRoleIsSystemRole)
 	}
 
-	// 4. 验证权限是否存在
-	permissionCount, err := l.svcCtx.EntClient.AdminPermission.
-		Query().
-		Where(adminpermission.IDIn(permissionIDs...)).
-		Count(l.ctx)
-	if err != nil {
-		l.Logger.Errorf("查询权限失败，错误: %v", err)
-		return nil, common.NewBizError(common.ErrInternalServer)
-	}
-	if permissionCount != len(permissionIDs) {
-		l.Logger.Errorf("部分权限不存在，请求权限数量: %d, 实际存在: %d", len(permissionIDs), permissionCount)
-		return nil, common.NewBizErrorWithMsg(common.ErrPermissionNotFound, "部分权限不存在或已被删除")
+	// 4. 权限必须存在且启用，且不得超出调用者自身的权限集合（防越权提升）
+	if err := ensurePermissionGrantAllowed(l.ctx, l.svcCtx.EntClient, permissionIDs); err != nil {
+		return nil, err
 	}
 
 	// 5. 开启事务

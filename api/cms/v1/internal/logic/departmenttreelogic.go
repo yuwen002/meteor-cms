@@ -39,32 +39,55 @@ func (l *DepartmentTreeLogic) DepartmentTree() (resp []*types.DepartmentTreeResp
 		return nil, err
 	}
 
-	// 构建 map
-	nodeMap := make(map[int64]*types.DepartmentTreeResp)
+	return buildDepartmentTree(list), nil
+}
 
+// buildDepartmentTree 先用内部指针节点完成任意层级的挂载，再一次性物化为响应类型。
+// 直接把子节点按值拷进父节点，后续挂到子节点上的孙节点不会回填已拷贝的副本，
+// 三级及以上部门会静默丢失且结果依赖遍历顺序。这里保持 cms.api 的值切片契约不变。
+func buildDepartmentTree(list []*ent.Department) []*types.DepartmentTreeResp {
+	type node struct {
+		resp     types.DepartmentTreeResp
+		children []*node
+	}
+
+	nodes := make(map[int64]*node, len(list))
 	for _, v := range list {
-		nodeMap[v.ID] = &types.DepartmentTreeResp{
+		nodes[v.ID] = &node{resp: types.DepartmentTreeResp{
 			Id:       v.ID,
 			Name:     v.Name,
 			Sort:     v.Sort,
 			IsActive: v.IsActive,
 			Children: []types.DepartmentTreeResp{},
-		}
+		}}
 	}
 
-	var tree []*types.DepartmentTreeResp
-
+	roots := make([]*node, 0)
 	for _, v := range list {
-		node := nodeMap[v.ID]
+		cur := nodes[v.ID]
 		if v.ParentID == nil || *v.ParentID == 0 {
-			tree = append(tree, node)
-		} else {
-			parent, ok := nodeMap[*v.ParentID]
-			if ok {
-				parent.Children = append(parent.Children, *node)
-			}
+			roots = append(roots, cur)
+			continue
+		}
+		// parent == cur 表示 parent_id 指向自身的脏数据，挂到自己会形成自环
+		if parent, ok := nodes[*v.ParentID]; ok && parent != cur {
+			parent.children = append(parent.children, cur)
 		}
 	}
 
-	return tree, nil
+	var materialize func(*node) *types.DepartmentTreeResp
+	materialize = func(n *node) *types.DepartmentTreeResp {
+		resp := n.resp
+		resp.Children = make([]types.DepartmentTreeResp, 0, len(n.children))
+		for _, child := range n.children {
+			resp.Children = append(resp.Children, *materialize(child))
+		}
+		return &resp
+	}
+
+	tree := make([]*types.DepartmentTreeResp, 0, len(roots))
+	for _, root := range roots {
+		tree = append(tree, materialize(root))
+	}
+	return tree
 }

@@ -5,12 +5,14 @@ package logic
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 	"github.com/yuwen002/meteor-cms/ent/tokenblacklist"
 	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/authsession"
 	"github.com/yuwen002/meteor-cms/internal/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -41,6 +43,18 @@ func (l *AdminLogoutLogic) AdminLogout() (resp *types.CommonResp, err error) {
 	token := utils.GetTokenFromCtx(l.ctx)
 	if token == "" {
 		return nil, common.NewBizError(common.ErrInvalidToken)
+	}
+
+	// 结束当前会话：revoked 标记让该 sid 的所有令牌被中间件拒绝，
+	// 与只覆盖当前这一枚令牌的 token 黑名单互补。
+	if sid, ok := userClaims["sid"].(string); ok && sid != "" {
+		if uid, ok := utils.ExtractUserID(userClaims); ok && uid > 0 {
+			sessions := authsession.New(l.svcCtx.Redis, time.Duration(l.svcCtx.Config.Auth.RefreshExpire)*time.Second)
+			if _, e := sessions.Revoke(l.ctx, uid, sid); e != nil &&
+				!errors.Is(e, authsession.ErrNotFound) && !errors.Is(e, authsession.ErrUnavailable) {
+				logx.Errorf("吊销登录会话失败: sid=%s err=%v", sid, e)
+			}
+		}
 	}
 
 	// 获取token过期时间

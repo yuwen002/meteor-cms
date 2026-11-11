@@ -32,6 +32,14 @@ func NewAdminCreateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Admin
 }
 
 func (l *AdminCreateLogic) AdminCreate(req *types.CreateAdminReq) (resp *types.CommonResp, err error) {
+	// 只有超级管理员能创建超级管理员；判定走 DB 真值而非 token claim，
+	// 避免能新增管理员的人借此绕过 RBAC 与数据范围。
+	if req.IsSuper {
+		if err := ensureSuperAdmin(l.ctx, l.svcCtx.EntClient); err != nil {
+			return nil, err
+		}
+	}
+
 	// 检查用户是否存在
 	exists, err := l.svcCtx.EntClient.AdminUser.
 		Query().

@@ -10,8 +10,10 @@ import (
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 	"github.com/yuwen002/meteor-cms/ent"
 	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminroledept"
 	"github.com/yuwen002/meteor-cms/ent/adminrolepermission"
 	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	entschema "github.com/yuwen002/meteor-cms/ent/schema"
 	"github.com/yuwen002/meteor-cms/internal/common"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -68,58 +70,61 @@ func (l *RoleDeleteLogic) RoleDelete(req *types.RoleDeleteReq) (resp *types.Comm
 	}
 	if userCount > 0 {
 		l.Logger.Errorf("角色正在被使用，无法删除，ID: %d, 用户数量: %d", req.ID, userCount)
+		return nil, common.NewBizError(common.ErrRoleIsInUse)
+	}
+
+	// 5. 事务清理全部关联并删除角色，避免中途失败留下「权限已清、角色仍在」的半删除状态
+	cancel := newTxContext(&l.ctx)
+	defer cancel()
+	tx, err := l.svcCtx.EntClient.Tx(l.ctx)
+	if err != nil {
+		l.Logger.Errorf("开启事务失败: %v", err)
+		return nil, common.NewBizError(common.ErrInternalServer)
+	}
+	defer func() {
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				l.Logger.Errorf("事务回滚失败: %v", rbErr)
+			}
+		}
+	}()
+
+	if _, err = tx.AdminRolePermission.
+		Delete().
+		Where(adminrolepermission.RoleID(req.ID)).
+		Exec(l.ctx); err != nil {
+		l.Logger.Errorf("删除角色权限关联失败，ID: %d, 错误: %v", req.ID, err)
 		return nil, common.NewBizError(common.ErrRoleDeleteFail)
 	}
 
-	// 5. 删除角色权限关联
-	permissions, err := l.svcCtx.EntClient.AdminRolePermission.
-		Query().
-		Where(adminrolepermission.RoleID(req.ID)).
-		All(l.ctx)
-	if err != nil {
-		l.Logger.Errorf("查询角色权限关联失败，ID: %d, 错误: %v", req.ID, err)
-		return nil, common.NewBizError(common.ErrInternalServer)
-	}
-
-	if len(permissions) > 0 {
-		_, err = l.svcCtx.EntClient.AdminRolePermission.
-			Delete().
-			Where(adminrolepermission.RoleID(req.ID)).
-			Exec(l.ctx)
-		if err != nil {
-			l.Logger.Errorf("删除角色权限关联失败，ID: %d, 错误: %v", req.ID, err)
-			return nil, common.NewBizError(common.ErrRoleDeleteFail)
-		}
-	}
-
-	// 5.1. 删除用户角色关联
-	userRoles, err := l.svcCtx.EntClient.AdminUserRole.
-		Query().
+	if _, err = tx.AdminUserRole.
+		Delete().
 		Where(adminuserrole.RoleID(req.ID)).
-		All(l.ctx)
-	if err != nil {
-		l.Logger.Errorf("查询用户角色关联失败，ID: %d, 错误: %v", req.ID, err)
-		return nil, common.NewBizError(common.ErrInternalServer)
+		Exec(l.ctx); err != nil {
+		l.Logger.Errorf("删除用户角色关联失败，ID: %d, 错误: %v", req.ID, err)
+		return nil, common.NewBizError(common.ErrRoleDeleteFail)
 	}
 
-	if len(userRoles) > 0 {
-		_, err = l.svcCtx.EntClient.AdminUserRole.
-			Delete().
-			Where(adminuserrole.RoleID(req.ID)).
-			Exec(l.ctx)
-		if err != nil {
-			l.Logger.Errorf("删除用户角色关联失败，ID: %d, 错误: %v", req.ID, err)
-			return nil, common.NewBizError(common.ErrRoleDeleteFail)
-		}
+	// 自定义部门关联带软删除，必须真删，否则历史行继续占用 (role_id, dept_id) 唯一索引
+	if _, err = tx.AdminRoleDept.
+		Delete().
+		Where(adminroledept.RoleID(req.ID)).
+		Exec(entschema.SkipSoftDelete(l.ctx)); err != nil {
+		l.Logger.Errorf("删除角色部门关联失败，ID: %d, 错误: %v", req.ID, err)
+		return nil, common.NewBizError(common.ErrRoleDeleteFail)
 	}
 
-	// 6. 删除角色
-	err = l.svcCtx.EntClient.AdminRole.
+	// 角色已无任何关联，物理删除可释放 name/code 唯一索引，允许同名重建
+	if err = tx.AdminRole.
 		DeleteOneID(req.ID).
-		Exec(l.ctx)
-	if err != nil {
+		Exec(entschema.SkipSoftDelete(l.ctx)); err != nil {
 		l.Logger.Errorf("删除角色失败，ID: %d, 错误: %v", req.ID, err)
 		return nil, common.NewBizError(common.ErrRoleDeleteFail)
+	}
+
+	if err = tx.Commit(); err != nil {
+		l.Logger.Errorf("提交事务失败: %v", err)
+		return nil, common.NewBizError(common.ErrInternalServer)
 	}
 
 	// 角色停用/删除会影响其下所有用户的权限集合

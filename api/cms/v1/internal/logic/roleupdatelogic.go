@@ -12,7 +12,10 @@ import (
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 	"github.com/yuwen002/meteor-cms/ent"
 	"github.com/yuwen002/meteor-cms/ent/adminrole"
+	"github.com/yuwen002/meteor-cms/ent/adminroledept"
+	entschema "github.com/yuwen002/meteor-cms/ent/schema"
 	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/datascope"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -76,12 +79,35 @@ func (l *RoleUpdateLogic) RoleUpdate(req *types.RoleUpdateReq) (resp *types.Comm
 			return nil, common.NewBizError(common.ErrRoleNameCannotBeEmpty)
 		}
 	}
+	if req.DataScope != nil && !datascope.ValidScope(*req.DataScope) {
+		return nil, common.NewBizErrorWithMsg(common.ErrInvalidParams, "data_scope 必须为 1-5")
+	}
 
-	update := l.svcCtx.EntClient.AdminRole.
+	// 离开「自定义部门」时同步清理历史部门清单，避免日后改回 5 时继承旧范围。
+	clearDepts := req.DataScope != nil &&
+		*req.DataScope != datascope.ScopeCustom && role.DataScope == datascope.ScopeCustom
+
+	// 5. 更新与关联清理放在同一事务，避免只改了 data_scope 却留下旧部门清单
+	cancel := newTxContext(&l.ctx)
+	defer cancel()
+	tx, err := l.svcCtx.EntClient.Tx(l.ctx)
+	if err != nil {
+		l.Logger.Errorf("开启事务失败: %v", err)
+		return nil, common.NewBizError(common.ErrInternalServer)
+	}
+	defer func() {
+		if err != nil {
+			if rbErr := tx.Rollback(); rbErr != nil {
+				l.Logger.Errorf("事务回滚失败: %v", rbErr)
+			}
+		}
+	}()
+
+	update := tx.AdminRole.
 		UpdateOneID(req.ID).
 		SetUpdatedAt(time.Now())
 
-	// 5. 更新字段（只更新非nil的字段）
+	// 6. 更新字段（只更新非nil的字段）
 	if req.Name != nil {
 		update.SetName(*req.Name)
 	}
@@ -101,11 +127,24 @@ func (l *RoleUpdateLogic) RoleUpdate(req *types.RoleUpdateReq) (resp *types.Comm
 		update.SetSort(*req.Sort)
 	}
 
-	// 6. 执行更新
-	_, err = update.Save(l.ctx)
-	if err != nil {
+	if _, err = update.Save(l.ctx); err != nil {
 		l.Logger.Errorf("更新角色失败: %v", err)
 		return nil, common.NewBizError(common.ErrRoleUpdateFail)
+	}
+
+	if clearDepts {
+		if _, err = tx.AdminRoleDept.
+			Delete().
+			Where(adminroledept.RoleID(req.ID)).
+			Exec(entschema.SkipSoftDelete(l.ctx)); err != nil {
+			l.Logger.Errorf("清理角色部门范围失败: %v", err)
+			return nil, common.NewBizError(common.ErrRoleUpdateFail)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		l.Logger.Errorf("提交事务失败: %v", err)
+		return nil, common.NewBizError(common.ErrInternalServer)
 	}
 
 	// 角色启用状态变更会改变其下所有用户的有效权限

@@ -11,6 +11,7 @@ import (
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 	"github.com/yuwen002/meteor-cms/ent/adminrole"
 	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/datascope"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -30,6 +31,10 @@ func NewRoleCreateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RoleCr
 }
 
 func (l *RoleCreateLogic) RoleCreate(req *types.RoleCreateReq) (resp *types.CommonResp, err error) {
+	if !datascope.ValidScope(req.DataScope) {
+		return nil, common.NewBizErrorWithMsg(common.ErrInvalidParams, "data_scope 必须为 1-5")
+	}
+
 	// 1. 检查角色编码是否已存在
 	exists, err := l.svcCtx.EntClient.AdminRole.
 		Query().

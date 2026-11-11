@@ -257,6 +257,7 @@ func main() {
 	handler.RegisterPublicSiteRoutes(server, ctx)
 	handler.RegisterSiteExtRoutes(server, ctx)
 	handler.RegisterMetricsRoutes(server, c.Metrics.Enabled, c.Metrics.Token)
+	handler.RegisterSessionRoutes(server, ctx)
 
 	// 启动后台维护任务，随服务停止而退出；WaitGroup 保证退出时在途清理不会被截断。
 	taskCtx, cancelTasks := context.WithCancel(context.Background())

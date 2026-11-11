@@ -222,7 +222,7 @@ Authorization: Bearer <token>
 | GET | `/admin/departments/:id` | `system:dept:detail` | 部门详情 |
 | POST | `/admin/departments` | `system:dept:add` | 新增部门 |
 | PUT | `/admin/departments/:id` | `system:dept:edit` | 更新部门 |
-| DELETE | `/admin/departments/:id` | `system:dept:delete` | 删除部门，存在子部门或仍有关联管理员时拒绝 |
+| DELETE | `/admin/departments/:id` | `system:dept:delete` | 删除部门（软删除），存在子部门时拒绝；删除或停用后旧的 `dept_id` 引用不再产生可见范围 |
 
 部门树节点含 `children`，父部门未启用时其下的启用子部门不会出现在树中。
 

@@ -10,6 +10,7 @@ import (
 	"github.com/yuwen002/meteor-cms/ent/adminuser"
 	"github.com/yuwen002/meteor-cms/ent/tokenblacklist"
 	"github.com/yuwen002/meteor-cms/internal/common"
+	"github.com/yuwen002/meteor-cms/internal/pkg/authsession"
 	"github.com/yuwen002/meteor-cms/internal/pkg/tokenversion"
 	"github.com/yuwen002/meteor-cms/internal/utils"
 
@@ -87,6 +88,20 @@ func (l *RefreshTokenLogic) RefreshToken(req *types.RefreshTokenReq) (resp *type
 	// 读取当前 token 版本号，写入新令牌；用于全局踢人 / 改密后旧令牌失效
 	tv, _ := tokenversion.Get(l.ctx, l.svcCtx.Redis, user.ID)
 
+	// 沿用 refresh token 中的会话 ID；升级前签发的旧令牌没有 sid，补建一条会话。
+	origSID, hasSID := claims["sid"].(string)
+	sid := origSID
+	if !hasSID || sid == "" {
+		sid = authsession.NewSID()
+		hasSID = false
+	}
+	// 已吊销的会话不能再轮换出新令牌；不带 sid 的旧令牌仍由 tv / 黑名单控制。
+	if hasSID {
+		if e := authsession.CheckUsable(l.svcCtx.Redis, sid); e != nil {
+			return nil, common.NewBizError(common.ErrTokenRevoked)
+		}
+	}
+
 	accessToken, err := utils.GenerateToken(l.svcCtx.Config.Auth.AccessSecret, l.svcCtx.Config.Auth.AccessExpire, map[string]interface{}{
 		"user_id":    user.ID,
 		"username":   user.Username,
@@ -97,6 +112,7 @@ func (l *RefreshTokenLogic) RefreshToken(req *types.RefreshTokenReq) (resp *type
 		"is_active":  user.IsActive,
 		"login_time": time.Now().Unix(),
 		"tv":         tv,
+		"sid":        sid,
 	})
 	if err != nil {
 		return nil, common.NewBizError(common.ErrInternalServer)
@@ -109,9 +125,22 @@ func (l *RefreshTokenLogic) RefreshToken(req *types.RefreshTokenReq) (resp *type
 		"username":   user.Username,
 		"token_type": "refresh",
 		"tv":         tv,
+		"sid":        sid,
 	})
 	if err != nil {
 		return nil, common.NewBizError(common.ErrInternalServer)
+	}
+
+	// 会话存在则更新当前 access hash（吊销时可据此把令牌加入黑名单），否则补登。
+	sessions := authsession.New(l.svcCtx.Redis, time.Duration(l.svcCtx.Config.Auth.RefreshExpire)*time.Second)
+	accessHash := utils.GenerateTokenHash(accessToken)
+	if hasSID {
+		if e := sessions.Touch(l.ctx, user.ID, sid, accessHash); e != nil {
+			logx.Errorf("更新登录会话失败: sid=%s err=%v", sid, e)
+		}
+	} else if e := sessions.Create(l.ctx, user.ID, sid,
+		utils.GetClientIP(l.ctx), utils.GetUserAgent(l.ctx), accessHash); e != nil {
+		logx.Errorf("补登登录会话失败: user_id=%d err=%v", user.ID, e)
 	}
 
 	oldHash := utils.GenerateTokenHash(req.RefreshToken)

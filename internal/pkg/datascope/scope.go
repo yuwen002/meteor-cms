@@ -9,7 +9,6 @@ package datascope
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/yuwen002/meteor-cms/ent"
 	"github.com/yuwen002/meteor-cms/ent/adminrole"
@@ -30,6 +29,23 @@ const (
 	// ScopeCustom 自定义部门集合，读取 admin_role_depts
 	ScopeCustom = 5
 )
+
+// ValidScope 判断 data_scope 是否为已定义的取值，供写入口做前置校验。
+func ValidScope(scope int) bool {
+	return scope >= ScopeAll && scope <= ScopeCustom
+}
+
+// ActiveDepartments 只保留仍启用的部门；软删除行由 Ent 拦截器在查询阶段排除。
+// 停用部门不能再通过旧的 admin_users.dept_id / admin_role_depts 引用继续放权。
+func ActiveDepartments(departments []*ent.Department) []*ent.Department {
+	active := make([]*ent.Department, 0, len(departments))
+	for _, d := range departments {
+		if d != nil && d.IsActive {
+			active = append(active, d)
+		}
+	}
+	return active
+}
 
 // Filter 当前用户的数据可见范围
 type Filter struct {
@@ -82,7 +98,28 @@ func Resolve(ctx context.Context, client *ent.Client, userID int64) (*Filter, er
 	filter := &Filter{Restricted: true, UserID: userID}
 	deptSet := make(map[int64]struct{})
 	needChildren := false
-	var departments []*ent.Department
+
+	// 只把「仍存在且启用」的部门计入可见范围：部门软删除或停用后，
+	// admin_users.dept_id 与 admin_role_depts 里的旧引用不应继续放权。
+	// Ent 的软删除拦截器会在查询时自动排除已删除行。
+	var activeDepartments []*ent.Department
+	activeDeptIDs := make(map[int64]struct{})
+	loaded := false
+	loadActiveDepartments := func() error {
+		if loaded {
+			return nil
+		}
+		all, err := client.Department.Query().All(ctx)
+		if err != nil {
+			return err
+		}
+		activeDepartments = ActiveDepartments(all)
+		for _, d := range activeDepartments {
+			activeDeptIDs[d.ID] = struct{}{}
+		}
+		loaded = true
+		return nil
+	}
 
 	for _, role := range roles {
 		switch role.DataScope {
@@ -95,6 +132,12 @@ func Resolve(ctx context.Context, client *ent.Client, userID int64) (*Filter, er
 				// 未分配部门却要求按部门过滤，该角色贡献的可见范围为空
 				continue
 			}
+			if err := loadActiveDepartments(); err != nil {
+				return nil, err
+			}
+			if _, ok := activeDeptIDs[*user.DeptID]; !ok {
+				continue
+			}
 			deptSet[*user.DeptID] = struct{}{}
 			if role.DataScope == ScopeDeptAndChildren {
 				needChildren = true
@@ -104,6 +147,9 @@ func Resolve(ctx context.Context, client *ent.Client, userID int64) (*Filter, er
 			filter.OnlySelf = true
 
 		case ScopeCustom:
+			if err := loadActiveDepartments(); err != nil {
+				return nil, err
+			}
 			roleDepts, err := client.AdminRoleDept.
 				Query().
 				Where(adminroledept.RoleID(role.ID)).
@@ -112,29 +158,25 @@ func Resolve(ctx context.Context, client *ent.Client, userID int64) (*Filter, er
 				return nil, err
 			}
 			for _, rd := range roleDepts {
-				deptSet[rd.DeptID] = struct{}{}
+				if _, ok := activeDeptIDs[rd.DeptID]; ok {
+					deptSet[rd.DeptID] = struct{}{}
+				}
 			}
 
 		default:
-			// 未知取值不做猜测，交由上层按解析失败处理
-			return nil, fmt.Errorf("unsupported data_scope: %d", role.DataScope)
+			// 未知取值不做猜测：只跳过这一条脏角色，其余角色仍按并集生效。
+			// 若所有角色都无效，filter 为空集，由上层 fail-closed 处理。
+			continue
 		}
 	}
 
-	// 展开「本部门及子部门」：把子孙部门并入可见集合
+	// 展开「本部门及子部门」：只沿启用部门展开，停用/已删部门不提供可见范围
 	if needChildren && len(deptSet) > 0 {
-		if departments == nil {
-			all, err := client.Department.Query().All(ctx)
-			if err != nil {
-				return nil, err
-			}
-			departments = all
-		}
 		roots := make([]int64, 0, len(deptSet))
 		for id := range deptSet {
 			roots = append(roots, id)
 		}
-		for _, id := range CollectDescendantIDs(departments, roots) {
+		for _, id := range CollectDescendantIDs(activeDepartments, roots) {
 			deptSet[id] = struct{}{}
 		}
 	}

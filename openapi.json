@@ -3763,6 +3763,59 @@
         ],
         "type": "object"
       },
+      "SessionItem": {
+        "properties": {
+          "created_at": {
+            "type": "integer"
+          },
+          "expires_at": {
+            "type": "integer"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "is_current": {
+            "type": "boolean"
+          },
+          "last_seen_at": {
+            "type": "integer"
+          },
+          "sid": {
+            "type": "string"
+          },
+          "user_agent": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "sid",
+          "ip",
+          "user_agent",
+          "created_at",
+          "last_seen_at",
+          "expires_at",
+          "is_current"
+        ],
+        "type": "object"
+      },
+      "SessionListResp": {
+        "properties": {
+          "list": {
+            "items": {
+              "$ref": "#/components/schemas/SessionItem"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "list"
+        ],
+        "type": "object"
+      },
+      "SessionSIDReq": {
+        "properties": {},
+        "type": "object"
+      },
       "SiteInfoResp": {
         "properties": {
           "comment_enabled": {
@@ -7729,6 +7782,58 @@
           }
         },
         "summary": "rolePermissionListWithNames",
+        "tags": [
+          "系统管理"
+        ]
+      }
+    },
+    "/admin/sessions": {
+      "get": {
+        "operationId": "sessionList",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResp"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "sessionList",
+        "tags": [
+          "系统管理"
+        ]
+      }
+    },
+    "/admin/sessions/{sid}": {
+      "delete": {
+        "operationId": "sessionRevoke",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommonResp"
+                }
+              }
+            },
+            "description": "成功"
+          }
+        },
+        "summary": "sessionRevoke",
         "tags": [
           "系统管理"
         ]

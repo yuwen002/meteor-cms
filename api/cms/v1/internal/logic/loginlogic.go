@@ -11,6 +11,7 @@ import (
 	"github.com/yuwen002/meteor-cms/ent/adminuser"
 	"github.com/yuwen002/meteor-cms/internal/common"
 	"github.com/yuwen002/meteor-cms/internal/pkg/audit"
+	"github.com/yuwen002/meteor-cms/internal/pkg/authsession"
 	"github.com/yuwen002/meteor-cms/internal/pkg/tokenversion"
 	"github.com/yuwen002/meteor-cms/internal/utils"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -101,6 +102,9 @@ func (l *LoginLogic) Login(req *types.LoginReq) (*types.LoginResp, error) {
 	// 读取当前 token 版本号，写入新令牌；用于全局踢人 / 改密后旧令牌失效
 	tv, _ := tokenversion.Get(l.ctx, l.svcCtx.Redis, user.ID)
 
+	// 会话 ID 贯穿 access / refresh，刷新时沿用，用于会话列表与单会话吊销。
+	sid := authsession.NewSID()
+
 	// 签发访问令牌（短期有效）
 	accessToken, err := utils.GenerateToken(l.svcCtx.Config.Auth.AccessSecret, l.svcCtx.Config.Auth.AccessExpire, map[string]interface{}{
 		"user_id":    user.ID,
@@ -112,6 +116,7 @@ func (l *LoginLogic) Login(req *types.LoginReq) (*types.LoginResp, error) {
 		"is_active":  user.IsActive,
 		"login_time": time.Now().Unix(),
 		"tv":         tv,
+		"sid":        sid,
 	})
 	if err != nil {
 		return nil, common.NewBizError(common.ErrInternalServer)
@@ -123,9 +128,18 @@ func (l *LoginLogic) Login(req *types.LoginReq) (*types.LoginResp, error) {
 		"username":   user.Username,
 		"token_type": "refresh",
 		"tv":         tv,
+		"sid":        sid,
 	})
 	if err != nil {
 		return nil, common.NewBizError(common.ErrInternalServer)
+	}
+
+	// 登记活跃会话；Redis 不可用时降级为 no-op，不阻断登录主流程。
+	sessions := authsession.New(l.svcCtx.Redis, time.Duration(l.svcCtx.Config.Auth.RefreshExpire)*time.Second)
+	if err := sessions.Create(l.ctx, user.ID, sid,
+		utils.GetClientIP(l.ctx), utils.GetUserAgent(l.ctx),
+		utils.GenerateTokenHash(accessToken)); err != nil {
+		logx.Errorf("登记登录会话失败: user_id=%d err=%v", user.ID, err)
 	}
 
 	go func() {

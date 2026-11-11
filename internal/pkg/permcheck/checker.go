@@ -57,6 +57,21 @@ func HasAny(perms []string, candidates ...string) bool {
 	return false
 }
 
+// ContainsAll 判断 own 是否覆盖 requested 中的全部权限标识。
+// 用于「非超管只能授予自己已有的权限」，防止通过角色授权提权。
+func ContainsAll(own, requested []string) bool {
+	set := make(map[string]struct{}, len(own))
+	for _, p := range own {
+		set[p] = struct{}{}
+	}
+	for _, p := range requested {
+		if _, ok := set[p]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // Checker 缓存用户权限与全量 API 权限定义。缓存 key 带版本号，
 // 权限变更时递增版本号即可让旧条目立刻失效，无需遍历删除。
 type Checker struct {

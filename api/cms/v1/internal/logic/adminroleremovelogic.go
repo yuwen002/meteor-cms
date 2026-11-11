@@ -70,6 +70,9 @@ func (l *AdminRoleRemoveLogic) AdminRoleRemove(req *types.AdminRoleRemoveReq) (r
 		return nil, common.NewBizErrorWithMsg(common.ErrRoleNotFound, "该管理员未绑定此角色")
 	}
 
+	// 撤销角色后立刻让该用户的权限快照失效，避免 60s 缓存窗口内仍持有旧权限
+	l.svcCtx.PermissionChecker.InvalidateUser(req.ID)
+
 	l.Logger.Infof("移除管理员角色成功，管理员ID: %d, 角色ID: %d", req.ID, req.RoleID)
 
 	// 4. 返回成功响应
