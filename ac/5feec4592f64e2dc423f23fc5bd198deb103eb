@@ -1,0 +1,118 @@
+openapi.json
+  s_bbf609960902b0::t_d510e43cbf123e 1715-1749,2125-2240,3016-3075,3793-3836,6262-6265,7438-7441
+  s_bbf609960902b0::t_aa61a569ce20a0 58-63,4481-4488
+web/src/views/admin/user/index.vue
+  s_bbf609960902b0::t_458653c520d3c1 389-392
+  s_bbf609960902b0::t_6c412256e4e764 45,50
+  s_bbf609960902b0::t_dd383053fb0b73 181-182,189-194
+  s_bbf609960902b0::t_1bc86e0a5f763a 352,354-355,358-359,362-368
+  s_bbf609960902b0::t_c0cc0281cae58c 123-133
+  s_bbf609960902b0::t_55d194db498fb9 150,154,163,166-167
+  s_bbf609960902b0::t_497e583d0c0627 232
+  s_bbf609960902b0::t_0b9303edf44a28 33
+  s_bbf609960902b0::t_3a0117e98a09af 347-351,353,356-357,360-361,369-388
+  s_bbf609960902b0::t_13b8bd0b876277 8-12
+api/cms/v1/internal/logic/departmentupdatelogic_test.go
+  s_bbf609960902b0::t_ca184c21f68643 37-77,101-119
+  s_bbf609960902b0::t_4bf853c575ebfa 78-100
+api/cms/v1/cms.api
+  s_bbf609960902b0::t_883c38efc1de9c 104-105,112
+web/src/api/role.ts
+  s_bbf609960902b0::t_6845f555acc446 39
+  s_bbf609960902b0::t_3749ca5e9a128f 59-66
+cmd/apidoc/main_test.go
+  s_bbf609960902b0::t_627e8e98ec9f06 129-234
+api/cms/v1/internal/handler/sessionroutes.go
+  h_a3f313f3d96276 26
+api/cms/v1/internal/logic/adminlistlogic.go
+  s_bbf609960902b0::t_9d887400f28928 166-169
+  s_bbf609960902b0::t_e9f4332e709c85 14
+  s_bbf609960902b0::t_fe078f2c491cf0 136-148
+  s_bbf609960902b0::t_25ca55bf1dbf47 181-189
+  s_bbf609960902b0::t_e859e827280cf3 96-117
+cmd/apidoc/main.go
+  s_bbf609960902b0::t_cfc4035c3ccda3 398-406
+  s_bbf609960902b0::t_21528c6a32a382 488,497
+  s_bbf609960902b0::t_965518e3fbd003 38-40
+  s_bbf609960902b0::t_de825899624693 519
+  s_bbf609960902b0::t_85e5204d0a7a17 330-332
+  s_bbf609960902b0::t_def09346f550cd 208-234,237-244,248-266,270-322
+api/cms/v1/internal/logic/departmentdeletelogic.go
+  s_bbf609960902b0::t_5c1c0affbcfa2a 11-12
+  s_bbf609960902b0::t_6cf17e8d4b76d0 59-84
+api/cms/v1/internal/types/types.go
+  s_bbf609960902b0::t_332ad8a9aa639d 44
+  h_a3f313f3d96276 35-36
+api/cms/v1/internal/handler/contentroutes.go
+  s_bbf609960902b0::t_5b6d1819d9374e 24
+  s_bbf609960902b0::t_b141389f2e701c 17
+api/cms/v1/internal/handler/routes_test.go
+  s_bbf609960902b0::t_8c2a519407b638 5,12,14,16,19-20,23-45,47
+  s_bbf609960902b0::t_d92ec97b8c40a7 1-4,6-11,13,15,17-18,21-22,46,48-50
+internal/seed/permissions_routes_test.go
+  s_bbf609960902b0::t_5b112788729f55 1-78
+api/cms/v1/internal/logic/departmentupdatelogic.go
+  s_bbf609960902b0::t_a0d82bb453c3f7 226-264
+  s_bbf609960902b0::t_0fb78cc3102095 195-201
+  s_bbf609960902b0::t_860c3ed5dbe54c 78
+  s_bbf609960902b0::t_66402b36d9adc9 95-101
+  s_bbf609960902b0::t_e0b6ae07bf4f32 122-138,155-186
+  s_bbf609960902b0::t_a46f6ed4fd48cf 77,79-94
+api/cms/v1/internal/handler/routes.go
+  s_bbf609960902b0::t_90f263bc6820a3 56-59
+  s_bbf609960902b0::t_7d281194469dd4 303,327
+web/src/views/admin/role/index.vue
+  s_bbf609960902b0::t_43cf635212bdbd 71-75
+  s_bbf609960902b0::t_338e6b5e0d610c 57
+  s_bbf609960902b0::t_7a9e0794c74613 184,187,195-202,207-212,215,217,220-221,224-226
+  s_bbf609960902b0::t_0f1caa2d973900 273-276,282
+  s_bbf609960902b0::t_a2c6b1eb9460b8 164-178
+  s_bbf609960902b0::t_6a362538e31f28 106,111,114,117
+api/cms/v1/internal/handler/siteextroutes.go
+  s_bbf609960902b0::t_b1a22c7f9e104d 19
+api/cms/v1/internal/logic/admindeletelogic.go
+  s_bbf609960902b0::t_6de23ca6c3c698 14
+  s_bbf609960902b0::t_21f4d1d283f1c9 80-89
+api/cms/v1/internal/handler/sysroutes.go
+  s_bbf609960902b0::t_e30187e4653d16 23
+README.md
+  s_bbf609960902b0::t_48773fc2e2096d 572
+  s_bbf609960902b0::t_9dae50664f628a 496-498
+  s_bbf609960902b0::t_8cd17e60a3c925 457-458
+  s_bbf609960902b0::t_df38e56c9459ee 553-556
+  s_bbf609960902b0::t_7e7dfd3f9ea9c9 28
+  s_bbf609960902b0::t_f675df33e4b146 485-495
+api/cms/v1/internal/logic/adminlistlogic_test.go
+  s_bbf609960902b0::t_75d57174b38989 1-36
+internal/pkg/datascope/scope.go
+  s_bbf609960902b0::t_82ee59a49760bc 67-77
+web/src/api/user.ts
+  s_bbf609960902b0::t_facaa1b035ee34 39
+  s_bbf609960902b0::t_58187dd237a0dd 45-54
+docs/api.md
+  s_bbf609960902b0::t_c66ab7da6ea641 182
+  s_bbf609960902b0::t_2aa41e7575e199 224-225,228-229
+  s_bbf609960902b0::t_5cdb7b9d8ed570 303
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "26.9.9",
+  "base_commit_sha": "ac5feec4592f64e2dc423f23fc5bd198deb103eb",
+  "prompts": {},
+  "humans": {
+    "h_a3f313f3d96276": {
+      "author": "liuxingyu <yuwen002@163.com>"
+    }
+  },
+  "sessions": {
+    "s_bbf609960902b0": {
+      "agent_id": {
+        "tool": "codebuddy",
+        "id": "e1b6045518d048e4bd07e87813a33b92",
+        "model": "hy4free"
+      },
+      "human_author": "liuxingyu <yuwen002@163.com>",
+      "generated_lines": 1212
+    }
+  }
+}
