@@ -36,7 +36,7 @@ export function getRoleDetail(id: number) {
   return request({ url: `/admin/roles/${id}`, method: 'get' })
 }
 export function createRole(data: RoleForm) {
-  return request({ url: '/admin/roles', method: 'post', data })
+  return request({ url: '/admin/roles', method: 'post', data }) as Promise<{ id: number; message: string }>
 }
 export function updateRole(id: number, data: Partial<RoleForm>) {
   return request({ url: `/admin/roles/${id}`, method: 'put', data })
@@ -55,4 +55,12 @@ export function getRolePermissionsWithNames(id: number) {
 }
 export function assignRolePermissions(id: number, permission_ids: number[]) {
   return request({ url: `/admin/roles/${id}/permissions`, method: 'put', data: { permission_ids } })
+}
+
+// data_scope=5 时角色可见的自定义部门集合
+export function getRoleDepartments(id: number) {
+  return request({ url: `/admin/roles/${id}/departments`, method: 'get' }) as Promise<{ dept_ids: number[] }>
+}
+export function assignRoleDepartments(id: number, dept_ids: number[]) {
+  return request({ url: `/admin/roles/${id}/departments`, method: 'put', data: { dept_ids } })
 }

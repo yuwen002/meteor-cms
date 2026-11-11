@@ -25,6 +25,7 @@
 - 🎯 RBAC 权限模型（菜单 / 按钮 / API 三级鉴权）
 - 🧭 我的菜单接口（按角色动态下发菜单树与权限码）
 - 🔒 数据权限（按部门范围收敛可见数据）
+- 🏢 部门数据一致性闭环：部门筛选与可见范围求交、删除/停用前置校验、跨父移动重算层级、管理员删除同步清理负责人引用
 - ✉️ 忘记密码闭环（邮件令牌 + 一次性重置）
 - 📄 统一分页参数（每页上限 100）
 - 🧭 动态菜单：侧边栏由后端按角色下发的菜单树渲染，含图标 / 排序 / 多级层级
@@ -453,8 +454,8 @@ Authorization: Bearer <token>
 | 模块 | 主要接口 | 说明 |
 | --- | --- | --- |
 | 仪表盘 | `GET /admin/dashboard/stats` | 管理员 / 部门 / 角色 / 权限总量，今日登录与本周操作数 |
-| 管理员 | `GET/POST /admin/admin-users`、`GET/PUT/DELETE /admin/admin-users/:id`、禁用/启用、重置密码、绑定部门、角色分配 | 分页 + 数据权限收敛 |
-| 部门 | `GET /admin/departments/tree`、`POST /admin/departments`、`GET/PUT/DELETE /admin/departments/:id` | 树形结构 |
+| 管理员 | `GET/POST /admin/admin-users`、`GET/PUT/DELETE /admin/admin-users/:id`、禁用/启用、重置密码、绑定部门、角色分配 | 分页 + 数据权限收敛 + `dept_id` 部门筛选，列表项含 `dept_id` / `dept_name` |
+| 部门 | `GET /admin/departments/tree`、`POST /admin/departments`、`GET/PUT/DELETE /admin/departments/:id` | 树形结构、删除/停用前置校验、跨父移动重算子树层级 |
 | 角色 | 角色 CRUD、`GET/PUT /admin/roles/:id/permissions`、`GET/PUT /admin/roles/:id/departments` | 权限与数据范围分配 |
 | 权限 | `GET /admin/permissions`、`GET /admin/permissions/tree`、CRUD | 菜单 / 按钮 / API 三级定义 |
 | 数据字典 | `GET/POST /admin/dicts` + CRUD、`GET/POST /admin/dicts/items` + 字典项 CRUD | 字典类型 + 字典项 |
@@ -481,6 +482,20 @@ OpenAPI 文档由 `make gen-doc` 生成：以 `api/cms/v1/cms.api` 为主体，�
 镜像内同时发布到 `/openapi.json` 供 `/docs.html` 使用。
 `cmd/apidoc` 的测试自动扫描 `internal/handler/*routes.go` 中注册的全部路由
 做覆盖校验，CI 用 `git diff --exit-code -- openapi.json` 阻止新增接口漏同步文档。
+生成器支持 `returns ([]T)`（输出 `type: array` + `items.$ref`）、`cms.api` 尾部的独立
+`type Xxx { }` 声明，以及匿名嵌入字段的字段平铺；测试还会递归断言所有 `$ref`
+都能命中 `components.schemas`，并校验关键 schema 的 `properties` 非空。
+
+权限与审计门禁同样纳入 CI：`internal/seed` 以真实注册的 Go 路由为基准，双向校验
+Type=3 API 权限（漏登会让非超管被拒，孤立权限说明接口改名后忘了同步清单）；
+所有受保护链统一为 `ClientInfo → JWT → OperationLog → Permission`，审计在前，
+被权限拒绝的越权尝试也会写入操作日志，并有顺序回归测试防止调回去。
+
+前端已闭环数据范围配置：角色页在 `data_scope=5` 时联动部门树，走
+`GET/PUT /admin/roles/:id/departments`；用户页的「绑定部门」走
+`PUT /admin/admin-users/:id/bind-department`，打开时回显当前部门；
+管理员列表支持按部门筛选并展示 `dept_name`，筛选项来自部门树（仅启用部门），
+重置查询会一并清掉 `dept_id`。
 
 ## 默认管理员账户
 
@@ -535,6 +550,10 @@ OpenAPI 文档由 `make gen-doc` 生成：以 `api/cms/v1/cms.api` 为主体，�
 - **部门生命周期收权**：只读「仍存在且启用」的部门参与范围计算。部门被软删除或停用后，`admin_users.dept_id` 与 `admin_role_depts` 中的旧引用不再放权；「本部门及子部门」也只沿启用部门展开
 - 角色从 `data_scope=5` 改为其它取值时，同事务清空 `admin_role_depts`，避免日后改回 5 时继承历史部门范围
 - 部门树按指针挂载后再物化，任意层级都能完整返回；更新父级时会沿 `parent_id` 回溯拒绝挂到自己的后代下，根级统一用 `NULL`（不再写 `parent_id=0` 撞自引用外键）
+- **按部门筛选防越权**：管理员列表的 `dept_id` 先确认部门仍存在且启用，再与当前用户可见范围求交；越界、已删 / 停用部门一律返回空列表，避免靠构造 `dept_id` 探测不可见部门
+- **部门引用闭环**：删除部门前校验管理员 `dept_id` 与 `admin_role_depts` 引用，避免悬空引用；删除管理员时同事务清空其担任负责人的部门 `leader_id`
+- **停用边界**：部门仍被管理员 / 角色引用时允许停用（停用即收权），但仍有启用子部门时拒绝，否则整条子树会沿停用父级被静默截断
+- **层级维护**：跨父移动部门时按新的 `parent_id` 快照重算被移动子树的 `level`，避免层级展示与数据范围长期失真
 
 ## 活跃会话管理
 
@@ -550,7 +569,7 @@ OpenAPI 文档由 `make gen-doc` 生成：以 `api/cms/v1/cms.api` 为主体，�
 | `GET /admin/sessions` | `system:session:list` | 列出当前管理员的活跃会话，`is_current` 标记本次请求所用会话；响应不含 token 哈希 |
 | `DELETE /admin/sessions/:sid` | `system:session:revoke` | 吊销指定会话；只能吊销自己的会话，不存在 / 已过期 / 他人会话返回参数错误 |
 
-两个接口都挂 `ClientInfo → JWT → Permission → OperationLog` 受保护链；权限种子已包含对应的按钮与 API 记录（挂在「管理员管理」下），迁移时幂等写入。
+两个接口都挂 `ClientInfo → JWT → OperationLog → Permission` 受保护链；权限种子已包含对应的按钮与 API 记录（挂在「管理员管理」下），迁移时幂等写入。
 
 与既有强制下线的区别：强制下线自增 `auth:tv:<uid>`，使该用户**全部**令牌立即失效；会话吊销只针对单个 `sid`，适合「让某台设备退出登录」。
 

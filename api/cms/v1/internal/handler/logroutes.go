@@ -25,8 +25,8 @@ func RegisterLogRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 	protected := []rest.Middleware{
 		serverCtx.ClientInfoMiddleware,
 		serverCtx.JwtMiddleware,
-		serverCtx.PermissionMiddleware,
 		serverCtx.OperationLogMiddleware,
+		serverCtx.PermissionMiddleware,
 	}
 
 	server.AddRoutes(rest.WithMiddlewares(protected, []rest.Route{

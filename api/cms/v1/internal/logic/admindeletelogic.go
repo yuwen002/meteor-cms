@@ -11,6 +11,7 @@ import (
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 	"github.com/yuwen002/meteor-cms/ent"
 	"github.com/yuwen002/meteor-cms/ent/adminuserrole"
+	"github.com/yuwen002/meteor-cms/ent/department"
 	"github.com/yuwen002/meteor-cms/internal/common"
 	"github.com/yuwen002/meteor-cms/internal/pkg/tokenversion"
 	"github.com/yuwen002/meteor-cms/internal/utils"
@@ -74,6 +75,16 @@ func (l *AdminDeleteLogic) AdminDelete(req *types.DeleteAdminReq) (resp *types.C
 		Where(adminuserrole.UserID(req.Id)).
 		Exec(l.ctx); err != nil {
 		l.Logger.Errorf("清理管理员角色关联失败: %v", err)
+		return nil, common.NewBizError(common.ErrInternalServer)
+	}
+	// 部门负责人指向管理员；软删后残留的 leader_id 会让部门详情返回悬空 ID。
+	// 与角色关联清理放在同一事务，避免删除成功但引用未清。
+	if _, err := tx.Department.
+		Update().
+		Where(department.LeaderIDEQ(req.Id)).
+		ClearLeaderID().
+		Save(l.ctx); err != nil {
+		l.Logger.Errorf("清理部门负责人引用失败: %v", err)
 		return nil, common.NewBizError(common.ErrInternalServer)
 	}
 	if _, err := tx.AdminUser.UpdateOneID(req.Id).

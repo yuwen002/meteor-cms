@@ -11,6 +11,7 @@ import (
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
 	"github.com/yuwen002/meteor-cms/ent"
 	"github.com/yuwen002/meteor-cms/ent/adminuser"
+	"github.com/yuwen002/meteor-cms/ent/department"
 	"github.com/yuwen002/meteor-cms/ent/predicate"
 	"github.com/yuwen002/meteor-cms/internal/common"
 	"github.com/yuwen002/meteor-cms/internal/pkg/datascope"
@@ -92,6 +93,28 @@ func (l *AdminListLogic) AdminList(req *types.AdminListReq) (resp *types.AdminLi
 		query = query.Where(adminuser.Or(conds...))
 	}
 
+	// 按部门筛选：先确认部门仍存在且启用，再与数据可见范围求交，
+	// 避免通过构造 dept_id 探测不可见部门，或让已删/停用部门被重新检索出来。
+	if req.DeptId > 0 {
+		active, e := l.svcCtx.EntClient.Department.
+			Query().
+			Where(department.IDEQ(req.DeptId), department.IsActiveEQ(true)).
+			Exist(l.ctx)
+		if e != nil {
+			l.Logger.Errorf("校验筛选部门失败: %v", e)
+			return nil, common.NewBizError(common.ErrAdminListFailed)
+		}
+		if !deptFilterAllowed(scope, active, req.DeptId) {
+			return &types.AdminListResp{
+				Total:    0,
+				Page:     page,
+				PageSize: pageSize,
+				List:     []types.AdminItem{},
+			}, nil
+		}
+		query = query.Where(adminuser.DeptIDEQ(req.DeptId))
+	}
+
 	// 总数
 	total, err := query.Count(l.ctx)
 	if err != nil {
@@ -108,6 +131,19 @@ func (l *AdminListLogic) AdminList(req *types.AdminListReq) (resp *types.AdminLi
 	if err != nil {
 		l.Logger.Errorf("获取管理员列表失败: %v", err)
 		return nil, common.NewBizError(common.ErrAdminListFailed)
+	}
+
+	// 一次性取部门名用于列表展示，避免逐行 N+1 查询；失败只记日志，不影响列表主体
+	deptNames := make(map[int64]string)
+	if len(list) > 0 {
+		depts, e := l.svcCtx.EntClient.Department.Query().All(l.ctx)
+		if e != nil {
+			l.Logger.Errorf("查询部门名称失败: %v", e)
+		} else {
+			for _, d := range depts {
+				deptNames[d.ID] = d.Name
+			}
+		}
 	}
 
 	// 转换结构
@@ -127,6 +163,10 @@ func (l *AdminListLogic) AdminList(req *types.AdminListReq) (resp *types.AdminLi
 		if u.LastLoginAt != nil {
 			item.LastLoginAt = u.LastLoginAt.Format(time.RFC3339)
 		}
+		if u.DeptID != nil {
+			item.DeptId = *u.DeptID
+			item.DeptName = deptNames[item.DeptId]
+		}
 		items = append(items, item)
 	}
 
@@ -137,4 +177,13 @@ func (l *AdminListLogic) AdminList(req *types.AdminListReq) (resp *types.AdminLi
 		PageSize: pageSize,
 		List:     items,
 	}, nil
+}
+
+// deptFilterAllowed 判定「按指定部门筛选」是否落在当前可见范围内。
+// 抽成纯函数便于脱离数据库做防越权回归测试。
+func deptFilterAllowed(scope *datascope.Filter, deptActive bool, deptID int64) bool {
+	if deptID <= 0 || !deptActive {
+		return false
+	}
+	return !scope.Restricted || scope.AllowsDept(deptID)
 }

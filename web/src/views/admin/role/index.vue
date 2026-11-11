@@ -54,7 +54,7 @@
         @current-change="loadData" @size-change="loadData" />
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="520px">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="520px" @opened="onDialogOpened">
       <el-form :model="form" label-width="90px">
         <el-form-item label="名称" required><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="编码" required>
@@ -67,6 +67,11 @@
           <el-select v-model="form.data_scope" style="width: 100%">
             <el-option v-for="o in dataScopeOptions" :key="o.value" :value="o.value" :label="o.label" />
           </el-select>
+        </el-form-item>
+        <el-form-item v-if="form.data_scope === 5" label="可见部门">
+          <el-tree ref="deptTreeRef" :data="deptTree" :props="{ label: 'name', children: 'children' }"
+            node-key="id" show-checkbox default-expand-all style="width: 100%; max-height: 220px; overflow: auto" />
+          <div class="dept-tip">仅勾选部门的数据可见；未选择时该角色看不到任何数据。</div>
         </el-form-item>
         <el-form-item label="状态"><el-switch v-model="form.is_active" /></el-form-item>
         <el-form-item label="排序"><el-input-number v-model="form.sort" :min="0" /></el-form-item>
@@ -98,14 +103,18 @@ const canAdd = computed(() => userStore.hasPermission('system:role:add'))
 const canEdit = computed(() => userStore.hasPermission('system:role:edit'))
 const canDelete = computed(() => userStore.hasPermission('system:role:delete'))
 const canAssignPerm = computed(() => userStore.hasPermission('system:role:perm_assign'))
+const canAssignDept = computed(() => userStore.hasPermission('system:role:dept_assign'))
 import { ElMessage, ElMessageBox } from '@/utils/element'
 import {
   getRoles, createRole, updateRole, deleteRole,
   getRolePermissions, assignRolePermissions,
+  getRoleDepartments, assignRoleDepartments,
 } from '@/api/role'
 import { getPermissionTree } from '@/api/permission'
+import { getDeptTree } from '@/api/dept'
 import type { RoleItem, RoleForm } from '@/api/role'
 import type { PermissionTreeItem } from '@/api/permission'
+import type { DeptTreeItem } from '@/api/dept'
 
 // el-table 作用域插槽的 row 为 DefaultRow，这里显式收敛为 RoleItem
 const asRow = (row: unknown) => row as RoleItem
@@ -152,14 +161,30 @@ const submitting = ref(false)
 const emptyForm: RoleForm = { name: '', code: '', desc: '', data_scope: 1, is_active: true, sort: 0 }
 const form = reactive<RoleForm>({ ...emptyForm })
 
+const deptTree = ref<DeptTreeItem[]>([])
+const deptTreeRef = ref()
+const pendingDeptIds = ref<number[]>([])
+
+async function loadDeptTree() {
+  if (deptTree.value.length > 0) return
+  deptTree.value = await getDeptTree()
+  await nextTick()
+  deptTreeRef.value?.setCheckedKeys(pendingDeptIds.value)
+}
+// el-dialog 的内容在打开动画结束后才渲染，勾选必须等到这一刻
+function onDialogOpened() {
+  deptTreeRef.value?.setCheckedKeys(pendingDeptIds.value)
+}
+
 function openCreate() {
   isEdit.value = false
   dialogTitle.value = '新增角色'
   Object.assign(form, emptyForm)
   currentRow.value = null
+  pendingDeptIds.value = []
   dialogVisible.value = true
 }
-function openEdit(row: RoleItem) {
+async function openEdit(row: RoleItem) {
   isEdit.value = true
   dialogTitle.value = '编辑角色'
   currentRow.value = row
@@ -167,18 +192,37 @@ function openEdit(row: RoleItem) {
     name: row.name, code: row.code, desc: row.desc,
     data_scope: row.data_scope, is_active: row.is_active, sort: row.sort,
   })
+  pendingDeptIds.value = []
+  if (row.data_scope === 5 && canAssignDept.value) {
+    try {
+      pendingDeptIds.value = (await getRoleDepartments(row.id)).dept_ids || []
+    } catch {
+      ElMessage.warning('读取角色可见部门失败，请重新勾选')
+    }
+  }
   dialogVisible.value = true
 }
 async function submit() {
   if (!form.name || !form.code) { ElMessage.warning('请填写名称和编码'); return }
+  const deptKeys = form.data_scope === 5
+    ? ((deptTreeRef.value?.getCheckedKeys() || []) as number[])
+    : []
+  if (form.data_scope === 5 && canAssignDept.value && deptKeys.length === 0) {
+    ElMessage.warning('自定义数据范围请至少选择一个部门'); return
+  }
   submitting.value = true
   try {
+    let roleId = currentRow.value?.id ?? 0
     if (isEdit.value && currentRow.value) {
-      await updateRole(currentRow.value.id, { ...form })
+      await updateRole(roleId, { ...form })
       ElMessage.success('更新成功')
     } else {
-      await createRole({ ...form })
+      const created = await createRole({ ...form })
+      roleId = created.id
       ElMessage.success('创建成功')
+    }
+    if (form.data_scope === 5 && canAssignDept.value && roleId > 0) {
+      await assignRoleDepartments(roleId, deptKeys)
     }
     dialogVisible.value = false
     loadData()
@@ -226,10 +270,14 @@ async function submitPerm() {
   }
 }
 
-onMounted(loadData)
+onMounted(() => {
+  loadData()
+  void loadDeptTree()
+})
 </script>
 
 <style scoped>
 .toolbar { margin-bottom: 12px; }
 .pager { margin-top: 16px; justify-content: flex-end; }
+.dept-tip { width: 100%; font-size: 12px; line-height: 18px; color: var(--el-text-color-secondary); }
 </style>

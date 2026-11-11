@@ -8,6 +8,8 @@ import (
 
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/svc"
 	"github.com/yuwen002/meteor-cms/api/cms/v1/internal/types"
+	"github.com/yuwen002/meteor-cms/ent/adminroledept"
+	"github.com/yuwen002/meteor-cms/ent/adminuser"
 	"github.com/yuwen002/meteor-cms/ent/department"
 	"github.com/yuwen002/meteor-cms/internal/common"
 
@@ -54,7 +56,32 @@ func (l *DepartmentDeleteLogic) DepartmentDelete(req *types.DepartmentDeleteReq)
 		return nil, common.NewBizError(common.ErrDepartmentHasChildren)
 	}
 
-	// 3️⃣ 软删除（触发 SoftDeleteMixin）
+	// 3️⃣ 仍有关联管理员、或被角色自定义数据范围引用时拒绝删除：
+	// 否则会留下 admin_users.dept_id / admin_role_depts 的悬空引用。
+	// AdminRoleDept 带软删除，查询只会命中使用中的引用。
+	hasUsers, err := l.svcCtx.EntClient.AdminUser.
+		Query().
+		Where(adminuser.DeptIDEQ(req.Id)).
+		Exist(l.ctx)
+	if err != nil {
+		return nil, err
+	}
+	if hasUsers {
+		return nil, common.NewBizErrorWithMsg(common.ErrDepartmentDeleteFail, "该部门下仍有管理员，请先调整其所属部门")
+	}
+
+	usedByRole, err := l.svcCtx.EntClient.AdminRoleDept.
+		Query().
+		Where(adminroledept.DeptIDEQ(req.Id)).
+		Exist(l.ctx)
+	if err != nil {
+		return nil, err
+	}
+	if usedByRole {
+		return nil, common.NewBizErrorWithMsg(common.ErrDepartmentDeleteFail, "该部门仍被角色自定义数据范围引用，请先解除")
+	}
+
+	// 4️⃣ 软删除（触发 SoftDeleteMixin）
 	err = l.svcCtx.EntClient.Department.
 		DeleteOneID(req.Id).
 		Exec(l.ctx)

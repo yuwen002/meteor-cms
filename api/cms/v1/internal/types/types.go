@@ -32,6 +32,8 @@ type AdminItem struct {
 	IsActive    bool   `json:"isActive"`
 	LastLoginAt string `json:"last_login_at"`
 	CreatedAt   string `json:"createdAt"`
+	DeptId      int64  `json:"dept_id,optional"`   // 所属部门ID
+	DeptName    string `json:"dept_name,optional"` // 所属部门名称
 }
 
 type AdminListReq struct {
@@ -39,6 +41,7 @@ type AdminListReq struct {
 	PageSize int    `form:"page_size"`        // 每页数量
 	Keyword  string `form:"keyword,optional"` // 搜索关键词（用户名/昵称/邮箱）
 	Active   int    `form:"active,optional"`  // 可选：过滤启用状态
+	DeptId   int64  `form:"dept_id,optional"` // 可选：按部门筛选（与数据可见范围求交）
 }
 
 type AdminListResp struct {

@@ -35,8 +35,9 @@ var textResponseTypes = map[string]string{
 var pathParamRe = regexp.MustCompile(`:([A-Za-z_][A-Za-z0-9_]*)`)
 
 type typeDef struct {
-	name   string
-	fields []field
+	name     string
+	fields   []field
+	embedded []string // 匿名嵌入的类型名，字段需平铺到外层
 }
 
 type route struct {
@@ -204,54 +205,120 @@ func splitStructs(block string) []struct {
 func parseTypes(src string) map[string]typeDef {
 	types := map[string]typeDef{}
 	fieldRe := regexp.MustCompile(`(\w+)\s+([\w.*\[\]]+)\s+` + "`" + `([^` + "`" + `]*)` + "`")
+	embedRe := regexp.MustCompile(`^(\w+)$`)
+
+	parseStruct := func(name, body string) typeDef {
+		td := typeDef{name: name}
+		for _, line := range strings.Split(body, "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			// go-zero 的匿名嵌入字段（如 RoleDetailResp 里的 RoleItem）没有类型与 tag，
+			// 语义是把被嵌入类型的字段平铺到外层，而不是生成一个同名属性。
+			if em := embedRe.FindStringSubmatch(line); em != nil {
+				td.embedded = append(td.embedded, em[1])
+				continue
+			}
+			m := fieldRe.FindStringSubmatch(line)
+			if m == nil {
+				continue
+			}
+			f := field{name: m[1], goType: m[2]}
+			tag := m[3]
+			if jm := regexp.MustCompile(`json:"([^"]*)"`).FindStringSubmatch(tag); jm != nil {
+				parts := strings.Split(jm[1], ",")
+				f.json = parts[0]
+				for _, p := range parts[1:] {
+					if p == "optional" {
+						f.optional = true
+					}
+				}
+			}
+			if fm := regexp.MustCompile(`form:"([^"]*)"`).FindStringSubmatch(tag); fm != nil {
+				parts := strings.Split(fm[1], ",")
+				f.paramIn = "query"
+				f.paramName = parts[0]
+				for _, p := range parts[1:] {
+					if p == "optional" {
+						f.optional = true
+					}
+				}
+			}
+			if pm := regexp.MustCompile(`path:"([^"]*)"`).FindStringSubmatch(tag); pm != nil {
+				f.paramIn = "path"
+				f.paramName = pm[1]
+			}
+			// form / path 字段属于 URL 参数，不应出现在请求体 schema 里
+			if f.json == "" && f.paramIn == "" {
+				f.json = f.name
+			}
+			if strings.Contains(tag, "optional") {
+				f.optional = true
+			}
+			td.fields = append(td.fields, f)
+		}
+		return td
+	}
+
 	for _, block := range findBlock(src, "type (", '(', ')') {
 		for _, st := range splitStructs(block) {
-			td := typeDef{name: st.name}
-			for _, line := range strings.Split(st.body, "\n") {
-				line = strings.TrimSpace(line)
-				if line == "" {
-					continue
-				}
-				m := fieldRe.FindStringSubmatch(line)
-				if m == nil {
-					continue
-				}
-				f := field{name: m[1], goType: m[2]}
-				tag := m[3]
-				if jm := regexp.MustCompile(`json:"([^"]*)"`).FindStringSubmatch(tag); jm != nil {
-					parts := strings.Split(jm[1], ",")
-					f.json = parts[0]
-					for _, p := range parts[1:] {
-						if p == "optional" {
-							f.optional = true
-						}
-					}
-				}
-				if fm := regexp.MustCompile(`form:"([^"]*)"`).FindStringSubmatch(tag); fm != nil {
-					parts := strings.Split(fm[1], ",")
-					f.paramIn = "query"
-					f.paramName = parts[0]
-					for _, p := range parts[1:] {
-						if p == "optional" {
-							f.optional = true
-						}
-					}
-				}
-				if pm := regexp.MustCompile(`path:"([^"]*)"`).FindStringSubmatch(tag); pm != nil {
-					f.paramIn = "path"
-					f.paramName = pm[1]
-				}
-				// form / path 字段属于 URL 参数，不应出现在请求体 schema 里
-				if f.json == "" && f.paramIn == "" {
-					f.json = f.name
-				}
-				if strings.Contains(tag, "optional") {
-					f.optional = true
-				}
-				td.fields = append(td.fields, f)
-			}
+			td := parseStruct(st.name, st.body)
 			types[td.name] = td
 		}
+	}
+
+	// cms.api 尾部还有独立 `type Xxx { ... }` 声明，findBlock 的 "type (" 扫不到。
+	// 漏掉它们会让 requestBody / 响应拼出指向未定义 schema 的悬空 $ref。
+	standalone := regexp.MustCompile(`(?m)^\s*type\s+(\w+)\s*\{`)
+	for _, m := range standalone.FindAllStringSubmatch(src, -1) {
+		name := m[1]
+		for _, body := range findBlock(src, "type "+name+" {", '{', '}') {
+			td := parseStruct(name, body)
+			types[name] = td
+		}
+	}
+
+	// 第二遍展开匿名嵌入字段；types 收齐后才展开，避免被嵌入类型尚未解析。
+	for name, td := range types {
+		if len(td.embedded) == 0 {
+			continue
+		}
+		fields := append([]field(nil), td.fields...)
+		seen := make(map[string]bool, len(fields))
+		for _, f := range fields {
+			if f.json != "" {
+				seen[f.json] = true
+			}
+		}
+		visited := map[string]bool{name: true}
+		var expand func(string)
+		expand = func(emb string) {
+			if visited[emb] {
+				return
+			}
+			visited[emb] = true
+			base, ok := types[emb]
+			if !ok {
+				return
+			}
+			for _, sub := range base.embedded {
+				expand(sub)
+			}
+			for _, f := range base.fields {
+				if f.json == "" || seen[f.json] {
+					continue
+				}
+				seen[f.json] = true
+				fields = append(fields, f)
+			}
+		}
+		for _, emb := range td.embedded {
+			expand(emb)
+		}
+		td.fields = fields
+		td.embedded = nil
+		types[name] = td
 	}
 	return types
 }
@@ -260,7 +327,9 @@ func parseRoutes(src string) []route {
 	var routes []route
 	// 每个可选段自带前导空白：早期版本在路径后用 \s* 吃掉空格，
 	// 会让「get /path returns (Resp)」这种没有请求体的路由漏掉响应类型。
-	re := regexp.MustCompile(`^(get|post|put|delete|patch|head|options)\s+(\S+)(?:\s+\((\w+)\))?(?:\s+returns\s*\((\w+)\))?`)
+	// 请求与响应都允许 []T / *T / map[string]T；早期只用 (\w+) 会让
+	// `returns ([]DepartmentTreeResp)` 整段被跳过，响应模型静默退化成 object。
+	re := regexp.MustCompile(`^(get|post|put|delete|patch|head|options)\s+(\S+)(?:\s+\(([^)\s]+)\))?(?:\s+returns\s*\(([^)\s]+)\))?`)
 	for _, block := range findBlock(src, "service", '{', '}') {
 		lines := strings.Split(block, "\n")
 		var cur route
@@ -326,6 +395,15 @@ func toSchema(t string, types map[string]typeDef) map[string]interface{} {
 	case "time.Time":
 		schema = map[string]interface{}{"type": "string", "format": "date-time"}
 	default:
+		// 未知但首字母大写的具名类型仍出 $ref：若解析漏了某个 type 声明，
+		// 静默降级成 string 会把「悬空引用」洗白，让 $ref 完整性测试假通过。
+		if t != "" && t[0] >= 'A' && t[0] <= 'Z' {
+			ref := map[string]interface{}{"$ref": "#/components/schemas/" + t}
+			if nullable {
+				ref["nullable"] = true
+			}
+			return ref
+		}
 		schema = map[string]interface{}{"type": "string"}
 	}
 	if nullable {
@@ -407,7 +485,7 @@ func generate(src string) map[string]interface{} {
 					op["requestBody"] = map[string]interface{}{
 						"content": map[string]interface{}{
 							"application/json": map[string]interface{}{
-								"schema": map[string]interface{}{"$ref": "#/components/schemas/" + r.req},
+								"schema": toSchema(r.req, types),
 							},
 						},
 					}
@@ -416,7 +494,7 @@ func generate(src string) map[string]interface{} {
 				op["requestBody"] = map[string]interface{}{
 					"content": map[string]interface{}{
 						"application/json": map[string]interface{}{
-							"schema": map[string]interface{}{"$ref": "#/components/schemas/" + r.req},
+							"schema": toSchema(r.req, types),
 						},
 					},
 				}
@@ -438,7 +516,7 @@ func generate(src string) map[string]interface{} {
 		} else {
 			respContent := map[string]interface{}{}
 			if r.resp != "" {
-				respContent["schema"] = map[string]interface{}{"$ref": "#/components/schemas/" + r.resp}
+				respContent["schema"] = toSchema(r.resp, types)
 			} else {
 				respContent["schema"] = map[string]interface{}{"type": "object"}
 			}

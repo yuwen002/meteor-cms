@@ -126,3 +126,109 @@ func TestGenerateIncludesAllRegisteredRoutes(t *testing.T) {
 		t.Errorf("解析到的 Go 路由数量异常: %d", total)
 	}
 }
+
+func collectSchemaRefs(v interface{}, out map[string]bool) {
+	switch x := v.(type) {
+	case map[string]interface{}:
+		if ref, ok := x["$ref"].(string); ok {
+			out[strings.TrimPrefix(ref, "#/components/schemas/")] = true
+		}
+		for _, val := range x {
+			collectSchemaRefs(val, out)
+		}
+	case []interface{}:
+		for _, val := range x {
+			collectSchemaRefs(val, out)
+		}
+	}
+}
+
+func schemasForTest(t *testing.T) (map[string]interface{}, map[string]interface{}) {
+	t.Helper()
+	spec := generate(loadAPI("../../api/cms/v1/cms.api"))
+	paths, ok := spec["paths"].(map[string]interface{})
+	if !ok {
+		t.Fatal("spec.paths 类型错误")
+	}
+	components, ok := spec["components"].(map[string]interface{})
+	if !ok {
+		t.Fatal("spec.components 类型错误")
+	}
+	schemas, ok := components["schemas"].(map[string]interface{})
+	if !ok {
+		t.Fatal("spec.components.schemas 类型错误")
+	}
+	return paths, schemas
+}
+
+// TestAllRefsResolve 递归校验所有 $ref 都能命中 components.schemas。
+// 之前 cms.api 尾部的独立 type Xxx {} 没被解析，产物里留下 5 处悬空引用。
+func TestAllRefsResolve(t *testing.T) {
+	spec := generate(loadAPI("../../api/cms/v1/cms.api"))
+	components := spec["components"].(map[string]interface{})
+	schemas := components["schemas"].(map[string]interface{})
+	refs := map[string]bool{}
+	collectSchemaRefs(spec, refs)
+	if len(refs) < 20 {
+		t.Fatalf("解析到的 $ref 数量异常: %d", len(refs))
+	}
+	for name := range refs {
+		if _, ok := schemas[name]; !ok {
+			t.Errorf("悬空 $ref：#/components/schemas/%s", name)
+		}
+	}
+}
+
+// TestEmbeddedAndStandaloneSchemasHaveProperties 覆盖两类字段解析盲区：
+// 匿名嵌入字段需要平铺，独立 type {} 需要被 parseTypes 收进 schemas。
+// 注意：纯 path/form 参数类型是合理的空体，不能全量断言。
+func TestEmbeddedAndStandaloneSchemasHaveProperties(t *testing.T) {
+	_, schemas := schemasForTest(t)
+	for _, name := range []string{
+		"RoleDetailResp", "PermissionDetailResp",
+		"DashboardStatsResp", "FileItem", "FileListReq", "FileListResp", "FileDeleteReq", "FileRenameReq",
+	} {
+		sch, ok := schemas[name].(map[string]interface{})
+		if !ok {
+			t.Errorf("缺少 schema：%s", name)
+			continue
+		}
+		props, ok := sch["properties"].(map[string]interface{})
+		if !ok || len(props) == 0 {
+			t.Errorf("schema %s 的 properties 为空", name)
+		}
+	}
+}
+
+// TestArrayResponses returns ([]T) 必须生成 array + items.$ref，不能被降级成 object。
+func TestArrayResponses(t *testing.T) {
+	paths, _ := schemasForTest(t)
+	for _, tc := range []struct{ path, itemRef string }{
+		{"/admin/departments/tree", "#/components/schemas/DepartmentTreeResp"},
+		{"/admin/permissions/tree", "#/components/schemas/PermissionTreeItem"},
+	} {
+		ops, ok := paths[tc.path].(map[string]interface{})
+		if !ok {
+			t.Errorf("缺少路径 %s", tc.path)
+			continue
+		}
+		op, ok := ops["get"].(map[string]interface{})
+		if !ok {
+			t.Errorf("缺少操作 get %s", tc.path)
+			continue
+		}
+		responses := op["responses"].(map[string]interface{})
+		resp := responses["200"].(map[string]interface{})
+		content := resp["content"].(map[string]interface{})
+		jsonContent := content["application/json"].(map[string]interface{})
+		schema := jsonContent["schema"].(map[string]interface{})
+		if schema["type"] != "array" {
+			t.Errorf("%s 响应应为 array，实际 %v", tc.path, schema)
+			continue
+		}
+		items, ok := schema["items"].(map[string]interface{})
+		if !ok || items["$ref"] != tc.itemRef {
+			t.Errorf("%s 的 items 应为 %s，实际 %v", tc.path, tc.itemRef, schema["items"])
+		}
+	}
+}

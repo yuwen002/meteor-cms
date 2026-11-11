@@ -53,7 +53,10 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 
 	server.AddRoutes(
 		rest.WithMiddlewares(
-			[]rest.Middleware{serverCtx.ClientInfoMiddleware, serverCtx.JwtMiddleware, serverCtx.PermissionMiddleware, serverCtx.OperationLogMiddleware},
+			// OperationLog 必须排在 Permission 之前：否则被权限中间件拒绝的越权尝试
+			// 根本走不到审计中间件，日志里只会留下成功请求。Jwt 仍在它外层，
+			// 因此 save() 依旧能取到当前用户身份与请求上下文。
+			[]rest.Middleware{serverCtx.ClientInfoMiddleware, serverCtx.JwtMiddleware, serverCtx.OperationLogMiddleware, serverCtx.PermissionMiddleware},
 			[]rest.Route{
 				{
 					Method:  http.MethodGet,
@@ -297,7 +300,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	// 文件管理：需登录，且按 system:file:* 权限码鉴权（超级管理员天然放行）
 	server.AddRoutes(
 		rest.WithMiddlewares(
-			[]rest.Middleware{serverCtx.ClientInfoMiddleware, serverCtx.JwtMiddleware, serverCtx.PermissionMiddleware, serverCtx.OperationLogMiddleware},
+			[]rest.Middleware{serverCtx.ClientInfoMiddleware, serverCtx.JwtMiddleware, serverCtx.OperationLogMiddleware, serverCtx.PermissionMiddleware},
 			[]rest.Route{
 				{
 					Method:  http.MethodGet,
@@ -321,7 +324,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	// 数据字典与系统配置：需登录，并按 system:dict:* / system:config:* 权限码鉴权
 	server.AddRoutes(
 		rest.WithMiddlewares(
-			[]rest.Middleware{serverCtx.ClientInfoMiddleware, serverCtx.JwtMiddleware, serverCtx.PermissionMiddleware, serverCtx.OperationLogMiddleware},
+			[]rest.Middleware{serverCtx.ClientInfoMiddleware, serverCtx.JwtMiddleware, serverCtx.OperationLogMiddleware, serverCtx.PermissionMiddleware},
 			[]rest.Route{
 				{
 					Method:  http.MethodGet,

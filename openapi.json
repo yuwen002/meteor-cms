@@ -55,6 +55,12 @@
           "createdAt": {
             "type": "string"
           },
+          "dept_id": {
+            "type": "integer"
+          },
+          "dept_name": {
+            "type": "string"
+          },
           "email": {
             "type": "string"
           },
@@ -1706,6 +1712,41 @@
         ],
         "type": "object"
       },
+      "DashboardStatsResp": {
+        "properties": {
+          "admin_count": {
+            "type": "integer"
+          },
+          "dept_count": {
+            "type": "integer"
+          },
+          "permission_count": {
+            "type": "integer"
+          },
+          "role_count": {
+            "type": "integer"
+          },
+          "today_fail_login": {
+            "type": "integer"
+          },
+          "today_login_count": {
+            "type": "integer"
+          },
+          "week_op_count": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "admin_count",
+          "dept_count",
+          "role_count",
+          "permission_count",
+          "today_login_count",
+          "today_fail_login",
+          "week_op_count"
+        ],
+        "type": "object"
+      },
       "DeleteAdminReq": {
         "properties": {},
         "type": "object"
@@ -2079,6 +2120,122 @@
       },
       "EnableAdminReq": {
         "properties": {},
+        "type": "object"
+      },
+      "FileDeleteReq": {
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "FileItem": {
+        "properties": {
+          "height": {
+            "type": "integer"
+          },
+          "is_dir": {
+            "type": "boolean"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "modified": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "original_name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "ref_count": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          },
+          "width": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "path",
+          "url",
+          "size",
+          "modified",
+          "is_dir",
+          "original_name",
+          "mime",
+          "width",
+          "height",
+          "ref_count"
+        ],
+        "type": "object"
+      },
+      "FileListReq": {
+        "properties": {
+          "dir": {
+            "type": "string"
+          },
+          "keyword": {
+            "type": "string"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "FileListResp": {
+        "properties": {
+          "current_dir": {
+            "type": "string"
+          },
+          "list": {
+            "items": {
+              "$ref": "#/components/schemas/FileItem"
+            },
+            "type": "array"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "list",
+          "total",
+          "current_dir"
+        ],
+        "type": "object"
+      },
+      "FileRenameReq": {
+        "properties": {
+          "new_name": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "new_name"
+        ],
         "type": "object"
       },
       "ForceLogoutByDeptReq": {
@@ -2856,7 +3013,66 @@
         "type": "object"
       },
       "PermissionDetailResp": {
-        "properties": {},
+        "properties": {
+          "api_path": {
+            "type": "string"
+          },
+          "component": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "method": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parent_id": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "permission": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "parent_id",
+          "type",
+          "path",
+          "component",
+          "icon",
+          "method",
+          "api_path",
+          "permission",
+          "is_active",
+          "sort",
+          "created_at",
+          "updated_at"
+        ],
         "type": "object"
       },
       "PermissionItem": {
@@ -3574,7 +3790,50 @@
         "type": "object"
       },
       "RoleDetailResp": {
-        "properties": {},
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "data_scope": {
+            "type": "integer"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "is_system": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "sort": {
+            "type": "integer"
+          },
+          "updated_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "desc",
+          "data_scope",
+          "is_system",
+          "is_active",
+          "sort",
+          "created_at",
+          "updated_at"
+        ],
         "type": "object"
       },
       "RoleItem": {
@@ -4215,6 +4474,14 @@
           {
             "in": "query",
             "name": "active",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dept_id",
             "required": false,
             "schema": {
               "type": "integer"
@@ -5992,7 +6259,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentTreeResp"
+                  },
+                  "type": "array"
                 }
               }
             },
@@ -7165,7 +7435,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "items": {
+                    "$ref": "#/components/schemas/PermissionTreeItem"
+                  },
+                  "type": "array"
                 }
               }
             },

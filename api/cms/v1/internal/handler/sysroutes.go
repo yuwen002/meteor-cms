@@ -19,8 +19,8 @@ func RegisterSystemExtraRoutes(server *rest.Server, svcCtx *svc.ServiceContext) 
 	protected := []rest.Middleware{
 		svcCtx.ClientInfoMiddleware,
 		svcCtx.JwtMiddleware,
-		svcCtx.PermissionMiddleware,
 		svcCtx.OperationLogMiddleware,
+		svcCtx.PermissionMiddleware,
 	}
 	server.AddRoutes(rest.WithMiddlewares(protected, []rest.Route{
 		{Method: http.MethodGet, Path: "/admin/configs/key/:key", Handler: configByKeyHandler(svcCtx)},

@@ -64,6 +64,17 @@ func (f *Filter) Empty() bool {
 	return f.Restricted && len(f.DeptIDs) == 0 && !f.OnlySelf
 }
 
+// AllowsDept 判断指定部门是否落在允许访问的部门集合内。
+// 供「按部门筛选」类入口把用户传入的 dept_id 与可见范围求交，防止探测越权数据。
+func (f *Filter) AllowsDept(id int64) bool {
+	for _, d := range f.DeptIDs {
+		if d == id {
+			return true
+		}
+	}
+	return false
+}
+
 // Resolve 解析指定用户的数据范围。
 //
 // 超级管理员与拥有 ScopeAll 角色的用户不做行级过滤；

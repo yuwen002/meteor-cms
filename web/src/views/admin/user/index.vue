@@ -5,6 +5,11 @@
         <el-form-item label="关键词">
           <el-input v-model="query.keyword" placeholder="用户名/昵称/邮箱" clearable @keyup.enter="loadList" />
         </el-form-item>
+        <el-form-item label="部门">
+          <el-select v-model="query.dept_id" placeholder="全部部门" clearable style="width: 180px" @change="loadList">
+            <el-option v-for="d in deptFilterOptions" :key="d.id" :label="d.label" :value="d.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadList">查询</el-button>
           <el-button @click="resetQuery">重置</el-button>
@@ -25,6 +30,7 @@
         <el-table-column prop="nickname" label="昵称" />
         <el-table-column prop="email" label="邮箱" />
         <el-table-column prop="phone" label="手机号" />
+        <el-table-column prop="dept_name" label="部门" />
         <el-table-column label="超管" width="70">
           <template #default="{ row }">
             <el-tag v-if="row.isSuper" type="danger">是</el-tag>
@@ -36,11 +42,12 @@
             <el-tag :type="row.isActive ? 'success' : 'info'">{{ row.isActive ? '启用' : '禁用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="350" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(asRow(row))" v-if="canEdit">编辑</el-button>
             <el-button link type="warning" @click="openResetPwd(asRow(row))" v-if="canResetPwd">重置密码</el-button>
             <el-button link type="info" @click="openAssignRole(asRow(row))" v-if="canAssignRole">分配角色</el-button>
+            <el-button link type="info" @click="openBindDept(asRow(row))" v-if="canBindDept">绑定部门</el-button>
             <el-button v-if="row.isActive && canDisable" link type="warning" @click="doDisable(asRow(row))">禁用</el-button>
             <el-button v-else-if="canEnable" link type="success" @click="doEnable(asRow(row))">启用</el-button>
             <el-button link type="danger" @click="doDelete(asRow(row))" v-if="canDelete">删除</el-button>
@@ -113,6 +120,17 @@
         <el-button type="primary" :loading="submitting" @click="submitRoles">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 绑定部门：后端要求部门必须存在，故不提供「清空部门」选项 -->
+    <el-dialog title="绑定部门" v-model="deptVisible" width="420px">
+      <el-select v-model="bindDeptId" placeholder="请选择部门" style="width: 100%">
+        <el-option v-for="d in deptOptions" :key="d.id" :label="d.label" :value="d.id" />
+      </el-select>
+      <template #footer>
+        <el-button @click="deptVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="submitBindDept">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -129,9 +147,11 @@ const canDisable = computed(() => userStore.hasPermission('system:admin_user:dis
 const canEnable = computed(() => userStore.hasPermission('system:admin_user:enable'))
 const canResetPwd = computed(() => userStore.hasPermission('system:admin_user:reset_pwd'))
 const canAssignRole = computed(() => userStore.hasPermission('system:admin_user:role_assign'))
+const canBindDept = computed(() => userStore.hasPermission('system:admin_user:bind_dept'))
 import { ElMessage, ElMessageBox } from '@/utils/element'
 import {
   getAdminList,
+  getAdminDetail,
   createAdmin,
   updateAdmin,
   deleteAdmin,
@@ -140,8 +160,11 @@ import {
   resetAdminPassword,
   getAdminRoles,
   assignAdminRoles,
+  bindAdminDepartment,
 } from '@/api/user'
 import { getRoles } from '@/api/role'
+import { getDeptTree } from '@/api/dept'
+import type { DeptTreeItem } from '@/api/dept'
 
 // el-table 作用域插槽的 row 为 DefaultRow，这里显式收敛为 AdminRow
 const asRow = (row: unknown) => row as AdminRow
@@ -155,13 +178,20 @@ interface AdminRow {
   avatar: string
   isSuper: boolean
   isActive: boolean
+  dept_id?: number
+  dept_name?: string
 }
 
 const loading = ref(false)
 const submitting = ref(false)
 const list = ref<AdminRow[]>([])
 const total = ref(0)
-const query = reactive({ page: 1, page_size: 10, keyword: '' })
+const query = reactive({
+  page: 1,
+  page_size: 10,
+  keyword: '',
+  dept_id: undefined as number | undefined,
+})
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -199,6 +229,7 @@ async function loadList() {
 
 function resetQuery() {
   query.keyword = ''
+  query.dept_id = undefined
   query.page = 1
   loadList()
 }
@@ -313,7 +344,52 @@ async function submitRoles() {
   }
 }
 
-onMounted(loadList)
+const deptVisible = ref(false)
+const deptTree = ref<DeptTreeItem[]>([])
+const bindDeptId = ref<number>()
+const deptAdminId = ref<number>()
+
+// 部门树铺平：绑定弹窗用带缩进的层级名，查询栏用不带缩进的纯名称
+const deptOptions = computed(() => flattenDeptTree(deptTree.value))
+const deptFilterOptions = computed(() => flattenDeptTree(deptTree.value, 0, false))
+function flattenDeptTree(nodes: DeptTreeItem[], depth = 0, indent = true): { id: number; label: string }[] {
+  const out: { id: number; label: string }[] = []
+  for (const n of nodes) {
+    out.push({ id: n.id, label: `${indent ? '　'.repeat(depth) : ''}${n.name}` })
+    if (n.children?.length) out.push(...flattenDeptTree(n.children, depth + 1, indent))
+  }
+  return out
+}
+
+async function loadDeptTree() {
+  if (deptTree.value.length > 0) return
+  deptTree.value = await getDeptTree()
+}
+
+async function openBindDept(row: AdminRow) {
+  deptAdminId.value = row.id
+  const [tree, detail] = await Promise.all([getDeptTree(), getAdminDetail(row.id)])
+  deptTree.value = tree
+  bindDeptId.value = detail.dept_id || undefined
+  deptVisible.value = true
+}
+
+async function submitBindDept() {
+  if (!deptAdminId.value || !bindDeptId.value) { ElMessage.warning('请选择部门'); return }
+  submitting.value = true
+  try {
+    await bindAdminDepartment(deptAdminId.value, bindDeptId.value)
+    ElMessage.success('部门已绑定')
+    deptVisible.value = false
+  } finally {
+    submitting.value = false
+  }
+}
+
+onMounted(() => {
+  loadList()
+  void loadDeptTree()
+})
 </script>
 
 <style scoped>

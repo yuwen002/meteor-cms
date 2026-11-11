@@ -179,7 +179,7 @@ Authorization: Bearer <token>
 
 | 方法 | 路径 | 权限码 | 说明 |
 | --- | --- | --- | --- |
-| GET | `/admin/admin-users` | `system:admin_user:list` | 管理员列表（分页、按用户名/手机/状态筛选） |
+| GET | `/admin/admin-users` | `system:admin_user:list` | 管理员列表（分页、关键词/状态/部门筛选）；`dept_id` 只返回仍启用且落在当前用户数据可见范围内的部门，越界返回空列表；列表项含 `dept_id` / `dept_name` |
 | GET | `/admin/admin-users/:id` | `system:admin_user:detail` | 管理员详情 |
 | POST | `/admin/admin-users/create` | `system:admin_user:add` | 新增管理员 |
 | PUT | `/admin/admin-users/:id` | `system:admin_user:edit` | 更新资料（局部更新，未传字段不变） |
@@ -221,10 +221,12 @@ Authorization: Bearer <token>
 | GET | `/admin/departments/tree` | `system:dept:list` | 部门树（仅返回启用部门） |
 | GET | `/admin/departments/:id` | `system:dept:detail` | 部门详情 |
 | POST | `/admin/departments` | `system:dept:add` | 新增部门 |
-| PUT | `/admin/departments/:id` | `system:dept:edit` | 更新部门 |
-| DELETE | `/admin/departments/:id` | `system:dept:delete` | 删除部门（软删除），存在子部门时拒绝；删除或停用后旧的 `dept_id` 引用不再产生可见范围 |
+| PUT | `/admin/departments/:id` | `system:dept:edit` | 更新部门（父级变更时同事务重算整条子树的 `level`；仍有启用子部门时不允许停用） |
+| DELETE | `/admin/departments/:id` | `system:dept:delete` | 删除部门（软删除），存在子部门、关联管理员或被角色自定义数据范围引用时拒绝；删除或停用后旧的 `dept_id` 引用不再产生可见范围 |
 
 部门树节点含 `children`，父部门未启用时其下的启用子部门不会出现在树中。
+停用是收权手段：仍被管理员或角色引用时允许停用，但存在启用子部门时拒绝，避免子树在范围解析中被静默截断；
+删除管理员会同步清空其担任负责人的部门 `leader_id`。
 
 ---
 
@@ -298,7 +300,7 @@ Authorization: Bearer <token>
 
 - 多角色取并集，任一角色为「全部数据」时不过滤
 - 范围解析失败、未分配启用角色、或要求按部门过滤但未分配部门时，按最严格处理（返回空集）
-- 当前仅在管理员列表接口落地
+- 部门模型（`dept_id` + `datascope`）当前仅在管理员列表接口落地；文章模块按 `author_id` 判定，属于另一套模型
 
 ---
 

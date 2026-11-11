@@ -14,14 +14,14 @@ import (
 // 新模块单独注册，既不动生成文件，也保证以后重新生成不会丢失文章路由。
 //
 // 后台接口挂四个中间件（与 routes.go 中受保护分组一致）：
-// ClientInfo + Jwt + Permission + OperationLog。
+// ClientInfo + Jwt + OperationLog + Permission，审计在前才能覆盖被拒绝的请求。
 // 公开阅读接口只挂 ClientInfoMiddleware，不经过 JWT 与权限校验。
 func RegisterContentRoutes(server *rest.Server, serverCtx *svc.ServiceContext) {
 	protected := []rest.Middleware{
 		serverCtx.ClientInfoMiddleware,
 		serverCtx.JwtMiddleware,
-		serverCtx.PermissionMiddleware,
 		serverCtx.OperationLogMiddleware,
+		serverCtx.PermissionMiddleware,
 	}
 
 	server.AddRoutes(rest.WithMiddlewares(protected, []rest.Route{

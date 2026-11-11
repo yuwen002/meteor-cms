@@ -36,12 +36,22 @@ export function getAdminList(params: {
   page_size?: number
   keyword?: string
   active?: number
+  dept_id?: number
 }) {
   return request({ url: '/admin/admin-users', method: 'get', params })
 }
 
 export function getAdminDetail(id: number) {
-  return request({ url: `/admin/admin-users/${id}`, method: 'get' })
+  return request({ url: `/admin/admin-users/${id}`, method: 'get' }) as Promise<{ dept_id: number }>
+}
+
+// 后端要求部门必须存在，因此不提供「清空部门」选项
+export function bindAdminDepartment(id: number, deptId: number) {
+  return request({
+    url: `/admin/admin-users/${id}/bind-department`,
+    method: 'put',
+    data: { dept_id: deptId },
+  })
 }
 
 export function createAdmin(data: Record<string, unknown>) {
